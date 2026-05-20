@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/DashboardLayout.master" AutoEventWireup="true" CodeBehind="courses.aspx.cs" Inherits="student_information_management_system.courses" Title="Courses - INTI Student Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="courses.aspx.cs" Inherits="student_information_management_system.courses" Title="Courses - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -86,7 +86,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y1 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=ENG1001"
+                <a href="/student/academic/course-detail.aspx?code=ENG1001"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -123,7 +123,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y1 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=MTH1001"
+                <a href="/student/academic/course-detail.aspx?code=MTH1001"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -160,7 +160,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y1 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=CSC1101"
+                <a href="/student/academic/course-detail.aspx?code=CSC1101"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -197,7 +197,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y1 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=CSC1102"
+                <a href="/student/academic/course-detail.aspx?code=CSC1102"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -234,7 +234,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y1 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=MTH1002"
+                <a href="/student/academic/course-detail.aspx?code=MTH1002"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -271,7 +271,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y1 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=PHY1001"
+                <a href="/student/academic/course-detail.aspx?code=PHY1001"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -308,7 +308,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=CSC2103"
+                <a href="/student/academic/course-detail.aspx?code=CSC2103"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -345,7 +345,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=CSC2104"
+                <a href="/student/academic/course-detail.aspx?code=CSC2104"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -382,7 +382,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=MTH2101"
+                <a href="/student/academic/course-detail.aspx?code=MTH2101"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -419,7 +419,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=ENG2001"
+                <a href="/student/academic/course-detail.aspx?code=ENG2001"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -456,7 +456,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=CSC2201"
+                <a href="/student/academic/course-detail.aspx?code=CSC2201"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -493,7 +493,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=CSC2202"
+                <a href="/student/academic/course-detail.aspx?code=CSC2202"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -530,7 +530,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y2 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=CSC2203"
+                <a href="/student/academic/course-detail.aspx?code=CSC2203"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -567,7 +567,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y3 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=CSC3101"
+                <a href="/student/academic/course-detail.aspx?code=CSC3101"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -604,7 +604,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y3 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=CSC3102"
+                <a href="/student/academic/course-detail.aspx?code=CSC3102"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -641,7 +641,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y3 &middot; Trimester 1</span>
-                <a href="course-detail.aspx?code=CSC3103"
+                <a href="/student/academic/course-detail.aspx?code=CSC3103"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -678,7 +678,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y3 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=CSC3201"
+                <a href="/student/academic/course-detail.aspx?code=CSC3201"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
@@ -715,7 +715,7 @@
             </div>
             <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <span class="text-slate-500" style="font-size:11.5px;font-weight:500">Y3 &middot; Trimester 2</span>
-                <a href="course-detail.aspx?code=CSC3202"
+                <a href="/student/academic/course-detail.aspx?code=CSC3202"
                     class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
                     style="font-size:12.5px;font-weight:600">
                     Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>

@@ -1,4 +1,4 @@
-<%@ Master Language="C#" MasterPageFile="~/Site.master" AutoEventWireup="true" CodeBehind="DashboardLayout.master.cs" Inherits="student_information_management_system.DashboardLayout" %>
+﻿<%@ Master Language="C#" MasterPageFile="~/shared/Site.master" AutoEventWireup="true" CodeBehind="DashboardLayout.master.cs" Inherits="student_information_management_system.DashboardLayout" %>
 <%@ Register TagPrefix="uc" TagName="Sidebar" Src="~/controls/Sidebar.ascx" %>
 <%@ Register TagPrefix="uc" TagName="Topbar" Src="~/controls/Topbar.ascx" %>
 

@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/DashboardLayout.master" AutoEventWireup="true" CodeBehind="timetable.aspx.cs" Inherits="student_information_management_system.timetable" Title="Timetable - INTI Student Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="timetable.aspx.cs" Inherits="student_information_management_system.timetable" Title="Timetable - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 

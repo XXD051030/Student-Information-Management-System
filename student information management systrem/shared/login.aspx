@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/LoginLayout.master" AutoEventWireup="true" CodeBehind="login.aspx.cs" Inherits="student_information_management_system.login" Title="Sign in - INTI Student Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/shared/LoginLayout.master" AutoEventWireup="true" CodeBehind="login.aspx.cs" Inherits="student_information_management_system.login" Title="Sign in - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <div class="flex w-full max-w-md flex-col">

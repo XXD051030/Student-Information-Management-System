@@ -1,4 +1,4 @@
-<%@ Master Language="C#" MasterPageFile="~/Site.master" AutoEventWireup="true" CodeBehind="LoginLayout.master.cs" Inherits="student_information_management_system.LoginLayout" %>
+﻿<%@ Master Language="C#" MasterPageFile="~/shared/Site.master" AutoEventWireup="true" CodeBehind="LoginLayout.master.cs" Inherits="student_information_management_system.LoginLayout" %>
 
 <asp:Content ContentPlaceHolderID="BodyPlaceholder" runat="server">
     <div class="size-full min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">

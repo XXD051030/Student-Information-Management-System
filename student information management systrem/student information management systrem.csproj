@@ -67,8 +67,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="*.aspx" />
-    <Content Include="*.master" />
+    <Content Include="Default.aspx" />
+    <Content Include="shared\login.aspx" />
+    <Content Include="shared\account.aspx" />
+    <Content Include="shared\dashboard.aspx" />
+    <Content Include="shared\notifications.aspx" />
+    <Content Include="student\academic\assignments.aspx" />
+    <Content Include="student\academic\attendance.aspx" />
+    <Content Include="student\academic\course-detail.aspx" />
+    <Content Include="student\academic\courses.aspx" />
+    <Content Include="student\academic\enrollment.aspx" />
+    <Content Include="student\academic\grades.aspx" />
+    <Content Include="student\academic\timetable.aspx" />
+    <Content Include="student\finance\payment.aspx" />
+    <Content Include="student\finance\payment-history.aspx" />
+    <Content Include="shared\Site.master" />
+    <Content Include="shared\DashboardLayout.master" />
+    <Content Include="shared\LoginLayout.master" />
     <Content Include="controls\*.ascx" />
     <Content Include="css\*.css" />
     <Content Include="img\inti_logo.png" />
@@ -76,16 +91,125 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="*.aspx.cs">
-      <DependentUpon>%(Filename)</DependentUpon>
+    <Compile Include="Default.aspx.cs">
+      <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="*.aspx.designer.cs" />
-    <Compile Include="*.master.cs">
-      <DependentUpon>%(Filename)</DependentUpon>
+    <Compile Include="Default.aspx.designer.cs">
+      <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\login.aspx.cs">
+      <DependentUpon>login.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="*.master.designer.cs" />
+    <Compile Include="shared\login.aspx.designer.cs">
+      <DependentUpon>login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\account.aspx.cs">
+      <DependentUpon>account.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\account.aspx.designer.cs">
+      <DependentUpon>account.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\dashboard.aspx.cs">
+      <DependentUpon>dashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\dashboard.aspx.designer.cs">
+      <DependentUpon>dashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\notifications.aspx.cs">
+      <DependentUpon>notifications.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\notifications.aspx.designer.cs">
+      <DependentUpon>notifications.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\assignments.aspx.cs">
+      <DependentUpon>assignments.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\assignments.aspx.designer.cs">
+      <DependentUpon>assignments.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\attendance.aspx.cs">
+      <DependentUpon>attendance.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\attendance.aspx.designer.cs">
+      <DependentUpon>attendance.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\course-detail.aspx.cs">
+      <DependentUpon>course-detail.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\course-detail.aspx.designer.cs">
+      <DependentUpon>course-detail.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\courses.aspx.cs">
+      <DependentUpon>courses.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\courses.aspx.designer.cs">
+      <DependentUpon>courses.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\enrollment.aspx.cs">
+      <DependentUpon>enrollment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\enrollment.aspx.designer.cs">
+      <DependentUpon>enrollment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\grades.aspx.cs">
+      <DependentUpon>grades.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\grades.aspx.designer.cs">
+      <DependentUpon>grades.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\academic\timetable.aspx.cs">
+      <DependentUpon>timetable.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\academic\timetable.aspx.designer.cs">
+      <DependentUpon>timetable.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\finance\payment.aspx.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\finance\payment.aspx.designer.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\finance\payment-history.aspx.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\finance\payment-history.aspx.designer.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\Site.master.cs">
+      <DependentUpon>Site.master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\Site.master.designer.cs">
+      <DependentUpon>Site.master</DependentUpon>
+    </Compile>
+    <Compile Include="shared\DashboardLayout.master.cs">
+      <DependentUpon>DashboardLayout.master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\DashboardLayout.master.designer.cs">
+      <DependentUpon>DashboardLayout.master</DependentUpon>
+    </Compile>
+    <Compile Include="shared\LoginLayout.master.cs">
+      <DependentUpon>LoginLayout.master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\LoginLayout.master.designer.cs">
+      <DependentUpon>LoginLayout.master</DependentUpon>
+    </Compile>
     <Compile Include="controls\*.ascx.cs">
       <DependentUpon>%(Filename)</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
