@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/DashboardLayout.master" AutoEventWireup="true" CodeBehind="account.aspx.cs" Inherits="student_information_management_system.account" Title="Account - INTI Student Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="account.aspx.cs" Inherits="student_information_management_system.account" Title="Account - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 

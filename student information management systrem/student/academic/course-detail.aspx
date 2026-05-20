@@ -1,9 +1,9 @@
-<%@ Page Language="C#" MasterPageFile="~/DashboardLayout.master" AutoEventWireup="true" CodeBehind="course-detail.aspx.cs" Inherits="student_information_management_system.course_detail" Title="Course Detail - INTI Student Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="course-detail.aspx.cs" Inherits="student_information_management_system.course_detail" Title="Course Detail - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
     <%-- Breadcrumb / back --%>
-    <a href="courses.aspx" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:500">
+    <a href="/student/academic/courses.aspx" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:500">
         <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back to My Courses
     </a>
 
