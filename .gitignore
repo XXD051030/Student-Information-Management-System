@@ -58,6 +58,8 @@ packages/
 Thumbs.db
 Desktop.ini
 
-# Documentation folders named doc
-doc/
-**/doc/
+# Documentation folders ending in doc or docs
+*doc/
+*docs/
+**/*doc/
+**/*docs/
