@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/shared/LoginLayout.master" AutoEventWireup="true" CodeBehind="login.aspx.cs" Inherits="student_information_management_system.login" Title="Sign in - INTI Student Portal" %>
+<%@ Page Language="C#" MasterPageFile="~/shared/LoginLayout.master" AutoEventWireup="true" CodeBehind="login.aspx.cs" Inherits="student_information_management_system.login" Title="Sign in - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <div class="flex w-full max-w-md flex-col">
@@ -15,7 +15,7 @@
 
             <!-- EMAIL CARD -->
             <div id="email-card">
-                <form id="email-form" onsubmit="return false">
+                <div id="email-form">
                     <div class="flex flex-col gap-2">
                         <div id="email-wrap" class="relative rounded-xl border bg-white transition-all border-gray-200 hover:border-gray-300">
                             <label for="email" class="pointer-events-none absolute left-4 transition-all top-1/2 -translate-y-1/2 text-gray-400" style="font-size:14px;font-weight:500" id="email-label">Email address</label>
@@ -29,17 +29,17 @@
                             </div>
                         </div>
                     </div>
-                    <button id="email-submit" type="submit" disabled class="mt-6 group flex w-full items-center justify-center gap-2 rounded-xl px-4 transition-all h-12 bg-indigo-300 text-white cursor-not-allowed" style="font-size:15px;font-weight:600">
+                    <button id="email-submit" type="button" disabled class="mt-6 group flex w-full items-center justify-center gap-2 rounded-xl px-4 transition-all h-12 bg-indigo-300 text-white cursor-not-allowed" style="font-size:15px;font-weight:600">
                         <span id="email-submit-label">Continue</span>
                         <i data-lucide="arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-0.5"></i>
                     </button>
                     <p class="mt-6 text-center text-gray-400" style="font-size:12px">By continuing you agree to INTI's Acceptable Use Policy.</p>
-                </form>
+                </div>
             </div>
 
             <!-- PASSWORD CARD (hidden initially) -->
             <div id="password-card" class="hidden">
-                <form id="password-form" onsubmit="return false">
+                <div id="password-form">
                     <button type="button" data-action="back-to-email" class="group mb-5 flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50/70 px-3 py-2.5 transition-all hover:border-indigo-200 hover:bg-indigo-50/40">
                         <span class="flex items-center gap-2.5 text-gray-700">
                             <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-white ring-1 ring-gray-200">
@@ -78,16 +78,22 @@
                         <a href="#" class="text-indigo-600 hover:text-indigo-700 transition-colors" style="font-size:13px;font-weight:600">Forgot password?</a>
                     </div>
 
-                    <button id="pw-submit" type="submit" disabled class="mt-6 group flex w-full items-center justify-center gap-2 rounded-xl px-4 transition-all h-12 bg-indigo-300 text-white cursor-not-allowed" style="font-size:15px;font-weight:600">
+                    <button id="pw-submit" type="button" disabled class="mt-6 group flex w-full items-center justify-center gap-2 rounded-xl px-4 transition-all h-12 bg-indigo-300 text-white cursor-not-allowed" style="font-size:15px;font-weight:600">
                         <span id="pw-submit-label">Sign in</span>
                         <i data-lucide="arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-0.5"></i>
                     </button>
 
                     <p class="mt-6 text-center text-gray-400" style="font-size:12px">Protected by INTI Identity &middot; End-to-end encrypted</p>
-                </form>
+                </div>
             </div>
 
         </div>
+
+        <%-- Hidden helpers for server-side sign-in. login.js copies the entered
+             email into hfEmail and clicks btnSignIn; the server then infers the
+             role from the email, stores it in Session and redirects. --%>
+        <asp:HiddenField ID="hfEmail" runat="server" ClientIDMode="Static" />
+        <asp:Button ID="btnSignIn" runat="server" ClientIDMode="Static" OnClick="btnSignIn_Click" UseSubmitBehavior="false" CssClass="hidden" Text="" />
 
         <div class="mt-8 flex items-center justify-between px-1 text-gray-500" style="font-size:13px">
             <a href="#" class="hover:text-indigo-600 transition-colors">Need help signing in?</a>

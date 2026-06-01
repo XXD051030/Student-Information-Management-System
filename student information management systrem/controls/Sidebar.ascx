@@ -10,6 +10,50 @@
 
     <nav class="flex-1 overflow-y-auto px-3 py-5">
         <p class="px-3 pb-2 text-slate-400" style="font-size:11px;font-weight:600;letter-spacing:0.08em">MAIN MENU</p>
+
+        <% if (IsLecturer) { %>
+        <%-- ===================== LECTURER MENU ===================== --%>
+        <ul class="space-y-0.5">
+            <li>
+                <a href="/lecturer/dashboard.aspx" data-nav-link="dashboard.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="layout-dashboard" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="/lecturer/academic/courses.aspx" data-nav-link="courses.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="book-open" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">My Courses</span>
+                    <span class="rounded-md px-1.5 bg-slate-100 text-slate-600" style="font-size:11px;font-weight:600">6</span>
+                </a>
+            </li>
+            <li>
+                <a href="/lecturer/academic/attendance.aspx" data-nav-link="attendance.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="user-check" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Attendance</span>
+                </a>
+            </li>
+            <li>
+                <a href="/lecturer/academic/grades.aspx" data-nav-link="grades.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="graduation-cap" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Grades</span>
+                </a>
+            </li>
+            <li>
+                <a href="/lecturer/academic/announcements.aspx" data-nav-link="announcements.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="megaphone" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Announcements</span>
+                </a>
+            </li>
+            <li>
+                <a href="/lecturer/academic/materials.aspx" data-nav-link="materials.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="folder-open" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Materials</span>
+                </a>
+            </li>
+        </ul>
+        <% } else { %>
+        <%-- ===================== STUDENT MENU ===================== --%>
         <ul class="space-y-0.5">
             <li>
                 <a href="/shared/dashboard.aspx" data-nav-link="dashboard.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
@@ -77,11 +121,12 @@
                 </a>
             </li>
         </ul>
+        <% } %>
 
         <p class="mt-7 px-3 pb-2 text-slate-400" style="font-size:11px;font-weight:600;letter-spacing:0.08em">SUPPORT</p>
         <ul class="space-y-0.5">
             <li>
-                <a href="/shared/account.aspx" data-nav-link="account.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                <a href="<%= IsLecturer ? "/lecturer/account.aspx" : "/shared/account.aspx" %>" data-nav-link="account.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
                     <i data-lucide="user-cog" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
                     Account
                 </a>
