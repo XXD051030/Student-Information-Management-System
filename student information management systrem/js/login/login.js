@@ -64,7 +64,7 @@
     emailInput.addEventListener('focus', function () { setLabelFloating(emailLabel, true); });
     emailInput.addEventListener('blur', function () { setLabelFloating(emailLabel, emailInput.value.length > 0); });
 
-    document.getElementById('email-form').addEventListener('submit', function () {
+    function goToPassword() {
         if (!emailRegex.test(emailInput.value.trim())) return;
         emailChip.textContent = emailInput.value.trim();
         emailCard.classList.add('hidden');
@@ -72,7 +72,9 @@
         heading.textContent = 'Enter your password';
         subtitle.textContent = "Confirm it's you to continue to your portal.";
         setTimeout(function () { pwInput.focus(); }, 0);
-    });
+    }
+    emailSubmit.addEventListener('click', goToPassword);
+    emailInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); goToPassword(); } });
 
     document.querySelector('[data-action="back-to-email"]').addEventListener('click', function () {
         pwCard.classList.add('hidden');
@@ -112,10 +114,20 @@
     pwInput.addEventListener('focus', function () { setLabelFloating(pwLabel, true); });
     pwInput.addEventListener('blur', function () { setLabelFloating(pwLabel, pwInput.value.length > 0); });
 
-    document.getElementById('password-form').addEventListener('submit', function () {
+    function doSignIn() {
         if (pwInput.value.length < 6) return;
         pwSubmitLabel.textContent = 'Signing in…';
         pwSubmit.disabled = true;
-        setTimeout(function () { window.location.href = 'dashboard.aspx'; }, 900);
-    });
+        setTimeout(function () {
+            // Hand off to the server: it reads the email, sets the role in
+            // Session and redirects to the right dashboard. Falls back to a
+            // direct redirect if the server button isn't present.
+            var hf = document.getElementById('hfEmail');
+            if (hf) hf.value = emailInput.value.trim();
+            var btn = document.getElementById('btnSignIn');
+            if (btn) { btn.click(); } else { window.location.href = '/shared/dashboard.aspx'; }
+        }, 900);
+    }
+    pwSubmit.addEventListener('click', doSignIn);
+    pwInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doSignIn(); } });
 })();
