@@ -81,6 +81,7 @@
     <Content Include="student\academic\timetable.aspx" />
     <Content Include="student\finance\payment.aspx" />
     <Content Include="student\finance\payment-history.aspx" />
+    <Content Include="lecturer\dashboard.aspx" />
     <Content Include="shared\Site.master" />
     <Content Include="shared\DashboardLayout.master" />
     <Content Include="shared\LoginLayout.master" />
@@ -188,6 +189,13 @@
     </Compile>
     <Compile Include="student\finance\payment-history.aspx.designer.cs">
       <DependentUpon>payment-history.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="lecturer\dashboard.aspx.cs">
+      <DependentUpon>dashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\dashboard.aspx.designer.cs">
+      <DependentUpon>dashboard.aspx</DependentUpon>
     </Compile>
     <Compile Include="shared\Site.master.cs">
       <DependentUpon>Site.master</DependentUpon>
