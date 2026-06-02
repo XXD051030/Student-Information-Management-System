@@ -171,5 +171,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/enrollment/enrollment.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/student/enrollment/enrollment.js") %>"></script>
 </asp:Content>

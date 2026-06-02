@@ -235,5 +235,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/timetable/timetable.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/student/timetable/timetable.js") %>"></script>
 </asp:Content>
