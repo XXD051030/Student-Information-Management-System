@@ -79,6 +79,8 @@
     <Content Include="admin\user_management.aspx" />
     <Content Include="controls\sidebar.ascx" />
     <Content Include="controls\topbar.ascx" />
+    <Content Include="controls\admin_sidebar.ascx" />
+    <Content Include="controls\admin_topbar.ascx" />
     <Content Include="css\site.css" />
     <Content Include="Global.asax" />
     <Content Include="db\enrollment.sql" />
@@ -198,6 +200,27 @@
     </Compile>
     <Compile Include="controls\topbar.ascx.designer.cs">
       <DependentUpon>topbar.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="controls\admin_sidebar.ascx.cs">
+      <DependentUpon>admin_sidebar.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="controls\admin_sidebar.ascx.designer.cs">
+      <DependentUpon>admin_sidebar.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="controls\admin_topbar.ascx.cs">
+      <DependentUpon>admin_topbar.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="controls\admin_topbar.ascx.designer.cs">
+      <DependentUpon>admin_topbar.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\AdminLayout.master.cs">
+      <DependentUpon>AdminLayout.master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\AdminLayout.master.designer.cs">
+      <DependentUpon>AdminLayout.master</DependentUpon>
     </Compile>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -324,6 +347,7 @@
     <Content Include="shared\site.master" />
     <Content Include="shared\LoginLayout.master" />
     <Content Include="shared\DashboardLayout.master" />
+    <Content Include="shared\AdminLayout.master" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
