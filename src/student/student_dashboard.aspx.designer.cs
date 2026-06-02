@@ -7,11 +7,11 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace src.shared
+namespace src.student
 {
 
 
-    public partial class dashboard
+    public partial class student_dashboard
     {
 
         /// <summary>

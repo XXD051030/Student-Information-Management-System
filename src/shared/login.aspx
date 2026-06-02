@@ -98,5 +98,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/login/login.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/shared/login/login.js") %>"></script>
 </asp:Content>
