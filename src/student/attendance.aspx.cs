@@ -9,7 +9,7 @@ using src.services;
 
 namespace src.student
 {
-    public partial class attendance : System.Web.UI.Page
+    public partial class attendance : src.security.StudentPage
     {
         private int _selectedOfferingId;
 

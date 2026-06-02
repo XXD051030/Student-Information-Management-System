@@ -7,7 +7,7 @@ using src.services;
 
 namespace src.shared
 {
-    public partial class notification : System.Web.UI.Page
+    public partial class notification : src.security.StudentPage
     {
         protected List<StudentNotification> Notifications = new List<StudentNotification>();
 
