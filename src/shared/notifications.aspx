@@ -122,5 +122,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/notifications/notifications.js") %>?v=2"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications/notifications.js") %>?v=2"></script>
 </asp:Content>

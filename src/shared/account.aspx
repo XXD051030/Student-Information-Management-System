@@ -277,5 +277,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/account/account.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/shared/account/account.js") %>"></script>
 </asp:Content>
