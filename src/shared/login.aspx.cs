@@ -17,7 +17,7 @@ namespace src.shared
 
             if (Session["user_id"] != null)
             {
-                Response.Redirect("~/shared/dashboard.aspx");
+                Response.Redirect(src.security.RoleRoutes.HomePageFor(Session["role"] as string));
                 return;
             }
 
@@ -71,7 +71,7 @@ namespace src.shared
 
                 Session["user_id"] = userId;
                 Session["role"] = role;
-                Response.Redirect("~/shared/dashboard.aspx");
+                Response.Redirect(src.security.RoleRoutes.HomePageFor(role));
             }
             catch (System.Exception ex)
             {
@@ -114,10 +114,11 @@ namespace src.shared
                 var inputHash = Sha256Hex(password);
 
                 int userId = 0;
+                string role = null;
                 bool authenticated = false;
 
                 using (var conn = Db.OpenConnection())
-                using (var cmd = new SqlCommand("SELECT user_id, password_hash, role FROM USERS WHERE email = @email", conn))
+                using (var cmd = new SqlCommand("SELECT user_id, password_hash, role, username FROM USERS WHERE email = @email", conn))
                 {
                     cmd.Parameters.AddWithValue("@email", email);
                     using (var reader = cmd.ExecuteReader())
@@ -128,8 +129,10 @@ namespace src.shared
                             if (string.Equals(dbHash, inputHash, System.StringComparison.OrdinalIgnoreCase))
                             {
                                 userId = (int)reader["user_id"];
+                                role = reader["role"].ToString();
                                 HttpContext.Current.Session["user_id"] = userId;
-                                HttpContext.Current.Session["role"] = reader["role"].ToString();
+                                HttpContext.Current.Session["role"] = role;
+                                HttpContext.Current.Session["username"] = reader["username"].ToString();
                                 authenticated = true;
                             }
                         }
@@ -149,7 +152,7 @@ namespace src.shared
                             System.Diagnostics.Debug.WriteLine("IssueRememberMeCookie failed: " + ex.Message);
                         }
                     }
-                    return new { ok = true };
+                    return new { ok = true, redirect = VirtualPathUtility.ToAbsolute(src.security.RoleRoutes.HomePageFor(role)) };
                 }
             }
 
