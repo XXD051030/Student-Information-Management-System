@@ -205,6 +205,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="db\Db.cs" />
     <Compile Include="security\RoleRoutes.cs" />
+    <Compile Include="security\SecurePage.cs" />
+    <Compile Include="security\StudentPage.cs" />
+    <Compile Include="security\LecturerPage.cs" />
+    <Compile Include="security\AdminPage.cs" />
     <Compile Include="services\AnnouncementService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AttendanceService.cs" />
