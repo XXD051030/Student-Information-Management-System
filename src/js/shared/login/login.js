@@ -211,7 +211,15 @@
                     throw new Error('HTTP ' + resp.status);
                 }
                 return resp.json().then(function (data) {
-                    window.location.href = data.redirect;
+                    // ASP.NET page methods wrap the payload in { "d": ... }
+                    var result = (data && typeof data.d !== 'undefined') ? data.d : data;
+                    if (result && result.redirect) {
+                        window.location.href = result.redirect;
+                    } else {
+                        showPasswordError('Could not determine where to go. Try again.');
+                        pwSubmitLabel.textContent = 'Sign in';
+                        setSubmitEnabled(pwSubmit, true);
+                    }
                 });
             })
             .catch(function () {
