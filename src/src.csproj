@@ -81,6 +81,8 @@
     <Content Include="controls\topbar.ascx" />
     <Content Include="controls\admin_sidebar.ascx" />
     <Content Include="controls\admin_topbar.ascx" />
+    <Content Include="controls\lecturer_sidebar.ascx" />
+    <Content Include="controls\lecturer_topbar.ascx" />
     <Content Include="css\site.css" />
     <Content Include="Global.asax" />
     <Content Include="db\enrollment.sql" />
@@ -222,6 +224,27 @@
     <Compile Include="shared\AdminLayout.master.designer.cs">
       <DependentUpon>AdminLayout.master</DependentUpon>
     </Compile>
+    <Compile Include="controls\lecturer_sidebar.ascx.cs">
+      <DependentUpon>lecturer_sidebar.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="controls\lecturer_sidebar.ascx.designer.cs">
+      <DependentUpon>lecturer_sidebar.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="controls\lecturer_topbar.ascx.cs">
+      <DependentUpon>lecturer_topbar.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="controls\lecturer_topbar.ascx.designer.cs">
+      <DependentUpon>lecturer_topbar.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\LecturerLayout.master.cs">
+      <DependentUpon>LecturerLayout.master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\LecturerLayout.master.designer.cs">
+      <DependentUpon>LecturerLayout.master</DependentUpon>
+    </Compile>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -348,6 +371,7 @@
     <Content Include="shared\LoginLayout.master" />
     <Content Include="shared\DashboardLayout.master" />
     <Content Include="shared\AdminLayout.master" />
+    <Content Include="shared\LecturerLayout.master" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
