@@ -8,7 +8,7 @@ using src.services;
 
 namespace src.student
 {
-    public partial class enrollment : System.Web.UI.Page
+    public partial class enrollment : src.security.StudentPage
     {
         private Semester _regSemester;
         private RegistrationWindow _window;

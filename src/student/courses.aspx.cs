@@ -6,7 +6,7 @@ using src.services;
 
 namespace src.student
 {
-    public partial class courses : System.Web.UI.Page
+    public partial class courses : src.security.StudentPage
     {
         private List<EnrolledCourse> _courses;
         private string _currentSemesterName;

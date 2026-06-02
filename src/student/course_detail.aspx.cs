@@ -6,7 +6,7 @@ using src.services;
 
 namespace src.student
 {
-    public partial class course_detail : System.Web.UI.Page
+    public partial class course_detail : src.security.StudentPage
     {
         protected new CourseHeader Header;
 

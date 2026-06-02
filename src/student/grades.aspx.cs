@@ -7,7 +7,7 @@ using src.services;
 
 namespace src.student
 {
-    public partial class grade : System.Web.UI.Page
+    public partial class grade : src.security.StudentPage
     {
         protected string FilterLabel { get; private set; }
         protected string CgpaDisplay { get; private set; }
