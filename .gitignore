@@ -29,6 +29,28 @@ TestResults/
 packages/
 *.nupkg
 
+# SQL Server / LocalDB files (e.g. under App_Data)
+*.mdf
+*.ldf
+*.ndf
+*.dbmdl
+*.jfm
+
+# ReSharper / Rider local state
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Source control bindings (TFS/legacy)
+$tf/
+*.vspscc
+*.vssscc
+
+# Backup and editor swap files
+*.bak
+*~
+*.swp
+
 # Local caches
 *.cache
 *.db
@@ -57,3 +79,9 @@ packages/
 # OS files
 Thumbs.db
 Desktop.ini
+
+# Documentation folders ending in doc or docs
+*doc/
+*docs/
+**/*doc/
+**/*docs/
