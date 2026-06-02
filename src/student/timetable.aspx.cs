@@ -9,7 +9,7 @@ using src.services;
 
 namespace src.student
 {
-    public partial class timetable : System.Web.UI.Page
+    public partial class timetable : src.security.StudentPage
     {
         protected string SemesterDisplay { get; private set; }
         protected string ProgrammeName { get; private set; }

@@ -6,7 +6,7 @@ using src.services;
 
 namespace src.shared
 {
-    public partial class account : System.Web.UI.Page
+    public partial class account : src.security.StudentPage
     {
         private Student _student;
 

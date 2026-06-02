@@ -15,23 +15,12 @@ namespace src.controls
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            Response.Cache.SetCacheability(HttpCacheability.NoCache);
-            Response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
-            Response.Cache.SetNoStore();
-
-            if (Session["user_id"] == null)
-            {
-                Response.Redirect("~/shared/login.aspx");
-                return;
-            }
+            if (Session["user_id"] == null) return;
 
             _student = StudentService.GetByUserId((int)Session["user_id"]);
-            _unreadNotificationCount = AnnouncementService.GetUnreadCountForStudent((int)Session["user_id"]);
-            if (_student == null)
+            if (_student != null)
             {
-                // Session belongs to a non-student (e.g. admin/lecturer) — no profile to show.
-                Response.Redirect("~/shared/login.aspx");
-                return;
+                _unreadNotificationCount = AnnouncementService.GetUnreadCountForStudent((int)Session["user_id"]);
             }
         }
         protected string IconUrl

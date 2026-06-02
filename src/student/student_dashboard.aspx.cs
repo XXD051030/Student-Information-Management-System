@@ -9,9 +9,9 @@ using System.Web.UI.WebControls;
 using src.db;
 using src.services;
 
-namespace src.shared
+namespace src.student
 {
-    public partial class dashboard : System.Web.UI.Page
+    public partial class student_dashboard : src.security.StudentPage
     {
         private Student _student;
         private Semester _semester;
