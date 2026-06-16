@@ -16,7 +16,7 @@
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
-    <IISExpressSSLPort>44317</IISExpressSSLPort>
+    <IISExpressSSLPort>44368</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
@@ -299,6 +299,7 @@
     <Compile Include="services\email\EmailLayout.cs" />
     <Compile Include="services\email\EmailMessage.cs" />
     <Compile Include="services\email\EmailService.cs" />
+    <Compile Include="services\ReportService.cs" />
     <Compile Include="services\ServiceAccess.cs" />
     <Compile Include="services\ServiceMap.cs" />
     <Compile Include="services\StudentPortalService.cs" />
