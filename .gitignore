@@ -1,0 +1,91 @@
+# Visual Studio
+.vs/
+**/.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.pubxml.user
+*.publishsettings
+
+# Editors and local IDE state
+.vscode/
+**/.vscode/
+.idea/
+**/.idea/
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Pp]ublish/
+TestResults/
+*.dll
+*.exe
+*.pdb
+
+# NuGet packages are restored from packages.config
+packages/
+*.nupkg
+
+# SQL Server / LocalDB files (e.g. under App_Data)
+*.mdf
+*.ldf
+*.ndf
+*.dbmdl
+*.jfm
+
+# ReSharper / Rider local state
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Source control bindings (TFS/legacy)
+$tf/
+*.vspscc
+*.vssscc
+
+# Backup and editor swap files
+*.bak
+*~
+*.swp
+
+# Local caches
+*.cache
+*.db
+*.db-shm
+*.db-wal
+*.vsidx
+
+# AI assistant local state and caches
+.codex/
+**/.codex/
+.claude/
+**/.claude/
+.aider*
+.continue/
+**/.continue/
+.cursor/
+**/.cursor/
+.windsurf/
+**/.windsurf/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Documentation folders ending in doc or docs
+*doc/
+*docs/
+**/*doc/
+**/*docs/
+
+# AI assistant config (holds the API key; use src/ai.config.example as template)
+src/ai.config
+src/smtp.config
