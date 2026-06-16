@@ -366,7 +366,6 @@
     </Compile>
     <Compile Include="lecturer\lecturer_attendance.aspx.cs">
       <DependentUpon>lecturer_attendance.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="lecturer\lecturer_attendance.aspx.designer.cs">
       <DependentUpon>lecturer_attendance.aspx</DependentUpon>
