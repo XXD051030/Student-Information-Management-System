@@ -16,7 +16,7 @@ namespace student_information_management_system
             ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".txt", ".zip"
         };
 
-        private Lecturer _lecturer;
+        private LecturerProfile _lecturer;
         private List<LecturerAnnouncementRow> _announcements = new List<LecturerAnnouncementRow>();
         private LecturerAnnouncementRow _selectedAnnouncement;
         private int? _offeringFilter;
@@ -33,7 +33,8 @@ namespace student_information_management_system
                 Page.Form.Action = Request.RawUrl;
             }
 
-            _lecturer = Session["user_id"] != null ? LecturerService.GetByUserId((int)Session["user_id"]) : null;
+            var user = UserContextFactory.FromSession(Session);
+            _lecturer = LecturerPortalService.GetProfile(user);
             if (_lecturer == null)
             {
                 Response.Redirect("~/shared/login.aspx");
@@ -94,7 +95,13 @@ namespace student_information_management_system
                 return;
             }
 
-            LecturerPortalService.AddAnnouncement(_lecturer.LecturerId, _lecturer.UserId, offeringId, titleInput.Text, messageInput.Text, pinnedInput.Checked, fileUrl);
+            var user = UserContextFactory.FromSession(Session);
+            LecturerPortalService.AddAnnouncement(user, new LecturerAnnouncementInput
+            {
+                OfferId = offeringId,
+                Title = titleInput.Text,
+                Message = messageInput.Text
+            });
             titleInput.Text = "";
             messageInput.Text = "";
             pinnedInput.Checked = false;
@@ -142,20 +149,15 @@ namespace student_information_management_system
 
         protected void PinButton_Click(object sender, EventArgs e)
         {
-            if (_selectedAnnouncement == null) return;
-
-            LecturerPortalService.SetAnnouncementPinned(_lecturer.LecturerId, _selectedAnnouncement.AnnouncementId, !_selectedAnnouncement.IsPinned);
-            statusMessage.Text = _selectedAnnouncement.IsPinned ? "Announcement unpinned." : "Announcement pinned.";
-            statusBanner.CssClass = "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
-            statusBanner.Visible = true;
-            LoadRows();
+            ShowError("Pinning is not available.");
         }
 
         protected void DeleteButton_Click(object sender, EventArgs e)
         {
             if (_selectedAnnouncement == null) return;
 
-            LecturerPortalService.DeleteAnnouncement(_lecturer.LecturerId, _selectedAnnouncement.AnnouncementId);
+            var user = UserContextFactory.FromSession(Session);
+            LecturerPortalService.DeleteAnnouncement(user, _selectedAnnouncement.AnnouncementId);
             ViewState["SelectedAnnouncementId"] = null;
             statusMessage.Text = "Announcement deleted.";
             statusBanner.CssClass = "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
@@ -165,7 +167,8 @@ namespace student_information_management_system
 
         private void BindCourses()
         {
-            var courses = LecturerCourseService.GetCourses(_lecturer.UserId);
+            var user = UserContextFactory.FromSession(Session);
+            var courses = LecturerPortalService.GetCourses(user);
             var courseOptions = courses.Select(c => new
             {
                 c.OfferingId,
@@ -197,7 +200,8 @@ namespace student_information_management_system
 
         private void LoadRows()
         {
-            _announcements = LecturerPortalService.GetLecturerAnnouncements(_lecturer.LecturerId, _offeringFilter);
+            var user = UserContextFactory.FromSession(Session);
+            _announcements = LecturerPortalService.GetAnnouncements(user, _offeringFilter);
             if (_tabFilter == "pinned")
                 _announcements = _announcements.Where(a => a.IsPinned).ToList();
             else if (_tabFilter == "files")

@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master"  AutoEventWireup="true" CodeBehind="course_detail.aspx.cs" Inherits="src.student.course_detail" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/student/StudentLayout.master"  AutoEventWireup="true" CodeBehind="course_detail.aspx.cs" Inherits="src.student.course_detail" %>
 
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
@@ -375,5 +375,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/student/course-detail/course-detail.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/student/course-detail.js") %>"></script>
 </asp:Content>

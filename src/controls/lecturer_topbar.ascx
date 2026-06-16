@@ -1,4 +1,4 @@
-<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="lecturer_topbar.ascx.cs" Inherits="src.controls.lecturer_topbar" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="lecturer_topbar.ascx.cs" Inherits="src.controls.lecturer_topbar" %>
 
 <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-6 backdrop-blur-md">
 

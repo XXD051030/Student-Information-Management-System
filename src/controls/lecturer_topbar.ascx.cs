@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Web.UI;
 using src.services;
 
@@ -6,12 +6,12 @@ namespace src.controls
 {
     public partial class lecturer_topbar : UserControl
     {
-        private Lecturer _lecturer;
+        private LecturerProfile _lecturer;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["user_id"] == null) return;
-            _lecturer = LecturerService.GetByUserId((int)Session["user_id"]);
+            _lecturer = LecturerPortalService.GetProfile(UserContextFactory.FromSession(Session));
         }
 
         protected string FullName
@@ -21,7 +21,7 @@ namespace src.controls
 
         protected string Subtitle
         {
-            get { return _lecturer != null ? _lecturer.Department : "Lecturer"; }
+            get { return _lecturer != null ? _lecturer.DepartmentId : "Lecturer"; }
         }
 
         // App-resolved URL of the profile image, or "" when none is set (the

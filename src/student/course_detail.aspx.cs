@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Web;
@@ -10,7 +10,7 @@ namespace src.student
 {
     public partial class course_detail : src.security.StudentPage
     {
-        protected new CourseHeader Header;
+        protected new StudentCourseHeader Header;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -21,10 +21,10 @@ namespace src.student
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
-            int userId = (int)Session["user_id"];
+            var user = UserContextFactory.FromSession(Session);
 
             int offeringId;
             if (!int.TryParse(Request.QueryString["offering"], out offeringId))
@@ -33,26 +33,26 @@ namespace src.student
                 return;
             }
 
-            Header = CourseDetailService.GetHeader(offeringId, userId);
+            Header = StudentPortalService.GetCourseHeader(user, offeringId);
             if (Header == null)   // not enrolled / no such offering
             {
                 Response.Redirect("~/student/courses.aspx");
                 return;
             }
 
-            outcomesRepeater.DataSource = CourseDetailService.GetLearningOutcomes(Header.CourseId);
+            outcomesRepeater.DataSource = StudentPortalService.GetLearningOutcomes(user, Header.CourseId);
             outcomesRepeater.DataBind();
 
-            modulesRepeater.DataSource = ModuleService.GetModules(offeringId);
+            modulesRepeater.DataSource = StudentPortalService.GetCourseModules(user, offeringId);
             modulesRepeater.DataBind();
 
-            announcementsRepeater.DataSource = AnnouncementService.GetByOffering(offeringId);
+            announcementsRepeater.DataSource = StudentPortalService.GetAnnouncements(user, offeringId);
             announcementsRepeater.DataBind();
 
-            assignmentsRepeater.DataSource = AssignmentService.GetByOffering(offeringId, userId);
+            assignmentsRepeater.DataSource = StudentPortalService.GetAssignments(user, offeringId);
             assignmentsRepeater.DataBind();
 
-            _gradebook = AssessmentService.GetGradebook(offeringId, userId);
+            _gradebook = StudentPortalService.GetGradebook(user, offeringId);
             assessmentsRepeater.DataSource = _gradebook.Items;
             assessmentsRepeater.DataBind();
             barsRepeater.DataSource = _gradebook.Items;
@@ -88,7 +88,8 @@ namespace src.student
                 return;
             }
 
-            bool saved = AssignmentService.SaveSubmission((int)Session["user_id"], assignmentId, fileUrl);
+            var user = UserContextFactory.FromSession(Session);
+            bool saved = StudentPortalService.SaveSubmission(user, assignmentId, fileUrl);
             assignmentStatusMessage.Text = saved ? "Assignment submitted." : "Unable to submit this assignment.";
             assignmentStatusPanel.CssClass = saved
                 ? "mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
@@ -98,7 +99,7 @@ namespace src.student
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId))
             {
-                assignmentsRepeater.DataSource = AssignmentService.GetByOffering(offeringId, (int)Session["user_id"]);
+                assignmentsRepeater.DataSource = StudentPortalService.GetAssignments(user, offeringId);
                 assignmentsRepeater.DataBind();
             }
         }
@@ -134,7 +135,7 @@ namespace src.student
             return "~/uploads/submissions/" + fileName;
         }
 
-        private Gradebook _gradebook;
+        private StudentGradebook _gradebook;
 
         /// <summary>Course accent color, or a neutral slate fallback for null/malformed values.</summary>
         protected string AccentColor(string color)
@@ -192,7 +193,7 @@ namespace src.student
             return "In " + days + " days";
         }
 
-        protected Gradebook Book { get { return _gradebook; } }
+        protected StudentGradebook Book { get { return _gradebook; } }
 
         /// <summary>Donut stroke-dashoffset for a 0-100 percentage over circumference 301.6.</summary>
         protected string DonutOffset(decimal? pct)
