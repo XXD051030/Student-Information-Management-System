@@ -1,27 +1,30 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using src.services;
 
 namespace src.student
 {
     public partial class course_detail : src.security.StudentPage
     {
-        protected new CourseHeader Header;
+        protected new StudentCourseHeader Header;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
             Response.Cache.SetNoStore();
+            Page.Form.Enctype = "multipart/form-data";
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
-            int userId = (int)Session["user_id"];
+            var user = UserContextFactory.FromSession(Session);
 
             int offeringId;
             if (!int.TryParse(Request.QueryString["offering"], out offeringId))
@@ -30,33 +33,109 @@ namespace src.student
                 return;
             }
 
-            Header = CourseDetailService.GetHeader(offeringId, userId);
+            Header = StudentPortalService.GetCourseHeader(user, offeringId);
             if (Header == null)   // not enrolled / no such offering
             {
                 Response.Redirect("~/student/courses.aspx");
                 return;
             }
 
-            outcomesRepeater.DataSource = CourseDetailService.GetLearningOutcomes(Header.CourseId);
+            outcomesRepeater.DataSource = StudentPortalService.GetLearningOutcomes(user, Header.CourseId);
             outcomesRepeater.DataBind();
 
-            modulesRepeater.DataSource = ModuleService.GetModules(offeringId);
+            modulesRepeater.DataSource = StudentPortalService.GetCourseModules(user, offeringId);
             modulesRepeater.DataBind();
 
-            announcementsRepeater.DataSource = AnnouncementService.GetByOffering(offeringId);
+            announcementsRepeater.DataSource = StudentPortalService.GetAnnouncements(user, offeringId);
             announcementsRepeater.DataBind();
 
-            assignmentsRepeater.DataSource = AssignmentService.GetByOffering(offeringId, userId);
+            assignmentsRepeater.DataSource = StudentPortalService.GetAssignments(user, offeringId);
             assignmentsRepeater.DataBind();
 
-            _gradebook = AssessmentService.GetGradebook(offeringId, userId);
+            _gradebook = StudentPortalService.GetGradebook(user, offeringId);
             assessmentsRepeater.DataSource = _gradebook.Items;
             assessmentsRepeater.DataBind();
             barsRepeater.DataSource = _gradebook.Items;
             barsRepeater.DataBind();
         }
 
-        private Gradebook _gradebook;
+        protected void assignmentsRepeater_ItemCommand(object source, RepeaterCommandEventArgs e)
+        {
+            if (e.CommandName != "SubmitAssignment") return;
+
+            int assignmentId;
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out assignmentId)) return;
+
+            var upload = e.Item.FindControl("submissionInput") as FileUpload;
+            if (upload == null || !upload.HasFile)
+            {
+                assignmentStatusMessage.Text = "Choose a file before submitting.";
+                assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                assignmentStatusPanel.Visible = true;
+                return;
+            }
+
+            string fileUrl;
+            try
+            {
+                fileUrl = SaveUploadedSubmission(upload, assignmentId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                assignmentStatusMessage.Text = ex.Message;
+                assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                assignmentStatusPanel.Visible = true;
+                return;
+            }
+
+            var user = UserContextFactory.FromSession(Session);
+            bool saved = StudentPortalService.SaveSubmission(user, assignmentId, fileUrl);
+            assignmentStatusMessage.Text = saved ? "Assignment submitted." : "Unable to submit this assignment.";
+            assignmentStatusPanel.CssClass = saved
+                ? "mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+                : "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+            assignmentStatusPanel.Visible = true;
+
+            int offeringId;
+            if (int.TryParse(Request.QueryString["offering"], out offeringId))
+            {
+                assignmentsRepeater.DataSource = StudentPortalService.GetAssignments(user, offeringId);
+                assignmentsRepeater.DataBind();
+            }
+        }
+
+        private string SaveUploadedSubmission(FileUpload upload, int assignmentId)
+        {
+            string extension = Path.GetExtension(upload.FileName);
+            if (string.IsNullOrWhiteSpace(extension)) extension = ".dat";
+            extension = extension.ToLowerInvariant();
+
+            string[] allowed = { ".pdf", ".doc", ".docx", ".zip", ".png", ".jpg", ".jpeg", ".txt" };
+            if (Array.IndexOf(allowed, extension) < 0) extension = ".dat";
+
+            int maxBytes = 10 * 1024 * 1024;
+            if (upload.PostedFile.ContentLength > maxBytes)
+            {
+                throw new InvalidOperationException("Submission file is larger than 10 MB.");
+            }
+
+            string folder = Server.MapPath("~/uploads/submissions");
+            Directory.CreateDirectory(folder);
+
+            string baseName = Path.GetFileNameWithoutExtension(upload.FileName);
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                baseName = baseName.Replace(c, '-');
+            }
+            if (string.IsNullOrWhiteSpace(baseName)) baseName = "submission";
+
+            string fileName = "a" + assignmentId + "-u" + Session["user_id"] + "-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + baseName + extension;
+            string physicalPath = Path.Combine(folder, fileName);
+            upload.SaveAs(physicalPath);
+            return "~/uploads/submissions/" + fileName;
+        }
+
+        private StudentGradebook _gradebook;
 
         /// <summary>Course accent color, or a neutral slate fallback for null/malformed values.</summary>
         protected string AccentColor(string color)
@@ -114,7 +193,7 @@ namespace src.student
             return "In " + days + " days";
         }
 
-        protected Gradebook Book { get { return _gradebook; } }
+        protected StudentGradebook Book { get { return _gradebook; } }
 
         /// <summary>Donut stroke-dashoffset for a 0-100 percentage over circumference 301.6.</summary>
         protected string DonutOffset(decimal? pct)
