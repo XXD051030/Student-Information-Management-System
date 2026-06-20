@@ -193,6 +193,35 @@ namespace src.services
         }
     }
 
+    public class LecturerAcademicPerformanceRow
+    {
+        public string StudentId { get; set; }
+        public string FullName { get; set; }
+        public string ProgrammeCode { get; set; }
+        public int Semester { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public decimal? AttendanceRate { get; set; }
+        public decimal? AverageMarks { get; set; }
+        public decimal GradePoint { get; set; }
+        public string LetterGrade { get; set; }
+        public bool AttendanceRisk { get; set; }
+        public bool AcademicRisk { get; set; }
+        public bool IsAtRisk { get { return AttendanceRisk || AcademicRisk; } }
+        public string Status { get { return !AverageMarks.HasValue ? "Pending" : AverageMarks.Value >= 50m ? "Pass" : "Fail"; } }
+        public string RiskLevel { get { return AttendanceRisk && AcademicRisk ? "High" : "Medium"; } }
+        public string RiskReason
+        {
+            get
+            {
+                if (AttendanceRisk && AcademicRisk) return "Low attendance and low marks";
+                if (AttendanceRisk) return "Attendance below 80%";
+                if (AcademicRisk) return "Marks below 50%";
+                return "";
+            }
+        }
+    }
+
     public class LecturerGradingItem
     {
         public string Title { get; set; }
