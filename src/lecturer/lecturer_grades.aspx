@@ -60,7 +60,7 @@
         <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Average</p><p class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= AverageDisplay %></p></div>
     </section>
 
-    <section class="mt-6 rounded-lg border border-slate-200 bg-white">
+    <section id="submissions" class="mt-6 scroll-mt-20 rounded-lg border border-slate-200 bg-white">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
             <div><h2 class="text-slate-900" style="font-size:16px;font-weight:700">Assessment Mark Entry</h2><p class="mt-0.5 text-slate-500" style="font-size:12.5px">Review submitted attachments and enter marks for students.</p></div>
             <div class="relative"><i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i><input data-filter-input data-filter-target="[data-grade-row]" type="search" placeholder="Search student" class="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-3 md:w-64" style="font-size:12.5px" /></div>

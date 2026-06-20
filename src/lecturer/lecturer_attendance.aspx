@@ -104,7 +104,7 @@
     </section>
 
     <%-- Weekly schedule (FullCalendar) --%>
-    <section class="mt-6 rounded-lg border border-slate-200 bg-white p-4 lg:p-6">
+    <section id="weekly-schedule" class="mt-6 scroll-mt-20 rounded-lg border border-slate-200 bg-white p-4 lg:p-6">
         <header class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div>
                 <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Weekly schedule</h2>

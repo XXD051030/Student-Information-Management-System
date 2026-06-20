@@ -7,11 +7,20 @@ namespace src.controls
     public partial class lecturer_topbar : UserControl
     {
         private LecturerProfile _lecturer;
+        private int _unreadNotificationCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["user_id"] == null) return;
-            _lecturer = LecturerPortalService.GetProfile(UserContextFactory.FromSession(Session));
+            var user = UserContextFactory.FromSession(Session);
+            _lecturer = LecturerPortalService.GetProfile(user);
+            var readIds = Session["lecturer_notification_read_ids"] as System.Collections.Generic.ISet<int>
+                ?? new System.Collections.Generic.HashSet<int>();
+            foreach (var announcement in LecturerPortalService.GetAnnouncements(user, null))
+            {
+                if (!readIds.Contains(announcement.AnnouncementId))
+                    _unreadNotificationCount++;
+            }
         }
 
         protected string FullName
@@ -22,6 +31,16 @@ namespace src.controls
         protected string Subtitle
         {
             get { return _lecturer != null ? _lecturer.DepartmentId : "Lecturer"; }
+        }
+
+        protected string NotificationBadgeText
+        {
+            get { return _unreadNotificationCount > 9 ? "9+" : _unreadNotificationCount.ToString(); }
+        }
+
+        protected string NotificationBadgeVisibilityClass
+        {
+            get { return _unreadNotificationCount > 0 ? "" : " hidden"; }
         }
 
         // App-resolved URL of the profile image, or "" when none is set (the

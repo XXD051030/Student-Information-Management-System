@@ -34,14 +34,10 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
                 _offeringFilter = offeringId;
-            else
-            {
-                Response.Redirect("~/lecturer/lecturer_courses.aspx");
-                return;
-            }
 
-            // Facade already scopes assessments to the offering
-            _assessments = LecturerPortalService.GetAssessments(user, _offeringFilter.Value);
+            _assessments = _offeringFilter.HasValue
+                ? LecturerPortalService.GetAssessments(user, _offeringFilter.Value)
+                : LecturerPortalService.GetAssessments(user);
             if (!IsPostBack)
             {
                 assessmentSelect.DataSource = _assessments;

@@ -31,7 +31,8 @@ namespace src.services
                 .ToList();
 
             var toGrade = GetGradingItems(user);
-            var announcements = LecturerAnnouncementReader.GetAnnouncements(user, null).Take(5).ToList();
+            var allAnnouncements = LecturerAnnouncementReader.GetAnnouncements(user, null);
+            var announcements = allAnnouncements.Take(5).ToList();
 
             return new LecturerDashboardData
             {
@@ -41,6 +42,7 @@ namespace src.services
                 TodayClasses = todayClasses,
                 ToGrade = toGrade,
                 Announcements = announcements,
+                TotalAnnouncementCount = allAnnouncements.Count,
                 ActiveCourses = currentCourses.Count,
                 StudentsTaught = currentCourses.Sum(c => c.EnrolledCount),
                 SubmissionsToReview = toGrade.Sum(g => g.PendingCount),

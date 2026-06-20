@@ -194,6 +194,7 @@ namespace src.services
         public List<LecturerClassSession> TodayClasses { get; set; }
         public List<LecturerGradingItem> ToGrade { get; set; }
         public List<LecturerAnnouncementRow> Announcements { get; set; }
+        public int TotalAnnouncementCount { get; set; }
         public int ActiveCourses { get; set; }
         public int StudentsTaught { get; set; }
         public int SubmissionsToReview { get; set; }
@@ -206,13 +207,20 @@ namespace src.services
         public string Title { get; set; }
         public string Message { get; set; }
         public string FileUrl { get; set; }
+        public bool IsPinned { get; set; }
     }
 
     public class LecturerMaterialInput
     {
         public int OfferingId { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
+        public string MaterialType { get; set; }
+        public DateTime? DueDate { get; set; }
+        public decimal? Weight { get; set; }
         public string FileUrl { get; set; }
+        public string FileType { get; set; }
+        public int? FileSizeBytes { get; set; }
         public DateTime UploadedAt { get; set; }
     }
 }

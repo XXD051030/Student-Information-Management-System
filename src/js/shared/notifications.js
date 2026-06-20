@@ -9,6 +9,7 @@
 
     var list = document.getElementById('notif-list');
     if (!list) return;
+    var endpointBase = list.getAttribute('data-notification-endpoint') || '/student/notifications.aspx';
 
     var items = Array.prototype.slice.call(list.querySelectorAll('.notif-item'));
     var unreadEl = document.getElementById('unread-count');
@@ -94,6 +95,7 @@
         if (badge) badge.className = 'notif-badge rounded border px-1.5 py-0.5 ' + cat(item).badge;
         var pin = item.querySelector('.notif-pin');
         if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
+        item.style.opacity = item.getAttribute('data-read') === 'true' ? '0.7' : '';
         paintDot(item);
     }
 
@@ -118,7 +120,7 @@
         recount();
 
         var id = parseInt(item.getAttribute('data-id'), 10);
-        var endpoint = read ? '/student/notifications.aspx/MarkRead' : '/student/notifications.aspx/MarkUnread';
+        var endpoint = endpointBase + (read ? '/MarkRead' : '/MarkUnread');
 
         postJson(endpoint, { announcementId: id }).then(function (result) {
             applyServerCount(result);
@@ -176,7 +178,7 @@
         items.forEach(function (item) { applyReadState(item, true); });
         syncBadges(0);
 
-        postJson('/student/notifications.aspx/MarkAllRead', {}).then(function (result) {
+        postJson(endpointBase + '/MarkAllRead', {}).then(function (result) {
             applyServerCount(result);
         }).catch(function () {
             items.forEach(function (item, index) {

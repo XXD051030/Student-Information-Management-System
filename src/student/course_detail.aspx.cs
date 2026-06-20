@@ -181,6 +181,11 @@ namespace src.student
             }
         }
 
+        protected string MaterialPreviewUrl(object materialId)
+        {
+            return ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(Convert.ToString(materialId)));
+        }
+
         /// <summary>Due/status line for an assignment card.</summary>
         protected string DueLabel(string status, DateTime due)
         {

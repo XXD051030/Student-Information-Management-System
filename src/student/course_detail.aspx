@@ -121,7 +121,8 @@
                                     <ul class="bg-slate-50/50 px-6 pb-4 module-items hidden" data-week='<%# Eval("Week") %>'>
                                         <asp:Repeater runat="server" DataSource='<%# Eval("Items") %>'>
                                             <ItemTemplate>
-                                                <li class="ml-12 flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white transition-colors">
+                                                <li class="ml-12">
+                                                <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white transition-colors">
                                                     <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                                                         <i data-lucide='<%# FileIcon(Eval("FileType").ToString()) %>' class="h-4 w-4"></i>
                                                     </span>
@@ -129,9 +130,8 @@
                                                         <p class="text-slate-900 truncate" style="font-size:13px;font-weight:500"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
                                                         <p class="text-slate-400" style="font-size:11px"><%# FileSize(Eval("FileSizeBytes")) %></p>
                                                     </div>
-                                                    <button type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors" aria-label="Download">
-                                                        <i data-lucide="download" class="h-4 w-4"></i>
-                                                    </button>
+                                                    <span class="rounded-lg p-1.5 text-slate-400"><i data-lucide="eye" class="h-4 w-4"></i></span>
+                                                </a>
                                                 </li>
                                             </ItemTemplate>
                                         </asp:Repeater>

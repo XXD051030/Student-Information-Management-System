@@ -25,6 +25,8 @@ namespace src.services
 
         public static List<LecturerAssessmentOption> GetAssessments(UserContext user, int offeringId) => LecturerGradeReader.GetAssessments(user, offeringId);
 
+        public static List<LecturerAssessmentOption> GetAssessments(UserContext user) => LecturerGradeReader.GetAssessments(user, null);
+
         public static List<LecturerGradeRow> GetGradeRows(UserContext user, int assessmentId) => LecturerGradeReader.GetGradeRows(user, assessmentId);
 
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks) => LecturerGradeReader.SaveGradeMarks(user, assessmentId, marks);
@@ -37,9 +39,15 @@ namespace src.services
 
         public static bool DeleteAnnouncement(UserContext user, int announcementId) => LecturerAnnouncementReader.Delete(user, announcementId);
 
+        public static bool SetAnnouncementPinned(UserContext user, int announcementId, bool isPinned) => LecturerAnnouncementReader.SetPinned(user, announcementId, isPinned);
+
         public static List<LecturerMaterialRow> GetMaterials(UserContext user, int? offeringId) => LecturerMaterialReader.GetMaterials(user, offeringId);
 
+        public static LecturerMaterialRow GetMaterial(UserContext user, int materialId) => LecturerMaterialReader.GetMaterial(user, materialId);
+
         public static int AddMaterial(UserContext user, LecturerMaterialInput input) => LecturerMaterialReader.Add(user, input);
+
+        public static decimal GetMaterialWeightTotal(UserContext user, int offeringId) => LecturerMaterialReader.GetWeightTotal(user, offeringId);
 
         public static bool DeleteMaterial(UserContext user, int materialId) => LecturerMaterialReader.Delete(user, materialId);
 

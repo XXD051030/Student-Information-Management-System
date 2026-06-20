@@ -10,27 +10,41 @@ namespace src.services
     {
         public static List<LecturerAssessmentOption> GetAssessments(UserContext user, int offeringId)
         {
-            var options = new List<LecturerAssessmentOption>();
-            if (user == null) return options;
+            return GetAssessments(user, (int?)offeringId);
+        }
 
-            const string sql =
-                "SELECT assignment_id, title FROM ASSIGNMENTS WHERE offer_id = @offerId ORDER BY due_date, assignment_id";
+        public static List<LecturerAssessmentOption> GetAssessments(UserContext user, int? offeringId)
+        {
+            var options = new List<LecturerAssessmentOption>();
+            if (user == null || !user.IsLecturer) return options;
+
+            string sql =
+                "SELECT a.assignment_id, a.offer_id, a.title, c.course_code " +
+                "FROM ASSIGNMENTS a " +
+                "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
+                "JOIN COURSES c ON c.course_id = co.course_id " +
+                "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
+                "AND (@offerId = 0 OR a.offer_id = @offerId) " +
+                "ORDER BY a.due_date, a.assignment_id";
 
             using (var conn = Db.OpenConnection())
             {
-                if (!ServiceAccess.CanManageOffer(conn, user, offeringId)) return options;
                 using (var cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@offerId", offeringId);
+                    ServiceAccess.AddUserContextParameters(cmd, user);
+                    cmd.Parameters.AddWithValue("@offerId", offeringId.GetValueOrDefault());
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
+                            int rowOfferingId = IntValue(reader["offer_id"]);
+                            string title = Text(reader["title"]);
+                            string courseCode = Text(reader["course_code"]);
                             options.Add(new LecturerAssessmentOption
                             {
                                 AssessmentId = IntValue(reader["assignment_id"]),
-                                OfferingId = offeringId,
-                                Label = Text(reader["title"])
+                                OfferingId = rowOfferingId,
+                                Label = offeringId.HasValue ? title : courseCode + " - " + title
                             });
                         }
                     }

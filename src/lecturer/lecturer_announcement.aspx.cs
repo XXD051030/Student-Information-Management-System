@@ -51,16 +51,16 @@ namespace student_information_management_system
             {
                 BindCourses();
                 SetComposeVisible(false);
+                int selectedId;
+                if (int.TryParse(Request.QueryString["id"], out selectedId) && selectedId > 0)
+                    ViewState["SelectedAnnouncementId"] = selectedId;
             }
 
-            showComposeButton.Visible = IsCourseScoped;
-            composePanel.Visible = IsCourseScoped;
             LoadRows();
         }
 
         protected void ShowComposeButton_Click(object sender, EventArgs e)
         {
-            if (!IsCourseScoped) return;
             SetComposeVisible(true);
         }
 
@@ -71,13 +71,6 @@ namespace student_information_management_system
 
         protected void PostAnnouncement_Click(object sender, EventArgs e)
         {
-            if (!IsCourseScoped)
-            {
-                ShowError("Choose a course before posting an announcement.");
-                SetComposeVisible(false);
-                return;
-            }
-
             if (string.IsNullOrWhiteSpace(titleInput.Text) || string.IsNullOrWhiteSpace(messageInput.Text))
             {
                 ShowError("Add a title and message before posting.");
@@ -96,16 +89,44 @@ namespace student_information_management_system
             }
 
             var user = UserContextFactory.FromSession(Session);
-            LecturerPortalService.AddAnnouncement(user, new LecturerAnnouncementInput
+            var targetOfferingIds = offeringId > 0
+                ? new List<int> { offeringId }
+                : LecturerPortalService.GetCourses(user).Select(c => c.OfferingId).Distinct().ToList();
+
+            if (targetOfferingIds.Count == 0)
             {
-                OfferId = offeringId,
-                Title = titleInput.Text,
-                Message = messageInput.Text
-            });
+                ShowError("No assigned courses are available.");
+                SetComposeVisible(true);
+                return;
+            }
+
+            int postedCount = 0;
+            foreach (int targetOfferingId in targetOfferingIds)
+            {
+                int added = LecturerPortalService.AddAnnouncement(user, new LecturerAnnouncementInput
+                {
+                    OfferId = targetOfferingId,
+                    Title = titleInput.Text,
+                    Message = messageInput.Text,
+                    FileUrl = fileUrl,
+                    IsPinned = pinnedInput.Checked
+                });
+                if (added > 0) postedCount++;
+            }
+
+            if (postedCount == 0)
+            {
+                ShowError("The announcement could not be posted.");
+                SetComposeVisible(true);
+                return;
+            }
+
             titleInput.Text = "";
             messageInput.Text = "";
             pinnedInput.Checked = false;
-            statusMessage.Text = "Announcement posted to students.";
+            statusMessage.Text = postedCount == 1
+                ? "Announcement posted to students."
+                : "Announcement posted to all " + postedCount + " assigned courses.";
             statusBanner.CssClass = "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
             statusBanner.Visible = true;
             SetComposeVisible(false);
@@ -149,7 +170,24 @@ namespace student_information_management_system
 
         protected void PinButton_Click(object sender, EventArgs e)
         {
-            ShowError("Pinning is not available.");
+            if (_selectedAnnouncement == null) return;
+
+            bool newState = !_selectedAnnouncement.IsPinned;
+            bool updated = LecturerPortalService.SetAnnouncementPinned(
+                UserContextFactory.FromSession(Session),
+                _selectedAnnouncement.AnnouncementId,
+                newState);
+
+            if (!updated)
+            {
+                ShowError("The announcement pin could not be updated.");
+                return;
+            }
+
+            statusMessage.Text = newState ? "Announcement pinned." : "Announcement unpinned.";
+            statusBanner.CssClass = "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
+            statusBanner.Visible = true;
+            LoadRows();
         }
 
         protected void DeleteButton_Click(object sender, EventArgs e)
@@ -179,9 +217,7 @@ namespace student_information_management_system
             courseSelect.DataTextField = "Label";
             courseSelect.DataValueField = "OfferingId";
             courseSelect.DataBind();
-            if (!_offeringFilter.HasValue)
-                courseSelect.Items.Insert(0, new ListItem("All assigned courses", "0"));
-
+            courseSelect.Items.Insert(0, new ListItem("All assigned courses", "0"));
             courseFilterSelect.DataSource = courseOptions;
             courseFilterSelect.DataTextField = "Label";
             courseFilterSelect.DataValueField = "OfferingId";
@@ -219,6 +255,12 @@ namespace student_information_management_system
             announcementsRepeater.DataBind();
             emptyPanel.Visible = _announcements.Count == 0;
             detailPanel.Visible = _selectedAnnouncement != null;
+            pinButton.CssClass = _selectedAnnouncement != null && _selectedAnnouncement.IsPinned
+                ? "inline-flex h-9 w-9 items-center justify-center rounded-md bg-amber-50 text-amber-500 hover:bg-amber-100"
+                : "inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-300 hover:bg-slate-100 hover:text-slate-500";
+            pinButton.ToolTip = _selectedAnnouncement != null && _selectedAnnouncement.IsPinned
+                ? "Unpin announcement"
+                : "Pin announcement";
             ApplyTabStyles();
         }
 

@@ -122,8 +122,10 @@
     <Content Include="lecturer\lecturer_dashboard.aspx" />
     <Content Include="lecturer\lecturer_account.aspx" />
     <Content Include="lecturer\lecturer_announcement.aspx" />
+    <Content Include="lecturer\lecturer_notifications.aspx" />
     <Content Include="devtools\ai_console.aspx" />
     <Content Include="shared\email_test.aspx" />
+    <Content Include="shared\material_preview.aspx" />
     <Content Include="student\account.aspx" />
     <Content Include="student\notifications.aspx" />
     <Content Include="student\attendance.aspx" />
@@ -416,6 +418,13 @@
     <Compile Include="lecturer\lecturer_announcement.aspx.designer.cs">
       <DependentUpon>lecturer_announcement.aspx</DependentUpon>
     </Compile>
+    <Compile Include="lecturer\lecturer_notifications.aspx.cs">
+      <DependentUpon>lecturer_notifications.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_notifications.aspx.designer.cs">
+      <DependentUpon>lecturer_notifications.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="student\account.aspx.cs">
       <DependentUpon>account.aspx</DependentUpon>
@@ -437,6 +446,13 @@
     </Compile>
     <Compile Include="shared\email_test.aspx.designer.cs">
       <DependentUpon>email_test.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\material_preview.aspx.cs">
+      <DependentUpon>material_preview.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\material_preview.aspx.designer.cs">
+      <DependentUpon>material_preview.aspx</DependentUpon>
     </Compile>
     <Compile Include="student\StudentLayout.master.cs">
       <DependentUpon>StudentLayout.master</DependentUpon>

@@ -20,10 +20,10 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <button class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
+                <a runat="server" href="~/lecturer/lecturer_attendance.aspx#weekly-schedule" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
                     <i data-lucide="calendar-days" class="h-4 w-4"></i>
                     Today's schedule
-                </button>
+                </a>
             </div>
         </div>
     </section>
@@ -90,7 +90,7 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Today's Schedule</h2>
                     <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= TodayScheduleSubtitle %></p>
                 </div>
-                <a href="#" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a runat="server" href="~/lecturer/lecturer_attendance.aspx#weekly-schedule" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     Full week <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
@@ -154,9 +154,9 @@
                 <p class="px-6 py-8 text-center text-slate-400" style="font-size:13px">Nothing awaiting grading.</p>
             <% } %>
             <div class="border-t border-slate-100 p-3">
-                <button class="w-full rounded-xl py-2.5 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
+                <a runat="server" href="~/lecturer/lecturer_grades.aspx#submissions" class="block w-full rounded-xl py-2.5 text-center text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
                     View all submissions
-                </button>
+                </a>
             </div>
         </div>
 
@@ -206,16 +206,24 @@
                     </span>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Announcements</h2>
                 </div>
+                <% if (HasMoreAnnouncements) { %>
+                <a href='<%= ResolveUrl("~/lecturer/lecturer_announcement.aspx") %>' class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:12px;font-weight:600">
+                    See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+                </a>
+                <% } %>
             </header>
             <asp:Repeater ID="announcementsRepeater" runat="server">
                 <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>
                 <ItemTemplate>
                     <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
+                        <a href='<%# ResolveUrl("~/lecturer/lecturer_announcement.aspx?id=" + Eval("AnnouncementId")) %>' class="block rounded-lg p-1 -m-1 hover:bg-slate-50 transition-colors">
                         <div class="flex items-center gap-2">
+                            <i data-lucide="pin" class='<%# Convert.ToBoolean(Eval("IsPinned")) ? "h-3.5 w-3.5 text-amber-500" : "h-3.5 w-3.5 text-slate-300" %>'></i>
                             <span class="text-slate-400" style="font-size:11.5px"><%# Server.HtmlEncode(FormatRelativeTime((DateTime)Eval("CreatedAt"))) %></span>
                         </div>
                         <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
                         <p class="mt-1 text-slate-500 line-clamp-2" style="font-size:12.5px;line-height:1.55"><%# Server.HtmlEncode(Eval("Content").ToString()) %></p>
+                        </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>

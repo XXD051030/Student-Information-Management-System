@@ -213,6 +213,11 @@ namespace student_information_management_system
             get { return _data != null ? _data.Announcements.Count : 0; }
         }
 
+        protected bool HasMoreAnnouncements
+        {
+            get { return _data != null && _data.TotalAnnouncementCount > 5; }
+        }
+
         protected string FormatRelativeTime(DateTime when)
         {
             TimeSpan ago = DateTime.Now - when;

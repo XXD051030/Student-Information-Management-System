@@ -68,6 +68,12 @@ namespace student_information_management_system
         {
             int offeringId;
             int.TryParse(courseSelect.SelectedValue, out offeringId);
+            string materialType = materialTypeSelect.SelectedValue;
+            bool isLectureNotes = string.Equals(materialType, "Lecture Notes", StringComparison.OrdinalIgnoreCase);
+            bool isQuiz = string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase);
+            bool requiresAssessmentDetails =
+                string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase);
 
             DateTime dueDate;
             DateTime? parsedDueDate = DateTime.TryParse(dueDateInput.Text, out dueDate) ? (DateTime?)dueDate : null;
@@ -76,6 +82,12 @@ namespace student_information_management_system
             decimal? parsedWeight = decimal.TryParse(weightInput.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out weight)
                 ? (decimal?)weight
                 : null;
+
+            if (isLectureNotes)
+            {
+                parsedDueDate = null;
+                parsedWeight = null;
+            }
 
             if (offeringId <= 0)
             {
@@ -89,7 +101,30 @@ namespace student_information_management_system
                 return;
             }
 
-            if (!materialFileInput.HasFile)
+            if (requiresAssessmentDetails && !parsedDueDate.HasValue)
+            {
+                ShowStatus("Due date is required for assignments and tests.", false);
+                return;
+            }
+
+            if (requiresAssessmentDetails && !parsedWeight.HasValue)
+            {
+                ShowStatus("Course weight is required for assignments and tests.", false);
+                return;
+            }
+
+            Uri quizUrl;
+            string description = (descriptionInput.Text ?? "").Trim();
+            bool validQuizUrl = Uri.TryCreate(description, UriKind.Absolute, out quizUrl)
+                && (quizUrl.Scheme == Uri.UriSchemeHttp || quizUrl.Scheme == Uri.UriSchemeHttps);
+
+            if (isQuiz && !validQuizUrl)
+            {
+                ShowStatus("For quizzes, please paste the full Google Forms sharing link in Description (starting with https://).", false);
+                return;
+            }
+
+            if (!isQuiz && !materialFileInput.HasFile)
             {
                 ShowStatus("Please choose a file to upload.", false);
                 return;
@@ -107,31 +142,59 @@ namespace student_information_management_system
                 return;
             }
 
-            string fileUrl;
-            string fileType;
-            int fileSizeBytes;
-            try
+            var user = UserContextFactory.FromSession(Session);
+            decimal currentWeight = LecturerPortalService.GetMaterialWeightTotal(user, offeringId);
+            if (parsedWeight.HasValue && currentWeight + parsedWeight.Value > 100m)
             {
-                fileUrl = SaveMaterialFile(materialFileInput, offeringId, out fileType, out fileSizeBytes);
-            }
-            catch (InvalidOperationException ex)
-            {
-                ShowStatus(ex.Message, false);
+                decimal remaining = Math.Max(0m, 100m - currentWeight);
+                ShowStatus(
+                    "This course already uses " + currentWeight.ToString("0.##", CultureInfo.InvariantCulture) +
+                    "% weight. You can add at most " + remaining.ToString("0.##", CultureInfo.InvariantCulture) + "%.",
+                    false);
                 return;
             }
 
-            var user = UserContextFactory.FromSession(Session);
+            string fileUrl = isQuiz ? description : "";
+            string fileType = isQuiz ? "link" : "";
+            int fileSizeBytes = 0;
+            if (!isQuiz)
+            {
+                try
+                {
+                    fileUrl = SaveMaterialFile(materialFileInput, offeringId, out fileType, out fileSizeBytes);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ShowStatus(ex.Message, false);
+                    return;
+                }
+            }
+
             int added = LecturerPortalService.AddMaterial(user, new LecturerMaterialInput
             {
                 OfferingId = offeringId,
                 Title = titleInput.Text,
+                Description = description,
+                MaterialType = materialType,
+                DueDate = parsedDueDate,
+                Weight = parsedWeight,
                 FileUrl = fileUrl,
+                FileType = fileType,
+                FileSizeBytes = fileSizeBytes,
                 UploadedAt = DateTime.Now
             });
+
+            if (added == -1)
+            {
+                ShowStatus("This material would make the course weight exceed 100%. Delete or reduce another weighted material first.", false);
+                TryDeleteSavedFile(fileUrl);
+                return;
+            }
 
             if (added == 0)
             {
                 ShowStatus("Material could not be published for this course.", false);
+                TryDeleteSavedFile(fileUrl);
                 return;
             }
 
@@ -186,6 +249,16 @@ namespace student_information_management_system
 
             fileType = extension.TrimStart('.');
             return "~/uploads/materials/" + fileName;
+        }
+
+        private void TryDeleteSavedFile(string fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl) || !fileUrl.StartsWith("~/uploads/materials/", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            string physicalPath = Server.MapPath(fileUrl);
+            if (File.Exists(physicalPath))
+                File.Delete(physicalPath);
         }
 
         private void LoadRows()
@@ -260,8 +333,9 @@ namespace student_information_management_system
         protected string MaterialPreviewUrl(object value)
         {
             string id = value == null || value == DBNull.Value ? "" : value.ToString();
-            if (string.IsNullOrWhiteSpace(id)) return "";
-            return ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(id));
+            return string.IsNullOrWhiteSpace(id)
+                ? ""
+                : ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(id));
         }
 
         private void ShowStatus(string message, bool success)

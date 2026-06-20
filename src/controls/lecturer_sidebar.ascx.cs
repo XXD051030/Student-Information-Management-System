@@ -9,9 +9,28 @@ namespace src.controls
 {
     public partial class lecturer_sidebar : System.Web.UI.UserControl
     {
+        private int _unreadNotificationCount;
+
         protected void Page_Load(object sender, EventArgs e)
         {
+            if (Session["user_id"] == null) return;
+            var user = src.services.UserContextFactory.FromSession(Session);
+            var readIds = Session["lecturer_notification_read_ids"] as ISet<int> ?? new HashSet<int>();
+            foreach (var announcement in src.services.LecturerPortalService.GetAnnouncements(user, null))
+            {
+                if (!readIds.Contains(announcement.AnnouncementId))
+                    _unreadNotificationCount++;
+            }
+        }
 
+        protected string NotificationBadgeText
+        {
+            get { return _unreadNotificationCount > 9 ? "9+" : _unreadNotificationCount.ToString(); }
+        }
+
+        protected string NotificationBadgeVisibilityClass
+        {
+            get { return _unreadNotificationCount > 0 ? "" : " hidden"; }
         }
     }
 }

@@ -20,7 +20,8 @@
                 <div class="flex items-center gap-5">
                     <div class="relative">
                         <% if (!string.IsNullOrEmpty(IconUrl)) { %>
-                            <img src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" class="h-20 w-20 rounded-full object-cover" />
+                            <img src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" class="h-20 w-20 rounded-full object-cover" />
+                            <div class="h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="display:none;font-size:26px;font-weight:700"><%= Initials %></div>
                         <% } else { %>
                             <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:26px;font-weight:700"><%= Initials %></div>
                         <% } %>

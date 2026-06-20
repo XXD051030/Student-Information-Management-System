@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using src.db;
 using static src.services.ServiceMap;
@@ -8,13 +9,77 @@ namespace src.services
 {
     public static class LecturerMaterialReader
     {
+        public static LecturerMaterialRow GetMaterial(UserContext user, int materialId)
+        {
+            if (user == null || materialId <= 0) return null;
+            EnsureMaterialColumns();
+
+            string sql =
+                "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, " +
+                "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, " +
+                "c.course_code, c.course_name " +
+                "FROM MATERIALS mat " +
+                "JOIN MODULES md ON md.module_id = mat.module_id " +
+                "JOIN COURSE_OFFERINGS co ON co.offer_id = md.offer_id " +
+                "JOIN COURSES c ON c.course_id = co.course_id " +
+                "WHERE mat.material_id = @materialId AND " + ServiceAccess.VisibleOfferScope("co");
+
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                ServiceAccess.AddUserContextParameters(cmd, user);
+                cmd.Parameters.AddWithValue("@materialId", materialId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read()) return null;
+                    return new LecturerMaterialRow
+                    {
+                        MaterialId = IntValue(reader["material_id"]),
+                        OfferingId = IntValue(reader["offer_id"]),
+                        CourseCode = Text(reader["course_code"]),
+                        CourseName = Text(reader["course_name"]),
+                        Title = Text(reader["title"]),
+                        Description = Text(reader["description"]),
+                        FileUrl = Text(reader["file_url"]),
+                        FileType = Text(reader["file_type"]),
+                        FileSizeBytes = NullableInt(reader["file_size_bytes"]),
+                        MaterialType = Text(reader["material_type"]),
+                        DueDate = DateValue(reader["due_date"]),
+                        Weight = DecimalValue(reader["weight"]),
+                        UploadedAt = DateValue(reader["uploaded_at"]) ?? DateTime.Now
+                    };
+                }
+            }
+        }
+
+        public static decimal GetWeightTotal(UserContext user, int offeringId)
+        {
+            if (user == null || offeringId <= 0) return 0m;
+            EnsureMaterialColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageOffer(conn, user, offeringId)) return 0m;
+                using (var cmd = new SqlCommand(
+                    "SELECT ISNULL(SUM(mat.weight), 0) " +
+                    "FROM MATERIALS mat JOIN MODULES md ON md.module_id = mat.module_id " +
+                    "WHERE md.offer_id = @offerId", conn))
+                {
+                    cmd.Parameters.AddWithValue("@offerId", offeringId);
+                    return Convert.ToDecimal(cmd.ExecuteScalar());
+                }
+            }
+        }
+
         public static List<LecturerMaterialRow> GetMaterials(UserContext user, int? offeringId)
         {
             var rows = new List<LecturerMaterialRow>();
             if (user == null || !user.IsLecturer) return rows;
+            EnsureMaterialColumns();
 
             string sql =
-                "SELECT mat.material_id, md.offer_id, mat.title, mat.file_url, mat.uploaded_at, " +
+                "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, " +
+                "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, " +
                 "c.course_code, c.course_name " +
                 "FROM MATERIALS mat " +
                 "JOIN MODULES md ON md.module_id = mat.module_id " +
@@ -40,13 +105,14 @@ namespace src.services
                             CourseCode = Text(reader["course_code"]),
                             CourseName = Text(reader["course_name"]),
                             Title = Text(reader["title"]),
+                            Description = Text(reader["description"]),
                             FileUrl = Text(reader["file_url"]),
                             UploadedAt = DateValue(reader["uploaded_at"]) ?? DateTime.Now,
-                            Description = "",
-                            FileType = "",
-                            MaterialType = "",
-                            DueDate = null,
-                            Weight = null
+                            FileType = Text(reader["file_type"]),
+                            FileSizeBytes = NullableInt(reader["file_size_bytes"]),
+                            MaterialType = Text(reader["material_type"]),
+                            DueDate = DateValue(reader["due_date"]),
+                            Weight = DecimalValue(reader["weight"])
                         });
                     }
                 }
@@ -54,37 +120,77 @@ namespace src.services
             return rows;
         }
 
-        // Inserts into the offering's first module. Returns the new material id, or 0.
+        // Returns the new material id, 0 for a general failure, or -1 when
+        // adding the requested weight would exceed the course's 100% total.
         public static int Add(UserContext user, LecturerMaterialInput input)
         {
             if (user == null || input == null || input.OfferingId <= 0) return 0;
+            EnsureMaterialColumns();
 
             using (var conn = Db.OpenConnection())
             {
                 if (!ServiceAccess.CanManageOffer(conn, user, input.OfferingId)) return 0;
 
-                string moduleId;
-                using (var cmd = new SqlCommand(
-                    "SELECT TOP 1 module_id FROM MODULES WHERE offer_id = @offerId ORDER BY module_id", conn))
+                using (var transaction = conn.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    cmd.Parameters.AddWithValue("@offerId", input.OfferingId);
-                    var value = cmd.ExecuteScalar();
-                    if (value == null || value == DBNull.Value) return 0;
-                    moduleId = value.ToString();
-                }
+                    decimal existingWeight;
+                    using (var weightCommand = new SqlCommand(
+                        "SELECT ISNULL(SUM(mat.weight), 0) " +
+                        "FROM MATERIALS mat WITH (UPDLOCK, HOLDLOCK) " +
+                        "JOIN MODULES md ON md.module_id = mat.module_id " +
+                        "WHERE md.offer_id = @offerId", conn, transaction))
+                    {
+                        weightCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
+                        existingWeight = Convert.ToDecimal(weightCommand.ExecuteScalar());
+                    }
 
-                const string sql =
-                    "INSERT INTO MATERIALS (module_id, title, file_url, uploaded_at) " +
-                    "OUTPUT INSERTED.material_id " +
-                    "VALUES (@moduleId, @title, @fileUrl, @uploadedAt)";
-                using (var cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@moduleId", moduleId);
-                    cmd.Parameters.AddWithValue("@title", ServiceAccess.DbValue(input.Title));
-                    cmd.Parameters.AddWithValue("@fileUrl", ServiceAccess.DbValue(input.FileUrl));
-                    cmd.Parameters.AddWithValue("@uploadedAt", input.UploadedAt == default(DateTime) ? DateTime.Now : input.UploadedAt);
-                    var id = cmd.ExecuteScalar();
-                    return id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+                    decimal requestedWeight = input.Weight.GetValueOrDefault();
+                    if (existingWeight + requestedWeight > 100m)
+                    {
+                        transaction.Rollback();
+                        return -1;
+                    }
+
+                    string moduleId;
+                    using (var moduleCommand = new SqlCommand(
+                        "SELECT TOP 1 module_id FROM MODULES WHERE offer_id = @offerId ORDER BY module_id",
+                        conn, transaction))
+                    {
+                        moduleCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
+                        var value = moduleCommand.ExecuteScalar();
+                        if (value == null || value == DBNull.Value)
+                        {
+                            transaction.Rollback();
+                            return 0;
+                        }
+                        moduleId = value.ToString();
+                    }
+
+                    const string sql =
+                        "INSERT INTO MATERIALS (module_id, title, description, file_url, file_type, file_size_bytes, " +
+                        "material_type, due_date, weight, uploaded_at) " +
+                        "OUTPUT INSERTED.material_id " +
+                        "VALUES (@moduleId, @title, @description, @fileUrl, @fileType, @fileSizeBytes, " +
+                        "@materialType, @dueDate, @weight, @uploadedAt)";
+                    using (var cmd = new SqlCommand(sql, conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@moduleId", moduleId);
+                        cmd.Parameters.AddWithValue("@title", ServiceAccess.DbValue(input.Title));
+                        cmd.Parameters.AddWithValue("@description", ServiceAccess.DbValue(input.Description));
+                        cmd.Parameters.AddWithValue("@fileUrl", ServiceAccess.DbValue(input.FileUrl));
+                        cmd.Parameters.AddWithValue("@fileType", ServiceAccess.DbValue(input.FileType));
+                        cmd.Parameters.AddWithValue("@fileSizeBytes", ServiceAccess.DbValue(input.FileSizeBytes));
+                        cmd.Parameters.AddWithValue("@materialType", NormalizeMaterialType(input.MaterialType));
+                        cmd.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(input.DueDate));
+                        var weightParameter = cmd.Parameters.Add("@weight", SqlDbType.Decimal);
+                        weightParameter.Precision = 5;
+                        weightParameter.Scale = 2;
+                        weightParameter.Value = ServiceAccess.DbValue(input.Weight);
+                        cmd.Parameters.AddWithValue("@uploadedAt", input.UploadedAt == default(DateTime) ? DateTime.Now : input.UploadedAt);
+                        var id = cmd.ExecuteScalar();
+                        transaction.Commit();
+                        return id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+                    }
                 }
             }
         }
@@ -101,6 +207,52 @@ namespace src.services
                     return cmd.ExecuteNonQuery() > 0;
                 }
             }
+        }
+
+        private static void EnsureMaterialColumns()
+        {
+            const string schemaSql =
+                "IF COL_LENGTH('MATERIALS', 'description') IS NULL ALTER TABLE MATERIALS ADD description varchar(500) NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'file_type') IS NULL ALTER TABLE MATERIALS ADD file_type varchar(20) NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'file_size_bytes') IS NULL ALTER TABLE MATERIALS ADD file_size_bytes int NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'material_type') IS NULL ALTER TABLE MATERIALS ADD material_type varchar(30) NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'due_date') IS NULL ALTER TABLE MATERIALS ADD due_date date NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'weight') IS NULL ALTER TABLE MATERIALS ADD weight decimal(5,2) NULL";
+
+            const string dataSql =
+                "UPDATE MATERIALS SET material_type = CASE " +
+                "WHEN LOWER(title) LIKE '%assignment%' THEN 'Assignment' " +
+                "WHEN LOWER(title) LIKE '%quiz%' THEN 'Quiz' " +
+                "WHEN LOWER(title) LIKE '%test%' OR LOWER(title) LIKE '%exam%' THEN 'Test' " +
+                "ELSE 'Lecture Notes' END " +
+                "WHERE material_type IS NULL OR LTRIM(RTRIM(material_type)) = ''";
+
+            using (var conn = Db.OpenConnection())
+            {
+                // SQL Server compiles a batch before executing it, so an UPDATE
+                // cannot reference a column added earlier in that same batch.
+                using (var schemaCommand = new SqlCommand(schemaSql, conn))
+                {
+                    schemaCommand.ExecuteNonQuery();
+                }
+                using (var dataCommand = new SqlCommand(dataSql, conn))
+                {
+                    dataCommand.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private static string NormalizeMaterialType(string materialType)
+        {
+            if (string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase)) return "Assignment";
+            if (string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase)) return "Quiz";
+            if (string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase)) return "Test";
+            return "Lecture Notes";
+        }
+
+        private static int? NullableInt(object value)
+        {
+            return value == null || value == DBNull.Value ? (int?)null : Convert.ToInt32(value);
         }
     }
 }
