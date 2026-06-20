@@ -24,17 +24,17 @@
                     style="font-size:13px" />
             </label>
             <label class="block">
-                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">DATE <span class="text-[#e0162b]">*</span></span>
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">DATE</span>
                 <asp:TextBox ID="dateInput" runat="server" TextMode="Date" required="required"
                     CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" />
             </label>
             <label class="block">
-                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">START TIME <span class="text-[#e0162b]">*</span></span>
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">START TIME</span>
                 <asp:TextBox ID="startTimeInput" runat="server" TextMode="Time" required="required"
                     CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" />
             </label>
             <label class="block">
-                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">END TIME <span class="text-[#e0162b]">*</span></span>
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">END TIME</span>
                 <asp:TextBox ID="endTimeInput" runat="server" TextMode="Time" required="required"
                     CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" />
             </label>

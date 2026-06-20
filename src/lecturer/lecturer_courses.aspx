@@ -95,5 +95,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=2"></script>
 </asp:Content>

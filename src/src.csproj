@@ -101,6 +101,7 @@
     <Content Include="js\lecturer\attendance.js" />
     <Content Include="js\lecturer\attendance-export.js" />
     <Content Include="js\lecturer\courses.js" />
+    <Content Include="js\lecturer\grades.js" />
     <Content Include="js\lecturer\lecturer-portal.js" />
     <Content Include="js\login\login.js" />
     <Content Include="js\shared\account.js" />

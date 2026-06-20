@@ -104,6 +104,9 @@
                                             <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px]">
                                                 <div class="flex min-h-0 flex-col bg-slate-100">
                                                     <div class="flex h-11 items-center gap-1 border-b border-slate-300 bg-slate-700 px-4 text-white">
+                                                        <a href='<%# SubmissionPreviewUrl(Eval("SubmissionFileUrl")) %>' target="_blank" rel="noopener" class="inline-flex h-8 items-center gap-1.5 rounded-md px-2 hover:bg-white/10" style="font-size:12px;font-weight:700">
+                                                            <i data-lucide="external-link" class="h-4 w-4"></i>Open file
+                                                        </a>
                                                         <button type="button" data-annotate-download class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Download annotated PDF"><i data-lucide="download" class="h-4 w-4"></i></button>
                                                         <span class="mx-2 h-5 w-px bg-white/25"></span>
                                                         <button type="button" data-annotate-tool="pointer" class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/15 hover:bg-white/20" title="Select"><i data-lucide="mouse-pointer-2" class="h-4 w-4"></i></button>
@@ -148,5 +151,6 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=8"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/grades.js") %>?v=1"></script>
 </asp:Content>

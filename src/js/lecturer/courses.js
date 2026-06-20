@@ -29,6 +29,32 @@
         return loadPins().indexOf(code) !== -1;
     }
 
+    function sortCards() {
+        var grid = document.getElementById("course-grid");
+        if (!grid) { return; }
+
+        var pins = loadPins();
+        cards()
+            .sort(function (left, right) {
+                var leftCode = left.getAttribute("data-course-code");
+                var rightCode = right.getAttribute("data-course-code");
+                var leftPinIndex = pins.indexOf(leftCode);
+                var rightPinIndex = pins.indexOf(rightCode);
+                var leftPinned = leftPinIndex !== -1;
+                var rightPinned = rightPinIndex !== -1;
+
+                if (leftPinned && !rightPinned) { return -1; }
+                if (!leftPinned && rightPinned) { return 1; }
+                if (leftPinned && rightPinned) { return leftPinIndex - rightPinIndex; }
+
+                return Number(left.getAttribute("data-original-order")) -
+                    Number(right.getAttribute("data-original-order"));
+            })
+            .forEach(function (card) {
+                grid.appendChild(card);
+            });
+    }
+
     function applyFilters() {
         var q = state.query.trim().toLowerCase();
         var visible = 0;
@@ -47,7 +73,14 @@
 
     function updatePinnedCount() {
         var el = document.getElementById("pinned-count");
-        if (el) { el.textContent = String(loadPins().length); }
+        if (!el) { return; }
+        var courseCodes = cards().map(function (card) {
+            return card.getAttribute("data-course-code");
+        });
+        var count = loadPins().filter(function (code) {
+            return courseCodes.indexOf(code) !== -1;
+        }).length;
+        el.textContent = String(count);
     }
 
     function paintPin(card) {
@@ -84,6 +117,10 @@
     }
 
     function init() {
+        cards().forEach(function (card, index) {
+            card.setAttribute("data-original-order", String(index));
+        });
+
         // Semester buttons
         Array.prototype.forEach.call(
             document.querySelectorAll('[data-action="filter-semester"]'),
@@ -113,6 +150,7 @@
                 btn.addEventListener("click", function () {
                     togglePin(card.getAttribute("data-course-code"));
                     paintPin(card);
+                    sortCards();
                     updatePinnedCount();
                 });
             }
@@ -122,6 +160,7 @@
         var allBtn = document.querySelector('[data-action="filter-semester"][data-semester="all"]');
         if (allBtn) { activateSemesterButton(allBtn); }
 
+        sortCards();
         updatePinnedCount();
         applyFilters();
     }
