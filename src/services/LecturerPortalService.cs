@@ -19,9 +19,11 @@ namespace src.services
 
         public static AttendanceOffering GetAttendanceOffering(UserContext user, int offeringId) => LecturerAttendanceReader.GetAttendanceOffering(user, offeringId);
 
-        public static List<RosterEntry> GetAttendanceRoster(UserContext user, int offeringId, DateTime date) => LecturerAttendanceReader.GetAttendanceRoster(user, offeringId, date);
+        public static List<LecturerAttendanceHistoryRow> GetAttendanceHistory(UserContext user) => LecturerAttendanceReader.GetHistory(user);
 
-        public static int SaveAttendance(UserContext user, int offeringId, DateTime date, IDictionary<int, string> statuses) => LecturerAttendanceReader.SaveAttendance(user, offeringId, date, statuses);
+        public static List<RosterEntry> GetAttendanceRoster(UserContext user, int offeringId, DateTime date, TimeSpan startTime, TimeSpan endTime) => LecturerAttendanceReader.GetAttendanceRoster(user, offeringId, date, startTime, endTime);
+
+        public static int SaveAttendance(UserContext user, int offeringId, DateTime date, TimeSpan startTime, TimeSpan endTime, IDictionary<int, string> statuses) => LecturerAttendanceReader.SaveAttendance(user, offeringId, date, startTime, endTime, statuses);
 
         public static List<LecturerAssessmentOption> GetAssessments(UserContext user, int offeringId) => LecturerGradeReader.GetAssessments(user, offeringId);
 

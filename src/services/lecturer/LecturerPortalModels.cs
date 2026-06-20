@@ -93,6 +93,21 @@ namespace src.services
         public string Status { get; set; }
     }
 
+    public class LecturerAttendanceHistoryRow
+    {
+        public int SessionId { get; set; }
+        public int OfferingId { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public DateTime SessionDate { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public int PresentCount { get; set; }
+        public int LateCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int RecordedCount { get; set; }
+    }
+
     public class LecturerAssessmentOption
     {
         public int AssessmentId { get; set; }

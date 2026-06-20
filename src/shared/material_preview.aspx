@@ -6,7 +6,10 @@
             <a href="<%= BackUrl %>" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900" style="font-size:13px;font-weight:600">
                 <i data-lucide="arrow-left" class="h-4 w-4"></i>Back
             </a>
-            <p class="mt-4 text-slate-500" style="font-size:13px;font-weight:600"><%= Html(Material == null ? "" : Material.CourseCode + " · " + Material.MaterialType) %></p>
+            <p class="mt-4 flex items-center gap-2 text-slate-500" style="font-size:13px;font-weight:600">
+                <span><%= Html(Material == null ? "" : Material.CourseCode) %></span>
+                <span><%= Html(Material == null ? "" : Material.MaterialType) %></span>
+            </p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= Html(Material == null ? "Material unavailable" : Material.Title) %></h1>
             <p class="mt-1 text-slate-500" style="font-size:14px"><%= Html(Material == null ? "" : Material.Description) %></p>
         </div>

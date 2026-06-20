@@ -99,6 +99,7 @@
     <Content Include="js\admin\student-detail\students.js" />
     <Content Include="js\core\icons-init.js" />
     <Content Include="js\lecturer\attendance.js" />
+    <Content Include="js\lecturer\attendance-export.js" />
     <Content Include="js\lecturer\courses.js" />
     <Content Include="js\lecturer\lecturer-portal.js" />
     <Content Include="js\login\login.js" />
@@ -116,6 +117,7 @@
     <Content Include="login\login.aspx" />
     <Content Include="lecturer\lecturer_at_risk.aspx" />
     <Content Include="lecturer\lecturer_attendance.aspx" />
+    <Content Include="lecturer\lecturer_attendance_history.aspx" />
     <Content Include="lecturer\lecturer_course_dashboard.aspx" />
     <Content Include="lecturer\lecturer_course_people.aspx" />
     <Content Include="lecturer\lecturer_courses.aspx" />
@@ -376,6 +378,13 @@
     </Compile>
     <Compile Include="lecturer\lecturer_attendance.aspx.designer.cs">
       <DependentUpon>lecturer_attendance.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="lecturer\lecturer_attendance_history.aspx.cs">
+      <DependentUpon>lecturer_attendance_history.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_attendance_history.aspx.designer.cs">
+      <DependentUpon>lecturer_attendance_history.aspx</DependentUpon>
     </Compile>
     <Compile Include="lecturer\lecturer_course_dashboard.aspx.cs">
       <DependentUpon>lecturer_course_dashboard.aspx</DependentUpon>
