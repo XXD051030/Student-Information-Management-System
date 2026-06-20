@@ -51,7 +51,7 @@ namespace src.student
             assignmentsRepeater.DataSource = _dashboard.AssignmentsDueThisWeek;
             assignmentsRepeater.DataBind();
 
-            announcementsRepeater.DataSource = _dashboard.Announcements;
+            announcementsRepeater.DataSource = _dashboard.Announcements?.Take(3).ToList();
             announcementsRepeater.DataBind();
         }
 

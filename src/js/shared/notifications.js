@@ -204,8 +204,22 @@
 
     recount();
 
-    if (items.length) {
-        select(items[0]);
+    var params = new URLSearchParams(window.location.search);
+    var targetId = params.get('id');
+    var initialItem = null;
+    if (targetId) {
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].getAttribute('data-id') === targetId) {
+                initialItem = items[i];
+                break;
+            }
+        }
+    }
+    if (!initialItem && items.length) initialItem = items[0];
+
+    if (initialItem) {
+        select(initialItem);
+        initialItem.scrollIntoView({ block: 'nearest' });
     } else {
         showDetail(false);
     }

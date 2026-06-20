@@ -71,9 +71,11 @@
                     <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Pending Tasks</p>
                     <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= PendingTaskCount %></p>
                 </div>
+                <% if (AssignmentDueCount > 0) { %>
                 <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-slate-100 text-slate-600" style="font-size:11px;font-weight:600">
                     Due soon
                 </span>
+                <% } %>
             </div>
             <p class="mt-3 text-slate-400" style="font-size:12px">next 7 days</p>
         </div>
@@ -90,7 +92,7 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Today's Schedule</h2>
                     <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= TodayScheduleSubtitle %></p>
                 </div>
-                <a href="#" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a href="/student/timetable.aspx" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     Full week <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
@@ -151,11 +153,6 @@
             <% if (AssignmentDueCount == 0) { %>
                 <p class="px-6 py-8 text-center text-slate-400" style="font-size:13px">Nothing due this week.</p>
             <% } %>
-            <div class="border-t border-slate-100 p-3">
-                <button class="w-full rounded-xl py-2.5 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
-                    View all assignments
-                </button>
-            </div>
         </div>
 
     </section>
@@ -170,7 +167,7 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">My Courses</h2>
                     <p class="text-slate-500 mt-0.5" style="font-size:13px">Trimester 1 &middot; 2025/26</p>
                 </div>
-                <a href="#" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a href="/student/courses.aspx" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
@@ -206,11 +203,13 @@
                 <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>
                 <ItemTemplate>
                     <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-400" style="font-size:11.5px"><%# Server.HtmlEncode(FormatRelativeTime((DateTime)Eval("CreatedAt"))) %></span>
-                        </div>
-                        <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
-                        <p class="mt-1 text-slate-500 line-clamp-2" style="font-size:12.5px;line-height:1.55"><%# Server.HtmlEncode(Eval("Content").ToString()) %></p>
+                        <a href="/student/notifications.aspx?id=<%# Eval("AnnouncementId") %>" class="block rounded-lg p-2 -mx-2 hover:bg-slate-50 transition-colors cursor-pointer">
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-400" style="font-size:11.5px"><%# Server.HtmlEncode(FormatRelativeTime((DateTime)Eval("CreatedAt"))) %></span>
+                            </div>
+                            <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                            <p class="mt-1 text-slate-500 line-clamp-2" style="font-size:12.5px;line-height:1.55"><%# Server.HtmlEncode(Eval("Content").ToString()) %></p>
+                        </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>
