@@ -73,12 +73,6 @@
                         <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Pin">
                             <i data-lucide="pin" id="detail-pin" class="h-4 w-4 text-amber-500"></i>
                         </button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Archive">
-                            <i data-lucide="archive" class="h-4 w-4 text-slate-500"></i>
-                        </button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Delete">
-                            <i data-lucide="trash-2" class="h-4 w-4 text-slate-500"></i>
-                        </button>
                     </div>
                 </header>
 
