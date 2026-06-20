@@ -333,6 +333,7 @@
     <Compile Include="services\lecturer\LecturerAtRiskReader.cs" />
     <Compile Include="services\lecturer\LecturerDashboardService.cs" />
     <Compile Include="services\LecturerPortalService.cs" />
+    <Compile Include="services\NotificationReadService.cs" />
     <Compile Include="security\AdminPage.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>

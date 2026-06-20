@@ -36,7 +36,8 @@ namespace src.lecturer
                 return;
             }
 
-            Notifications = GetNotifications(user, profile.FullName, ReadIds(Session));
+            ImportSessionReadIds(user);
+            Notifications = GetNotifications(user, profile.FullName, NotificationReadService.GetReadIds(user));
             notificationsRepeater.DataSource = Notifications;
             notificationsRepeater.DataBind();
             emptyPanel.Visible = Notifications.Count == 0;
@@ -91,17 +92,17 @@ namespace src.lecturer
             return user;
         }
 
-        private static HashSet<int> ReadIds(HttpSessionState session)
+        private void ImportSessionReadIds(UserContext user)
         {
-            var ids = session[ReadNotificationIdsKey] as HashSet<int>;
-            if (ids != null) return ids;
-            ids = new HashSet<int>();
-            session[ReadNotificationIdsKey] = ids;
-            return ids;
+            var ids = Session[ReadNotificationIdsKey] as IEnumerable<int>;
+            if (ids == null) return;
+            NotificationReadService.Import(user, ids);
+            Session.Remove(ReadNotificationIdsKey);
         }
 
-        private static object CountResponse(UserContext user, HashSet<int> readIds)
+        private static object CountResponse(UserContext user)
         {
+            var readIds = NotificationReadService.GetReadIds(user);
             int unread = LecturerPortalService.GetAnnouncements(user, null)
                 .Count(a => !readIds.Contains(a.AnnouncementId));
             return new { ok = true, unreadCount = unread, badgeText = unread > 9 ? "9+" : unread.ToString() };
@@ -112,9 +113,8 @@ namespace src.lecturer
         {
             var user = CurrentLecturerOrReject();
             if (user == null) return new { ok = false };
-            var ids = ReadIds(HttpContext.Current.Session);
-            ids.Add(announcementId);
-            return CountResponse(user, ids);
+            NotificationReadService.MarkRead(user, announcementId);
+            return CountResponse(user);
         }
 
         [WebMethod(EnableSession = true)]
@@ -122,9 +122,8 @@ namespace src.lecturer
         {
             var user = CurrentLecturerOrReject();
             if (user == null) return new { ok = false };
-            var ids = ReadIds(HttpContext.Current.Session);
-            ids.Remove(announcementId);
-            return CountResponse(user, ids);
+            NotificationReadService.MarkUnread(user, announcementId);
+            return CountResponse(user);
         }
 
         [WebMethod(EnableSession = true)]
@@ -132,10 +131,10 @@ namespace src.lecturer
         {
             var user = CurrentLecturerOrReject();
             if (user == null) return new { ok = false };
-            var ids = ReadIds(HttpContext.Current.Session);
-            foreach (var item in LecturerPortalService.GetAnnouncements(user, null))
-                ids.Add(item.AnnouncementId);
-            return CountResponse(user, ids);
+            NotificationReadService.MarkAllRead(
+                user,
+                LecturerPortalService.GetAnnouncements(user, null).Select(a => a.AnnouncementId));
+            return CountResponse(user);
         }
     }
 }

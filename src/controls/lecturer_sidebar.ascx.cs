@@ -15,7 +15,7 @@ namespace src.controls
         {
             if (Session["user_id"] == null) return;
             var user = src.services.UserContextFactory.FromSession(Session);
-            var readIds = Session["lecturer_notification_read_ids"] as ISet<int> ?? new HashSet<int>();
+            var readIds = src.services.NotificationReadService.GetReadIds(user);
             foreach (var announcement in src.services.LecturerPortalService.GetAnnouncements(user, null))
             {
                 if (!readIds.Contains(announcement.AnnouncementId))
