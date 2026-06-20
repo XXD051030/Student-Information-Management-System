@@ -54,5 +54,7 @@ namespace src.services
         public static bool DeleteMaterial(UserContext user, int materialId) => LecturerMaterialReader.Delete(user, materialId);
 
         public static List<AtRiskStudentRow> GetAtRisk(UserContext user) => LecturerAtRiskReader.GetAtRisk(user);
+
+        public static List<LecturerAcademicPerformanceRow> GetAcademicPerformance(UserContext user) => LecturerAtRiskReader.GetAcademicPerformance(user);
     }
 }

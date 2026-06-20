@@ -34,8 +34,8 @@
             </li>
             <li>
                 <a href="<%= ResolveUrl("~/lecturer/lecturer_at_risk.aspx") %>" data-nav-link="lecturer_at_risk.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
-                    <i data-lucide="alert-triangle" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
-                    <span class="flex-1">At-risk</span>
+                    <i data-lucide="trending-up" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Academic Performance</span>
                 </a>
             </li>
             <li>
