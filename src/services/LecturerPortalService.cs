@@ -17,6 +17,9 @@ namespace src.services
         public static LecturerDashboardData GetDashboard(UserContext user) => LecturerDashboardService.GetDashboard(user);
 
         public static List<LecturerClassSession> GetClassSessions(UserContext user) => LecturerTimetableReader.GetClassSessions(user);
+        public static List<LecturerClassSession> GetManageableClassSessions(UserContext user) => LecturerTimetableReader.GetManageableClassSessions(user);
+        public static int SaveClassSession(UserContext user, int timetableId, int offerId, string dayOfWeek, TimeSpan startTime, TimeSpan endTime, string room) => LecturerTimetableReader.SaveClassSession(user, timetableId, offerId, dayOfWeek, startTime, endTime, room);
+        public static bool DeleteClassSession(UserContext user, int timetableId) => LecturerTimetableReader.DeleteClassSession(user, timetableId);
 
         public static AttendanceOffering GetAttendanceOffering(UserContext user, int offeringId) => LecturerAttendanceReader.GetAttendanceOffering(user, offeringId);
 

@@ -20,7 +20,8 @@ namespace src.services
 
                 string sql = @"
                     SELECT session_id AS semester_id,
-                           academic_year + ' ' + semester AS name
+                           UPPER(DATENAME(MONTH, start_date)) + ' ' +
+                           CONVERT(varchar(4), YEAR(start_date)) + ' ' + semester AS name
                     FROM ACADEMIC_SESSIONS
                     ORDER BY start_date DESC, session_id DESC";
 
@@ -117,7 +118,7 @@ namespace src.services
                         INNER JOIN COURSES c
                             ON co.course_id = c.course_id
                         INNER JOIN ACADEMIC_SESSIONS sem
-                            ON co.academic_year = sem.academic_year AND co.semester = sem.semester
+                            ON co.session_id = sem.session_id
                         LEFT JOIN GRADES g
                             ON g.student_id = e.student_id AND g.offer_id = e.offer_id
                         WHERE e.status = 'ENROLLED'
@@ -224,7 +225,7 @@ namespace src.services
                         LEFT JOIN COURSES c
                             ON c.course_id = co.course_id
                         LEFT JOIN ACADEMIC_SESSIONS sem
-                            ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                            ON sem.session_id = co.session_id
                         LEFT JOIN GRADES g
                             ON g.student_id = e.student_id AND g.offer_id = e.offer_id
                         WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
@@ -402,7 +403,7 @@ namespace src.services
                     LEFT JOIN COURSE_OFFERINGS co
                         ON co.course_id = c.course_id
                     LEFT JOIN ACADEMIC_SESSIONS sem
-                        ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                        ON sem.session_id = co.session_id
                     LEFT JOIN ENROLLMENTS e
                         ON e.offer_id = co.offer_id AND e.status = 'ENROLLED'
                     LEFT JOIN GRADES g
@@ -485,7 +486,7 @@ namespace src.services
                     INNER JOIN PROGRAMMES p
                         ON p.programme_id = c.programme_id
                     INNER JOIN ACADEMIC_SESSIONS sem
-                        ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                        ON sem.session_id = co.session_id
                     LEFT JOIN ENROLLMENTS e
                         ON e.offer_id = co.offer_id AND e.status = 'ENROLLED'
                     LEFT JOIN ATTENDANCE_SESSIONS ats
@@ -571,7 +572,7 @@ namespace src.services
                         INNER JOIN COURSES c
                             ON c.course_id = co.course_id
                         INNER JOIN ACADEMIC_SESSIONS sem
-                            ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                            ON sem.session_id = co.session_id
                         WHERE s.status = 'ACTIVE'
                           AND (@SemesterId IS NULL OR sem.session_id = @SemesterId)
                           AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
@@ -657,6 +658,7 @@ namespace src.services
                            OR FailedCourses > 0
                            OR CurrentStanding LIKE '%risk%'
                            OR CurrentStanding LIKE '%probation%'
+                           OR CurrentStanding LIKE '%watch%'
                     )
                     SELECT * FROM risk_report
                     ORDER BY
@@ -732,7 +734,7 @@ namespace src.services
                         INNER JOIN COURSES c
                             ON c.course_id = co.course_id
                         INNER JOIN ACADEMIC_SESSIONS sem
-                            ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                            ON sem.session_id = co.session_id
                         LEFT JOIN GRADES g
                             ON g.student_id = e.student_id AND g.offer_id = e.offer_id
                         WHERE s.status = 'ACTIVE'
@@ -811,7 +813,7 @@ namespace src.services
                         SUM(CASE WHEN e.status IN ('ENROLLED', 'PENDING', 'DROPPED') THEN 1 ELSE 0 END) AS TotalEnrolments
                     FROM ACADEMIC_SESSIONS sem
                     INNER JOIN COURSE_OFFERINGS co
-                        ON co.academic_year = sem.academic_year AND co.semester = sem.semester
+                        ON co.session_id = sem.session_id
                     INNER JOIN COURSES c
                         ON c.course_id = co.course_id
                     INNER JOIN PROGRAMMES p

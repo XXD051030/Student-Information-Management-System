@@ -141,8 +141,13 @@ namespace src.services
         public string SessionId { get; set; }
         public string Name { get; set; }
         public string AcademicYear { get; set; }
+        public string IntakeId { get; set; }
+        public string IntakeName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime RegistrationStart { get; set; }
+        public DateTime RegistrationEnd { get; set; }
+        public DateTime AddDropEnd { get; set; }
         public int MinCredits { get; set; }
         public int MaxCredits { get; set; }
     }

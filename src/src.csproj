@@ -325,7 +325,15 @@
     <Compile Include="lecturer\lecturer_take_attendance.aspx.designer.cs">
       <DependentUpon>lecturer_take_attendance.aspx</DependentUpon>
     </Compile>
+    <Compile Include="lecturer\lecturer_timetable.aspx.cs">
+      <DependentUpon>lecturer_timetable.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_timetable.aspx.designer.cs">
+      <DependentUpon>lecturer_timetable.aspx</DependentUpon>
+    </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
+    <Compile Include="services\AcademicIntakeSchema.cs" />
     <Compile Include="services\AccountPasswordService.cs" />
     <Compile Include="services\PasswordResetService.cs" />
     <Compile Include="services\AccountWebMethods.cs" />
