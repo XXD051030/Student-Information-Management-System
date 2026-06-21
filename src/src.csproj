@@ -120,6 +120,7 @@
     <Content Include="js\student\payment-history.js" />
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
+    <Content Include="icon_upload.ashx" />
     <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
@@ -306,6 +307,9 @@
     <Compile Include="lecturer\lecturer_materials.aspx.cs">
       <DependentUpon>lecturer_materials.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="icon_upload.ashx.cs">
+      <DependentUpon>icon_upload.ashx</DependentUpon>
     </Compile>
     <Compile Include="lecturer\material_publish.ashx.cs">
       <DependentUpon>material_publish.ashx</DependentUpon>

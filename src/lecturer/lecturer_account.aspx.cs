@@ -86,7 +86,6 @@ namespace src.lecturer
             get { return (Session["role"] as string ?? "LECTURER").ToUpperInvariant(); }
         }
 
-        // App-resolved URL of the profile image, or "" when none is set.
         protected string IconUrl
         {
             get
