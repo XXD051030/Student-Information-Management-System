@@ -22,7 +22,7 @@ namespace src.services
         public static StudentRegistrationTerm GetCurrentTerm()
         {
             const string sql =
-                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date, min_credits, max_credits " +
+                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date " +
                 "FROM ACADEMIC_SESSIONS " +
                 "WHERE start_date <= @today AND end_date >= @today " +
                 "ORDER BY start_date DESC";
@@ -42,7 +42,7 @@ namespace src.services
                 return current;
 
             const string sql =
-                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date, min_credits, max_credits " +
+                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date " +
                 "FROM ACADEMIC_SESSIONS " +
                 "WHERE start_date > @today " +
                 "ORDER BY start_date";
@@ -52,22 +52,45 @@ namespace src.services
         private static StudentRegistrationTerm GetTerm(string sql)
         {
             using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(sql, conn))
             {
-                cmd.Parameters.AddWithValue("@today", DateTime.Today);
-                using (var reader = cmd.ExecuteReader())
+                bool hasCreditBounds;
+                using (var schemaCmd = new SqlCommand(
+                    "SELECT CASE WHEN " +
+                    "COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'min_credits') IS NOT NULL AND " +
+                    "COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'max_credits') IS NOT NULL " +
+                    "THEN 1 ELSE 0 END",
+                    conn))
                 {
-                    if (!reader.Read()) return null;
-                    return new StudentRegistrationTerm
+                    hasCreditBounds = Convert.ToInt32(schemaCmd.ExecuteScalar()) == 1;
+                }
+
+                string compatibleSql = hasCreditBounds
+                    ? sql.Replace(
+                        "start_date, end_date ",
+                        "start_date, end_date, min_credits, max_credits ")
+                    : sql;
+
+                using (var cmd = new SqlCommand(compatibleSql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@today", DateTime.Today);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        SessionId = Text(reader["session_id"]),
-                        AcademicYear = Text(reader["academic_year"]),
-                        Name = Text(reader["semester"]),
-                        StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
-                        EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4),
-                        MinCredits = NullableInt(reader["min_credits"]) ?? DefaultMinCredits,
-                        MaxCredits = NullableInt(reader["max_credits"]) ?? DefaultMaxCredits
-                    };
+                        if (!reader.Read()) return null;
+                        return new StudentRegistrationTerm
+                        {
+                            SessionId = Text(reader["session_id"]),
+                            AcademicYear = Text(reader["academic_year"]),
+                            Name = Text(reader["semester"]),
+                            StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
+                            EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4),
+                            MinCredits = hasCreditBounds
+                                ? NullableInt(reader["min_credits"]) ?? DefaultMinCredits
+                                : DefaultMinCredits,
+                            MaxCredits = hasCreditBounds
+                                ? NullableInt(reader["max_credits"]) ?? DefaultMaxCredits
+                                : DefaultMaxCredits
+                        };
+                    }
                 }
             }
         }
