@@ -13,6 +13,8 @@ namespace src.lecturer
         private int _announcementCount;
         private List<StudentCourseModule> _modules = new List<StudentCourseModule>();
         private List<LecturerMaterialRow> _assessments = new List<LecturerMaterialRow>();
+        private int _totalModuleCount;
+        private int _totalAssessmentCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -47,15 +49,23 @@ namespace src.lecturer
             var announcements = LecturerPortalService.GetAnnouncements(user, _offeringId);
             _announcementCount = announcements.Count;
 
-            _modules = LecturerPortalService.GetCourseModules(user, _offeringId);
+            var allModules = LecturerPortalService.GetCourseModules(user, _offeringId)
+                .Where(module => module.Items != null && module.Items.Count > 0)
+                .OrderByDescending(module => module.Items.Max(item => item.UploadedAt))
+                .ThenByDescending(module => module.Week)
+                .ToList();
+            _totalModuleCount = allModules.Count;
+            _modules = allModules.Take(3).ToList();
             modulesRepeater.DataSource = _modules;
             modulesRepeater.DataBind();
 
-            _assessments = LecturerPortalService.GetMaterials(user, _offeringId)
+            var allAssessments = LecturerPortalService.GetMaterials(user, _offeringId)
                 .Where(m => !string.Equals(m.MaterialType, "Lecture Notes", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.DueDate ?? DateTime.MaxValue)
-                .ThenBy(m => m.Title)
+                .OrderByDescending(m => m.UploadedAt)
+                .ThenByDescending(m => m.MaterialId)
                 .ToList();
+            _totalAssessmentCount = allAssessments.Count;
+            _assessments = allAssessments.Take(3).ToList();
             assessmentsRepeater.DataSource = _assessments;
             assessmentsRepeater.DataBind();
         }
@@ -138,13 +148,17 @@ namespace src.lecturer
         protected int AnnouncementCount { get { return _announcementCount; } }
         protected int ModuleCount { get { return _modules.Count; } }
         protected int AssessmentCount { get { return _assessments.Count; } }
+        protected int TotalModuleCount { get { return _totalModuleCount; } }
+        protected int TotalAssessmentCount { get { return _totalAssessmentCount; } }
 
         // ----- Sub-page links (carry the offering id) -----
 
-        protected string AnnouncementsUrl { get { return SubUrl("lecturer_announcement.aspx"); } }
+        protected string AnnouncementsUrl { get { return SubUrl("lecturer_announcement.aspx") + "&context=course"; } }
         protected string PeopleUrl { get { return SubUrl("lecturer_course_people.aspx"); } }
         protected string GradesUrl { get { return SubUrl("lecturer_grades.aspx"); } }
         protected string MaterialsUrl { get { return SubUrl("lecturer_materials.aspx"); } }
+        protected string ModulesUrl { get { return MaterialsUrl + "&tab=modules"; } }
+        protected string AssignmentsUrl { get { return MaterialsUrl + "&tab=assignments"; } }
 
         protected string MaterialPreviewUrl(object materialId)
         {
@@ -155,7 +169,13 @@ namespace src.lecturer
         {
             return value == null || value == DBNull.Value
                 ? "No due date"
-                : Convert.ToDateTime(value).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+                : FormatDueDate(Convert.ToDateTime(value));
+        }
+
+        private static string FormatDueDate(DateTime due)
+        {
+            return due.ToString("d MMM yyyy 'at' h:mm", CultureInfo.InvariantCulture) +
+                (due.Hour < 12 ? " a.m." : " p.m.");
         }
 
         protected string WeightDisplay(object value)

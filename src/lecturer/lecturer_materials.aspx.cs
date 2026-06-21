@@ -64,17 +64,39 @@ namespace student_information_management_system
             if (!IsPostBack)
             {
                 var courses = LecturerPortalService.GetCourses(user);
-                courseSelect.DataSource = courses;
-                courseSelect.DataTextField = "CourseCode";
-                courseSelect.DataValueField = "OfferingId";
-                courseSelect.DataBind();
-
+                courseSelect.Items.Clear();
+                courseSelect.Items.Add(new ListItem("Choose semester first", ""));
                 courseFilterSelect.Items.Clear();
                 courseFilterSelect.Items.Add(new ListItem("All courses", "all"));
                 foreach (var course in courses)
                 {
-                    courseFilterSelect.Items.Add(new ListItem(course.CourseCode, course.CourseCode));
+                    var uploadCourse = new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture));
+                    uploadCourse.Attributes["data-year"] = course.AcademicYear;
+                    uploadCourse.Attributes["data-semester"] = course.Semester;
+                    courseSelect.Items.Add(uploadCourse);
+                    courseFilterSelect.Items.Add(new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture)));
                 }
+
+                var years = courses.Select(course => course.AcademicYear).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                var semesters = courses.Select(course => course.Semester).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+
+                yearFilterSelect.Items.Clear();
+                yearFilterSelect.Items.Add(new ListItem("All years", "all"));
+                uploadYearSelect.Items.Clear();
+                uploadYearSelect.Items.Add(new ListItem("Choose academic year", ""));
+                foreach (string year in years)
+                {
+                    yearFilterSelect.Items.Add(new ListItem(year, year));
+                    uploadYearSelect.Items.Add(new ListItem(year, year));
+                }
+
+                semesterFilterSelect.Items.Clear();
+                semesterFilterSelect.Items.Add(new ListItem("All semesters", "all"));
+                foreach (string semester in semesters)
+                    semesterFilterSelect.Items.Add(new ListItem(semester, semester));
+
+                uploadSemesterSelect.Items.Clear();
+                uploadSemesterSelect.Items.Add(new ListItem("Choose academic year first", ""));
 
                 materialTypeSelect.Items.Clear();
                 materialTypeSelect.Items.Add(new ListItem("Assignment", "Assignment"));
@@ -94,6 +116,8 @@ namespace student_information_management_system
                 }
             }
             dueDateInput.Attributes["min"] = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            if (!IsPostBack && string.IsNullOrWhiteSpace(dueTimeInput.Text))
+                dueTimeInput.Text = "23:59";
             weightInput.Attributes["min"] = "0";
             weightInput.Attributes["max"] = "100";
             weightInput.Attributes["step"] = "0.01";
@@ -117,8 +141,7 @@ namespace student_information_management_system
                     ? (int?)selectedWeek
                     : null;
 
-            DateTime dueDate;
-            DateTime? parsedDueDate = DateTime.TryParse(dueDateInput.Text, out dueDate) ? (DateTime?)dueDate : null;
+            DateTime? parsedDueDate = ParseDueDateTime(dueDateInput.Text, dueTimeInput.Text);
 
             decimal weight;
             decimal? parsedWeight = decimal.TryParse(weightInput.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out weight)
@@ -150,7 +173,7 @@ namespace student_information_management_system
 
             if (requiresAssessmentDetails && !parsedDueDate.HasValue)
             {
-                ShowStatus("Due date is required for assignments and tests.", false);
+                ShowStatus("Due date and due time are required for assignments and tests.", false);
                 return;
             }
 
@@ -181,9 +204,9 @@ namespace student_information_management_system
                 return;
             }
 
-            if (parsedDueDate.HasValue && parsedDueDate.Value.Date < DateTime.Today)
+            if (parsedDueDate.HasValue && parsedDueDate.Value < DateTime.Now)
             {
-                ShowStatus("Due date cannot be before today.", false);
+                ShowStatus("Due date and time cannot be in the past.", false);
                 return;
             }
 
@@ -260,6 +283,7 @@ namespace student_information_management_system
             titleInput.Text = "";
             descriptionInput.Text = "";
             dueDateInput.Text = "";
+            dueTimeInput.Text = "23:59";
             weightInput.Text = "";
             ShowStatus("Material published for enrolled students.", true);
             LoadRows();
@@ -418,7 +442,21 @@ namespace student_information_management_system
         protected string DueDateLabel(object value)
         {
             if (value == null || value == DBNull.Value) return "No due date";
-            return Convert.ToDateTime(value).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+            DateTime due = Convert.ToDateTime(value);
+            return due.ToString("d MMM yyyy 'at' h:mm", CultureInfo.InvariantCulture) +
+                (due.Hour < 12 ? " a.m." : " p.m.");
+        }
+
+        private static DateTime? ParseDueDateTime(string dateText, string timeText)
+        {
+            DateTime date;
+            TimeSpan time;
+            if (!DateTime.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out date)
+                || !TimeSpan.TryParseExact(timeText, @"hh\:mm", CultureInfo.InvariantCulture, out time))
+                return null;
+
+            return date.Date.Add(time);
         }
 
         protected string WeightLabel(object value)
@@ -486,6 +524,10 @@ namespace student_information_management_system
 
         protected int CourseModuleCount { get { return _courseModules.Count; } }
         protected int CourseAssignmentCount { get { return _courseAssignments.Count; } }
+        protected bool ShowAssignmentsTab
+        {
+            get { return string.Equals(Request.QueryString["tab"], "assignments", StringComparison.OrdinalIgnoreCase); }
+        }
 
         protected string CourseAccentColor
         {

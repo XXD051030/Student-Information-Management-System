@@ -22,7 +22,7 @@ namespace src.services
             string sql =
                 "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, " +
                 "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, md.week_number, " +
-                "c.course_code, c.course_name " +
+                "c.course_code, c.course_name, co.academic_year, co.semester " +
                 "FROM MATERIALS mat " +
                 "JOIN MODULES md ON md.module_id = mat.module_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = md.offer_id " +
@@ -43,6 +43,8 @@ namespace src.services
                         OfferingId = IntValue(reader["offer_id"]),
                         CourseCode = Text(reader["course_code"]),
                         CourseName = Text(reader["course_name"]),
+                        AcademicYear = Text(reader["academic_year"]),
+                        Semester = Text(reader["semester"]),
                         Title = Text(reader["title"]),
                         Description = Text(reader["description"]),
                         FileUrl = Text(reader["file_url"]),
@@ -86,7 +88,7 @@ namespace src.services
             string sql =
                 "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, " +
                 "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, md.week_number, " +
-                "c.course_code, c.course_name " +
+                "c.course_code, c.course_name, co.academic_year, co.semester " +
                 "FROM MATERIALS mat " +
                 "JOIN MODULES md ON md.module_id = mat.module_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = md.offer_id " +
@@ -110,6 +112,8 @@ namespace src.services
                             OfferingId = IntValue(reader["offer_id"]),
                             CourseCode = Text(reader["course_code"]),
                             CourseName = Text(reader["course_name"]),
+                            AcademicYear = Text(reader["academic_year"]),
+                            Semester = Text(reader["semester"]),
                             Title = Text(reader["title"]),
                             Description = Text(reader["description"]),
                             FileUrl = Text(reader["file_url"]),

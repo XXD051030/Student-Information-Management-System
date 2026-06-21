@@ -149,15 +149,18 @@
         <div>
             <div>
                 <h2 class="text-slate-900" style="font-size:18px;font-weight:700">Course Content</h2>
-                <p class="mt-0.5 text-slate-500" style="font-size:13px">Preview weekly lecture notes and published assessments as students see them.</p>
+                <p class="mt-0.5 text-slate-500" style="font-size:13px">Recently published weekly lecture notes and assessments.</p>
             </div>
         </div>
 
         <div class="mt-4 grid gap-6 xl:grid-cols-2">
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <header class="border-b border-slate-100 px-6 py-5">
-                    <h3 class="text-slate-900" style="font-size:16px;font-weight:700">Weekly Modules</h3>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= ModuleCount %> modules containing lecture notes</p>
+                <header class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
+                    <div>
+                        <h3 class="text-slate-900" style="font-size:16px;font-weight:700">Weekly Modules</h3>
+                        <p class="mt-0.5 text-slate-500" style="font-size:12.5px">Latest <%= ModuleCount %> of <%= TotalModuleCount %> modules</p>
+                    </div>
+                    <a href="<%= ModulesUrl %>" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:700">See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a>
                 </header>
                 <ul class="divide-y divide-slate-100">
                     <asp:Repeater ID="modulesRepeater" runat="server">
@@ -193,9 +196,12 @@
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <header class="border-b border-slate-100 px-6 py-5">
-                    <h3 class="text-slate-900" style="font-size:16px;font-weight:700">Assignments, Quizzes &amp; Tests</h3>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= AssessmentCount %> published assessments</p>
+                <header class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
+                    <div>
+                        <h3 class="text-slate-900" style="font-size:16px;font-weight:700">Assignments, Quizzes &amp; Tests</h3>
+                        <p class="mt-0.5 text-slate-500" style="font-size:12.5px">Latest <%= AssessmentCount %> of <%= TotalAssessmentCount %> published assessments</p>
+                    </div>
+                    <a href="<%= AssignmentsUrl %>" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:700">See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a>
                 </header>
                 <ul class="divide-y divide-slate-100">
                     <asp:Repeater ID="assessmentsRepeater" runat="server">

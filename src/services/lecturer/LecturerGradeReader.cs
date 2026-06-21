@@ -66,6 +66,7 @@ namespace src.services
             // and their current published course letter grade (if any).
             const string sql =
                 "SELECT s.student_id, s.student_name, s.student_email, " +
+                "a.due_date, " +
                 "sub.submission_id, sub.marks_obtained, sub.submitted_at, sub.file_url, " +
                 "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url, " +
                 "ISNULL(sub.status, '') AS sub_status, " +
@@ -81,6 +82,7 @@ namespace src.services
             using (var conn = Db.OpenConnection())
             {
                 if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return rows;
+                EnsureMissingSubmissions(conn, assessmentId, null);
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@assignmentId", assessmentId);
@@ -92,20 +94,26 @@ namespace src.services
                             var letter = Text(reader["letter_grade"]);
                             var submissionId = IntValue(reader["submission_id"]);
                             var subStatus = Text(reader["sub_status"]);
+                            var dueDate = DateValue(reader["due_date"]);
+                            bool isMissing = string.Equals(subStatus, "MISSING", StringComparison.OrdinalIgnoreCase);
                             rows.Add(new LecturerGradeRow
                             {
                                 SubmissionId = submissionId,
                                 StudentId = Text(reader["student_id"]),
                                 FullName = Text(reader["student_name"]),
                                 StudentEmail = Text(reader["student_email"]),
-                                Marks = marks,
-                                HasMarks = marks.HasValue,
+                                Marks = isMissing ? 0m : marks,
+                                HasMarks = isMissing || marks.HasValue,
                                 SubmittedAt = DateValue(reader["submitted_at"]),
+                                DueDate = dueDate,
                                 FileUrl = Text(reader["file_url"]),
                                 Feedback = Text(reader["feedback"]),
                                 AnnotatedFileUrl = Text(reader["annotated_file_url"]),
-                                Grade = string.IsNullOrWhiteSpace(letter) ? "N/A" : letter,
-                                SubmissionStatus = !string.IsNullOrWhiteSpace(subStatus)
+                                Grade = isMissing ? "F" : (string.IsNullOrWhiteSpace(letter) ? "N/A" : letter),
+                                IsMissing = isMissing,
+                                SubmissionStatus = isMissing
+                                    ? "MISSING"
+                                    : !string.IsNullOrWhiteSpace(subStatus)
                                     ? subStatus
                                     : (marks.HasValue ? "GRADED" : (submissionId > 0 ? "SUBMITTED" : "PENDING"))
                             });
@@ -241,6 +249,8 @@ namespace src.services
                     }
                 }
 
+                EnsureMissingSubmissions(conn, null, offerId);
+
                 var percentByStudent = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
                 var countByStudent = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 using (var cmd = new SqlCommand(
@@ -278,6 +288,33 @@ namespace src.services
                     var point = PointFor(letter);
                     UpsertGrade(conn, offerId, sid, point, letter, semester);
                 }
+            }
+        }
+
+        private static void EnsureMissingSubmissions(SqlConnection conn, int? assessmentId, int? offerId)
+        {
+            const string sql =
+                "INSERT INTO SUBMISSIONS (assignment_id, student_id, submitted_at, file_url, marks_obtained, status) " +
+                "SELECT a.assignment_id, e.student_id, NULL, NULL, 0, 'MISSING' " +
+                "FROM ASSIGNMENTS a " +
+                "JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
+                "WHERE a.due_date IS NOT NULL AND a.due_date < GETDATE() " +
+                "AND (@assignmentId IS NULL OR a.assignment_id = @assignmentId) " +
+                "AND (@offerId IS NULL OR a.offer_id = @offerId) " +
+                "AND (@offerId IS NULL OR EXISTS (" +
+                "SELECT 1 FROM MATERIALS mat WHERE mat.assignment_id = a.assignment_id " +
+                "AND mat.weight IS NOT NULL AND mat.weight > 0)) " +
+                "AND NOT EXISTS (" +
+                "SELECT 1 FROM SUBMISSIONS existing WITH (UPDLOCK, HOLDLOCK) " +
+                "WHERE existing.assignment_id = a.assignment_id AND existing.student_id = e.student_id);";
+
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@assignmentId",
+                    assessmentId.HasValue ? (object)assessmentId.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@offerId",
+                    offerId.HasValue ? (object)offerId.Value : DBNull.Value);
+                cmd.ExecuteNonQuery();
             }
         }
 

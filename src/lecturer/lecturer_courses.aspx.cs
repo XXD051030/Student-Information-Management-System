@@ -29,13 +29,6 @@ namespace src.lecturer
             coursesRepeater.DataSource = _courses;
             coursesRepeater.DataBind();
 
-            // Filter tabs are data-driven: one per distinct semester the lecturer
-            // teaches in, newest first (the service already orders by start_date).
-            semesterRepeater.DataSource = _courses
-                .Select(c => c.SemesterName)
-                .Distinct()
-                .ToList();
-            semesterRepeater.DataBind();
         }
 
         /// <summary>Total number of courses the lecturer teaches (all semesters).</summary>

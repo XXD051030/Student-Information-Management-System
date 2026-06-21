@@ -21,6 +21,9 @@ namespace student_information_management_system
         private int? _offeringFilter;
         private bool _hasInvalidMarks;
 
+        protected bool IsCourseScoped { get { return _offeringFilter.HasValue; } }
+        protected int SelectedOfferingId { get { return _offeringFilter.GetValueOrDefault(); } }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
@@ -246,6 +249,7 @@ namespace student_information_management_system
 
                 int submissionId;
                 if (submissionHidden == null || input == null
+                    || !input.Enabled
                     || !int.TryParse(submissionHidden.Value, out submissionId)
                     || submissionId == 0)
                     continue;
@@ -318,6 +322,25 @@ namespace student_information_management_system
             if (g == "F" || g == "D") return "bg-[#e0162b]/10 text-[#a01020]";
             if (g.StartsWith("A")) return "bg-emerald-50 text-emerald-700";
             return "bg-blue-50 text-blue-700";
+        }
+
+        protected string SubmissionStatusClass(object isMissing)
+        {
+            return Convert.ToBoolean(isMissing)
+                ? "text-[#e0162b] font-semibold"
+                : "text-slate-400";
+        }
+
+        protected string MarkStatusClass(object isMissing, object hasMarks)
+        {
+            if (Convert.ToBoolean(isMissing)) return "text-[#e0162b]";
+            return Convert.ToBoolean(hasMarks) ? "text-emerald-700" : "text-amber-700";
+        }
+
+        protected string MarkStatusText(object isMissing, object hasMarks)
+        {
+            if (Convert.ToBoolean(isMissing)) return "Missing";
+            return Convert.ToBoolean(hasMarks) ? "Ready" : "Draft";
         }
 
         private void ShowStatus(string message, bool success)

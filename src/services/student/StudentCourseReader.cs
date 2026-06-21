@@ -112,7 +112,7 @@ namespace src.services
 
             var sql =
                 "SELECT m.module_id, m.module_title, CAST(m.module_description AS varchar(max)) AS module_description, m.week_number, " +
-                "mat.material_id, mat.title AS material_title, mat.file_url " +
+                "mat.material_id, mat.title AS material_title, mat.file_url, mat.uploaded_at " +
                 "FROM MODULES m " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = m.offer_id " +
                 "LEFT JOIN MATERIALS mat ON mat.module_id = m.module_id AND mat.material_type = 'Lecture Notes' " +
@@ -155,7 +155,8 @@ namespace src.services
                                 Title = Text(reader["material_title"]),
                                 FileUrl = fileUrl,
                                 FileType = FileTypeFromUrl(fileUrl),
-                                FileSizeBytes = null
+                                FileSizeBytes = null,
+                                UploadedAt = DateValue(reader["uploaded_at"]) ?? DateTime.MinValue
                             });
                         }
                     }

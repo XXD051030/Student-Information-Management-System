@@ -18,7 +18,7 @@ namespace src.services
 
             string sql =
                 "SELECT an.announcement_id, an.offer_id, an.title, an.message, an.file_url, an.is_pinned, an.created_at, " +
-                "c.course_code + ' - ' + c.course_name AS target_courses " +
+                "c.course_code + ' - ' + c.course_name AS target_courses, co.academic_year, co.semester " +
                 "FROM ANNOUNCEMENTS an " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = an.offer_id " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
@@ -38,6 +38,9 @@ namespace src.services
                         rows.Add(new LecturerAnnouncementRow
                         {
                             AnnouncementId = IntValue(reader["announcement_id"]),
+                            OfferingId = IntValue(reader["offer_id"]),
+                            AcademicYear = Text(reader["academic_year"]),
+                            Semester = Text(reader["semester"]),
                             Title = Text(reader["title"]),
                             Content = Text(reader["message"]),
                             FileUrl = Text(reader["file_url"]),

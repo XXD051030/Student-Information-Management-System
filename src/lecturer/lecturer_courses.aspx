@@ -23,20 +23,15 @@
 
     <%-- Filters --%>
     <div class="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex flex-wrap gap-2" id="semester-filters">
-            <button type="button" data-action="filter-semester" data-semester="all"
+        <div class="flex flex-wrap items-center gap-2" id="semester-filters">
+            <button type="button" data-action="filter-all"
                 class="rounded-full px-3.5 py-1.5 bg-slate-900 text-white transition-all"
-                style="font-size:12.5px;font-weight:600">All semesters</button>
+                style="font-size:12.5px;font-weight:600">All courses</button>
             <button type="button" data-action="filter-pinned"
                 class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-slate-600 hover:border-slate-300 hover:text-slate-900 transition-all"
                 style="font-size:12.5px;font-weight:600"><i data-lucide="pin" class="h-3.5 w-3.5"></i>Pinned courses</button>
-            <asp:Repeater ID="semesterRepeater" runat="server">
-                <ItemTemplate>
-                    <button type="button" data-action="filter-semester" data-semester='<%# Server.HtmlEncode(Container.DataItem.ToString()) %>'
-                        class="rounded-full px-3.5 py-1.5 border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 transition-all"
-                        style="font-size:12.5px;font-weight:600"><%# Server.HtmlEncode(Container.DataItem.ToString()) %></button>
-                </ItemTemplate>
-            </asp:Repeater>
+            <select id="academic-year-filter" class="h-9 rounded-full border border-slate-200 bg-white px-3 text-slate-600 outline-none focus:border-slate-400" style="font-size:12.5px;font-weight:600"><option value="all">All academic years</option></select>
+            <select id="semester-filter" disabled class="h-9 rounded-full border border-slate-200 bg-white px-3 text-slate-600 outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" style="font-size:12.5px;font-weight:600"><option value="all">Choose year first</option></select>
         </div>
         <div class="relative w-full lg:w-72">
             <i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
@@ -51,7 +46,8 @@
         <asp:Repeater ID="coursesRepeater" runat="server">
             <ItemTemplate>
                 <article data-course-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>'
-                    data-semester='<%# Server.HtmlEncode(Eval("SemesterName").ToString()) %>'
+                    data-academic-year='<%# Server.HtmlEncode(Eval("AcademicYear").ToString()) %>'
+                    data-semester='<%# Server.HtmlEncode(Eval("Semester").ToString()) %>'
                     data-search='<%# Server.HtmlEncode(SearchKey(Eval("CourseCode").ToString(), Eval("CourseName").ToString())) %>'
                     class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 pt-6 hover:border-slate-300 hover:shadow-sm transition-all">
                     <span class="absolute inset-x-0 top-0 h-1" style='background-color:<%# AccentColor(Eval("Color") as string) %>'></span>
@@ -98,5 +94,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=4"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=5"></script>
 </asp:Content>

@@ -7,7 +7,7 @@
     "use strict";
 
     var PIN_KEY = "lecturer.courses.pinned";
-    var state = { semester: "all", pinnedOnly: false, query: "" };
+    var state = { academicYear: "all", semester: "all", pinnedOnly: false, query: "" };
 
     function cards() {
         return Array.prototype.slice.call(document.querySelectorAll("#course-grid [data-course-code]"));
@@ -60,10 +60,11 @@
         var visible = 0;
 
         cards().forEach(function (card) {
+            var matchesYear = state.academicYear === "all" || card.getAttribute("data-academic-year") === state.academicYear;
             var matchesSemester = state.semester === "all" || card.getAttribute("data-semester") === state.semester;
             var matchesPinned = !state.pinnedOnly || isPinned(card.getAttribute("data-course-code"));
             var matchesQuery = q === "" || (card.getAttribute("data-search") || "").indexOf(q) !== -1;
-            var show = matchesSemester && matchesPinned && matchesQuery;
+            var show = matchesYear && matchesSemester && matchesPinned && matchesQuery;
             card.style.display = show ? "" : "none";
             if (show) { visible++; }
         });
@@ -105,7 +106,7 @@
     }
 
     function activateFilterButton(clicked) {
-        var buttons = document.querySelectorAll('[data-action="filter-semester"], [data-action="filter-pinned"]');
+        var buttons = document.querySelectorAll('[data-action="filter-all"], [data-action="filter-pinned"]');
         Array.prototype.forEach.call(buttons, function (b) {
             var active = b === clicked;
             b.classList.toggle("bg-slate-900", active);
@@ -119,29 +120,94 @@
         });
     }
 
+    function distinctCardValues(attribute, year) {
+        var values = [];
+        cards().forEach(function (card) {
+            if (year && card.getAttribute("data-academic-year") !== year) return;
+            var value = card.getAttribute(attribute) || "";
+            if (value && values.indexOf(value) === -1) values.push(value);
+        });
+        return values;
+    }
+
+    function populateYearFilter() {
+        var select = document.getElementById("academic-year-filter");
+        if (!select) return;
+        distinctCardValues("data-academic-year").forEach(function (year) {
+            var option = document.createElement("option");
+            option.value = year;
+            option.textContent = year;
+            select.appendChild(option);
+        });
+    }
+
+    function populateSemesterFilter(year) {
+        var select = document.getElementById("semester-filter");
+        if (!select) return;
+        select.innerHTML = "";
+        var first = document.createElement("option");
+        first.value = "all";
+        first.textContent = year === "all" ? "Choose year first" : "All semesters";
+        select.appendChild(first);
+        select.disabled = year === "all";
+        if (select.disabled) return;
+        distinctCardValues("data-semester", year).forEach(function (semester) {
+            var option = document.createElement("option");
+            option.value = semester;
+            option.textContent = semester;
+            select.appendChild(option);
+        });
+    }
+
     function init() {
         cards().forEach(function (card, index) {
             card.setAttribute("data-original-order", String(index));
         });
 
-        // Semester buttons
-        Array.prototype.forEach.call(
-            document.querySelectorAll('[data-action="filter-semester"]'),
-            function (btn) {
-                btn.addEventListener("click", function () {
-                    state.semester = btn.getAttribute("data-semester") || "all";
-                    state.pinnedOnly = false;
-                    activateFilterButton(btn);
-                    applyFilters();
-                });
-            }
-        );
+        populateYearFilter();
+        populateSemesterFilter("all");
+
+        var yearFilter = document.getElementById("academic-year-filter");
+        var semesterFilter = document.getElementById("semester-filter");
+        var allFilter = document.querySelector('[data-action="filter-all"]');
+        if (yearFilter) {
+            yearFilter.addEventListener("change", function () {
+                state.academicYear = yearFilter.value || "all";
+                state.semester = "all";
+                state.pinnedOnly = false;
+                populateSemesterFilter(state.academicYear);
+                activateFilterButton(state.academicYear === "all" ? allFilter : null);
+                applyFilters();
+            });
+        }
+        if (semesterFilter) {
+            semesterFilter.addEventListener("change", function () {
+                state.semester = semesterFilter.value || "all";
+                state.pinnedOnly = false;
+                activateFilterButton(null);
+                applyFilters();
+            });
+        }
+        if (allFilter) {
+            allFilter.addEventListener("click", function () {
+                state.academicYear = "all";
+                state.semester = "all";
+                state.pinnedOnly = false;
+                if (yearFilter) yearFilter.value = "all";
+                populateSemesterFilter("all");
+                activateFilterButton(allFilter);
+                applyFilters();
+            });
+        }
 
         var pinnedFilter = document.querySelector('[data-action="filter-pinned"]');
         if (pinnedFilter) {
             pinnedFilter.addEventListener("click", function () {
+                state.academicYear = "all";
                 state.semester = "all";
                 state.pinnedOnly = true;
+                if (yearFilter) yearFilter.value = "all";
+                populateSemesterFilter("all");
                 activateFilterButton(pinnedFilter);
                 applyFilters();
             });
@@ -171,8 +237,8 @@
             }
         });
 
-        // Establish the default active filter button visually (all semesters).
-        var allBtn = document.querySelector('[data-action="filter-semester"][data-semester="all"]');
+        // Establish the default active filter button visually.
+        var allBtn = document.querySelector('[data-action="filter-all"]');
         if (allBtn) { activateFilterButton(allBtn); }
 
         sortCards();

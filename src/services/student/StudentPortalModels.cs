@@ -72,6 +72,7 @@ namespace src.services
         public string FileUrl { get; set; }
         public string FileType { get; set; }
         public int? FileSizeBytes { get; set; }
+        public DateTime UploadedAt { get; set; }
     }
 
     public class StudentCourseAnnouncement

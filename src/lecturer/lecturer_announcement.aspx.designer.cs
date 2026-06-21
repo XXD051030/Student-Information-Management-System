@@ -121,6 +121,8 @@ namespace student_information_management_system
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList courseFilterSelect;
+        protected global::System.Web.UI.WebControls.DropDownList yearFilterSelect;
+        protected global::System.Web.UI.WebControls.DropDownList semesterFilterSelect;
 
         /// <summary>
         /// allTabButton control.

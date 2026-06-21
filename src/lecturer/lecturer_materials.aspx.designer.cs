@@ -41,6 +41,11 @@ namespace student_information_management_system
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal statusMessage;
 
+        protected global::System.Web.UI.WebControls.DropDownList yearFilterSelect;
+        protected global::System.Web.UI.WebControls.DropDownList semesterFilterSelect;
+        protected global::System.Web.UI.WebControls.DropDownList uploadYearSelect;
+        protected global::System.Web.UI.WebControls.DropDownList uploadSemesterSelect;
+
         /// <summary>
         /// courseFilterSelect control.
         /// </summary>
@@ -117,6 +122,15 @@ namespace student_information_management_system
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox dueDateInput;
+
+        /// <summary>
+        /// dueTimeInput control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox dueTimeInput;
 
         /// <summary>
         /// weightInput control.

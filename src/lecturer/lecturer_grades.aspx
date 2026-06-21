@@ -29,7 +29,12 @@
             }
         }
     </style>
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <% if (IsCourseScoped) { %>
+    <a href="<%= ResolveUrl("~/lecturer/lecturer_course_dashboard.aspx") %>?offering=<%= SelectedOfferingId %>" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:500">
+        <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back to course dashboard
+    </a>
+    <% } %>
+    <div class="<%= IsCourseScoped ? "mt-4 " : "" %>flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Lecturer Module</p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700">Marks &amp; Grades</h1>
@@ -88,7 +93,7 @@
                                         <i data-lucide="file-search" class="h-4 w-4"></i>Review submission
                                     </button>
                                     <span class='<%# Convert.ToBoolean(Eval("HasSubmission")) ? "hidden" : "text-slate-400" %>' style="font-size:12.5px">No attachment</span>
-                                    <div class="mt-1 text-slate-400" style="font-size:11.5px"><%# Html(Eval("SubmissionStatus")) %><%# SubmittedAtDisplay(Eval("SubmittedAt")) %></div>
+                                    <div class='mt-1 <%# SubmissionStatusClass(Eval("IsMissing")) %>' style="font-size:11.5px"><%# Html(Eval("SubmissionStatus")) %><%# SubmittedAtDisplay(Eval("SubmittedAt")) %></div>
                                     <div data-review-modal='<%# ReviewModalId(Eval("SubmissionId")) %>' data-submission-id='<%# Eval("SubmissionId") %>' class="fixed inset-0 z-[70] hidden bg-slate-950/55 px-4 py-5">
                                         <div class="mx-auto flex h-full max-w-[1500px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
                                             <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
@@ -158,9 +163,9 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4"><asp:TextBox ID="marksInput" runat="server" Text='<%# MarksValue(Eval("Marks")) %>' TextMode="Number" CssClass="h-9 w-24 rounded-md border border-slate-200 px-3" /></td>
+                                <td class="px-6 py-4"><asp:TextBox ID="marksInput" runat="server" Text='<%# MarksValue(Eval("Marks")) %>' TextMode="Number" Enabled='<%# Convert.ToBoolean(Eval("HasSubmission")) %>' CssClass="h-9 w-24 rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" /></td>
                                 <td class="px-6 py-4"><span class='rounded-full px-2 py-1 <%# GradeBadgeClass(Eval("LetterGrade")) %>' style="font-size:12px;font-weight:700"><%# Html(Eval("LetterGrade")) %></span></td>
-                                <td class="px-6 py-4"><span class='<%# Convert.ToBoolean(Eval("HasMarks")) ? "text-emerald-700" : "text-amber-700" %> font-semibold'><%# Convert.ToBoolean(Eval("HasMarks")) ? "Ready" : "Draft" %></span></td>
+                                <td class="px-6 py-4"><span class='<%# MarkStatusClass(Eval("IsMissing"), Eval("HasMarks")) %> font-semibold'><%# MarkStatusText(Eval("IsMissing"), Eval("HasMarks")) %></span></td>
                             </tr>
                         </ItemTemplate>
                     </asp:Repeater>

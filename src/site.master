@@ -32,7 +32,7 @@
     </form>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="<%= ResolveUrl("~/js/core/icons-init.js") %>?v=2"></script>
+    <script src="<%= ResolveUrl("~/js/core/icons-init.js") %>?v=3"></script>
     <asp:ContentPlaceHolder ID="ScriptsPlaceholder" runat="server" />
 
 </body>

@@ -15,8 +15,8 @@
         </button>
     </div>
 
-    <section class="mt-6 grid gap-4 lg:grid-cols-[minmax(320px,400px)_1fr]">
-        <div class="rounded-lg border border-slate-200 bg-white">
+    <section class="mt-6 grid gap-4 lg:h-[820px] lg:grid-cols-[minmax(320px,400px)_1fr]">
+        <div class="flex min-h-[620px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white lg:min-h-0">
             <div class="border-b border-slate-100 p-3">
                 <div class="relative">
                     <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
@@ -24,7 +24,7 @@
                 </div>
             </div>
 
-            <ul id="notif-list" data-notification-endpoint="<%= ResolveUrl("~/lecturer/lecturer_notifications.aspx") %>" class="max-h-[640px] divide-y divide-slate-100 overflow-y-auto">
+            <ul id="notif-list" data-notification-endpoint="<%= ResolveUrl("~/lecturer/lecturer_notifications.aspx") %>" class="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto">
                 <asp:Repeater ID="notificationsRepeater" runat="server">
                     <ItemTemplate>
                         <li>
@@ -59,7 +59,7 @@
             </ul>
         </div>
 
-        <div class="rounded-lg border border-slate-200 bg-white">
+        <div class="min-h-[620px] overflow-hidden rounded-lg border border-slate-200 bg-white lg:min-h-0">
             <article class="flex h-full flex-col">
                 <header class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
                     <div class="ml-auto flex items-center gap-1">

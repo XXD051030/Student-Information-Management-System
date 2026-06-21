@@ -16,8 +16,13 @@
             'lecturer_announcement.aspx'
         ];
         var activeTarget = page;
+        var isCourseScopedAnnouncement =
+            page === 'lecturer_announcement.aspx' &&
+            params.get('context') === 'course';
         if (coursePages.indexOf(page) !== -1 ||
-            (params.has('offering') && scopedCoursePages.indexOf(page) !== -1)) {
+            (params.has('offering') &&
+                scopedCoursePages.indexOf(page) !== -1 &&
+                (page !== 'lecturer_announcement.aspx' || isCourseScopedAnnouncement))) {
             activeTarget = 'lecturer_courses.aspx';
         }
         var links = document.querySelectorAll('[data-nav-link]');

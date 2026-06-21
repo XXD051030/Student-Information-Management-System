@@ -41,10 +41,9 @@ namespace student_information_management_system
                 int? week = lectureNotes && int.TryParse(context.Request.Form["week"], out weekValue)
                     ? (int?)weekValue
                     : null;
-                DateTime dueValue;
-                DateTime? dueDate = DateTime.TryParse(context.Request.Form["dueDate"], out dueValue)
-                    ? (DateTime?)dueValue
-                    : null;
+                DateTime? dueDate = ParseDueDateTime(
+                    context.Request.Form["dueDate"],
+                    context.Request.Form["dueTime"]);
                 decimal weightValue;
                 decimal? weight = decimal.TryParse(
                     context.Request.Form["weight"],
@@ -57,13 +56,13 @@ namespace student_information_management_system
                 if (lectureNotes && (!week.HasValue || week.Value < 1 || week.Value > 14))
                     throw new InvalidOperationException("Please choose a week between Week 1 and Week 14 for lecture notes.");
                 if (assessment && !dueDate.HasValue)
-                    throw new InvalidOperationException("Due date is required for assignments and tests.");
+                    throw new InvalidOperationException("Due date and due time are required for assignments and tests.");
                 if (assessment && !weight.HasValue)
                     throw new InvalidOperationException("Course weight is required for assignments and tests.");
                 if (assessment && weight.Value <= 0m)
                     throw new InvalidOperationException("Course weight for assignments and tests must be greater than 0%.");
-                if (dueDate.HasValue && dueDate.Value.Date < DateTime.Today)
-                    throw new InvalidOperationException("Due date cannot be before today.");
+                if (dueDate.HasValue && dueDate.Value < DateTime.Now)
+                    throw new InvalidOperationException("Due date and time cannot be in the past.");
                 if (weight.HasValue && (weight.Value < 0m || weight.Value > 100m))
                     throw new InvalidOperationException("Course weight must be between 0 and 100.");
 
@@ -151,6 +150,18 @@ namespace student_information_management_system
             fileType = extension.TrimStart('.');
             fileSize = upload.ContentLength;
             return "~/uploads/materials/" + fileName;
+        }
+
+        private static DateTime? ParseDueDateTime(string dateText, string timeText)
+        {
+            DateTime date;
+            TimeSpan time;
+            if (!DateTime.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out date)
+                || !TimeSpan.TryParseExact(timeText, @"hh\:mm", CultureInfo.InvariantCulture, out time))
+                return null;
+
+            return date.Date.Add(time);
         }
 
         private static bool IsGoogleFormsUrl(string value, out Uri uri)

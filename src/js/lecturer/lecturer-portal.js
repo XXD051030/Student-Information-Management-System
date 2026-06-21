@@ -1,4 +1,25 @@
 (function () {
+    function syncMaterialCardHeights() {
+        var resources = document.querySelector("[data-published-resources-card]");
+        var uploadDetails = document.querySelector("[data-upload-details-card]");
+        if (!resources || !uploadDetails) return;
+
+        if (window.matchMedia("(min-width: 1024px)").matches) {
+            resources.style.height = uploadDetails.offsetHeight + "px";
+        } else {
+            resources.style.height = "";
+        }
+    }
+
+    window.addEventListener("resize", syncMaterialCardHeights);
+    document.addEventListener("DOMContentLoaded", function () {
+        syncMaterialCardHeights();
+        var uploadDetails = document.querySelector("[data-upload-details-card]");
+        if (uploadDetails && window.ResizeObserver) {
+            new ResizeObserver(syncMaterialCardHeights).observe(uploadDetails);
+        }
+    });
+
     var activeMaterialType = "all";
     var MATERIAL_VIEW_KEY = "lecturer.materials.view";
 
@@ -12,10 +33,14 @@
     function saveMaterialView() {
         var search = document.querySelector("[data-filter-target='[data-material]']");
         var courseSelect = document.querySelector("[data-material-course-filter]");
+        var yearSelect = document.querySelector("[data-material-year-filter]");
+        var semesterSelect = document.querySelector("[data-material-semester-filter]");
         try {
             sessionStorage.setItem(MATERIAL_VIEW_KEY, JSON.stringify({
                 type: activeMaterialType,
                 course: courseSelect ? courseSelect.value : "all",
+                year: yearSelect ? yearSelect.value : "all",
+                semester: semesterSelect ? semesterSelect.value : "all",
                 search: search ? search.value : ""
             }));
         } catch (error) {
@@ -28,6 +53,8 @@
             var saved = JSON.parse(sessionStorage.getItem(MATERIAL_VIEW_KEY) || "{}");
             var search = document.querySelector("[data-filter-target='[data-material]']");
             var courseSelect = document.querySelector("[data-material-course-filter]");
+            var yearSelect = document.querySelector("[data-material-year-filter]");
+            var semesterSelect = document.querySelector("[data-material-semester-filter]");
             var savedTab = document.querySelector(
                 '[data-material-tab="' + String(saved.type || "all").replace(/"/g, '\\"') + '"]'
             );
@@ -39,6 +66,8 @@
                 courseSelect.value = saved.course;
             }
             if (search && typeof saved.search === "string") search.value = saved.search;
+            if (yearSelect && saved.year && Array.prototype.some.call(yearSelect.options, function (option) { return option.value === saved.year; })) yearSelect.value = saved.year;
+            if (semesterSelect && saved.semester && Array.prototype.some.call(semesterSelect.options, function (option) { return option.value === saved.semester; })) semesterSelect.value = saved.semester;
             if (savedTab) {
                 activeMaterialType = savedTab.getAttribute("data-material-tab") || "all";
                 document.querySelectorAll("[data-material-tab]").forEach(function (tab) {
@@ -53,11 +82,19 @@
     function updateMaterialCounts() {
         var courseSelect = document.querySelector("[data-material-course-filter]");
         var course = courseSelect ? courseSelect.value : "all";
+        var yearSelect = document.querySelector("[data-material-year-filter]");
+        var semesterSelect = document.querySelector("[data-material-semester-filter]");
+        var year = yearSelect ? yearSelect.value : "all";
+        var semester = semesterSelect ? semesterSelect.value : "all";
         var counts = { all: 0 };
 
         document.querySelectorAll("[data-material]").forEach(function (row) {
-            var rowCourse = row.getAttribute("data-material-course") || "";
+            var rowCourse = row.getAttribute("data-material-offering") || "";
+            var rowYear = row.getAttribute("data-material-year") || "";
+            var rowSemester = row.getAttribute("data-material-semester") || "";
             if (normalized(course) !== "all" && normalized(rowCourse) !== normalized(course)) return;
+            if (normalized(year) !== "all" && normalized(rowYear) !== normalized(year)) return;
+            if (normalized(semester) !== "all" && normalized(rowSemester) !== normalized(semester)) return;
             var type = row.getAttribute("data-material-category") || "";
             counts.all += 1;
             counts[type] = (counts[type] || 0) + 1;
@@ -73,17 +110,25 @@
     function applyMaterialFilters() {
         var search = document.querySelector("[data-filter-target='[data-material]']");
         var courseSelect = document.querySelector("[data-material-course-filter]");
+        var yearSelect = document.querySelector("[data-material-year-filter]");
+        var semesterSelect = document.querySelector("[data-material-semester-filter]");
         var query = search ? search.value.trim().toLowerCase() : "";
         var course = courseSelect ? courseSelect.value : "all";
+        var year = yearSelect ? yearSelect.value : "all";
+        var semester = semesterSelect ? semesterSelect.value : "all";
 
         document.querySelectorAll("[data-material]").forEach(function (row) {
             var type = normalized(row.getAttribute("data-material-category"));
-            var rowCourse = row.getAttribute("data-material-course") || "";
+            var rowCourse = row.getAttribute("data-material-offering") || "";
+            var rowYear = row.getAttribute("data-material-year") || "";
+            var rowSemester = row.getAttribute("data-material-semester") || "";
             var text = (row.getAttribute("data-filter-text") || row.textContent || "").toLowerCase();
             var typeMatch = normalized(activeMaterialType) === "all" || type === normalized(activeMaterialType);
             var courseMatch = normalized(course) === "all" || normalized(rowCourse) === normalized(course);
+            var yearMatch = normalized(year) === "all" || normalized(rowYear) === normalized(year);
+            var semesterMatch = normalized(semester) === "all" || normalized(rowSemester) === normalized(semester);
             var searchMatch = !query || text.indexOf(query) >= 0;
-            row.style.display = typeMatch && courseMatch && searchMatch ? "" : "none";
+            row.style.display = typeMatch && courseMatch && yearMatch && semesterMatch && searchMatch ? "" : "none";
         });
         updateMaterialCounts();
     }
@@ -109,15 +154,66 @@
         updateMaterialForm();
     }
 
-    function syncPublishCourseToFilter() {
-        var filter = document.querySelector("[data-material-course-filter]");
-        var publishCourse = document.querySelector("[data-material-course-select]");
-        if (!filter || !publishCourse || normalized(filter.value) === "all") return;
+    function initUploadCourseFilters() {
+        var yearSelect = document.querySelector("[data-upload-year-select]");
+        var semesterSelect = document.querySelector("[data-upload-semester-select]");
+        var courseSelect = document.querySelector("[data-material-course-select]");
+        if (!yearSelect || !semesterSelect || !courseSelect) return;
 
-        var matchingOption = Array.prototype.find.call(publishCourse.options, function (option) {
-            return normalized(option.textContent) === normalized(filter.value);
+        var courses = Array.prototype.slice.call(courseSelect.options, 1).map(function (option) {
+            return {
+                value: option.value,
+                label: option.textContent,
+                year: option.getAttribute("data-year") || "",
+                semester: option.getAttribute("data-semester") || ""
+            };
         });
-        if (matchingOption) publishCourse.value = matchingOption.value;
+
+        function resetSelect(select, label, disabled) {
+            select.innerHTML = "";
+            var option = document.createElement("option");
+            option.value = "";
+            option.textContent = label;
+            select.appendChild(option);
+            select.disabled = disabled;
+        }
+
+        function loadSemesters() {
+            var year = yearSelect.value;
+            resetSelect(semesterSelect, year ? "Choose semester" : "Choose academic year first", !year);
+            resetSelect(courseSelect, "Choose semester first", true);
+            if (!year) return;
+
+            var semesters = [];
+            courses.forEach(function (course) {
+                if (course.year === year && semesters.indexOf(course.semester) === -1) semesters.push(course.semester);
+            });
+            semesters.forEach(function (semester) {
+                var option = document.createElement("option");
+                option.value = semester;
+                option.textContent = semester;
+                semesterSelect.appendChild(option);
+            });
+        }
+
+        function loadCourses() {
+            var year = yearSelect.value;
+            var semester = semesterSelect.value;
+            resetSelect(courseSelect, semester ? "Choose course" : "Choose semester first", !semester);
+            if (!year || !semester) return;
+
+            courses.forEach(function (course) {
+                if (course.year !== year || course.semester !== semester) return;
+                var option = document.createElement("option");
+                option.value = course.value;
+                option.textContent = course.label;
+                courseSelect.appendChild(option);
+            });
+        }
+
+        yearSelect.addEventListener("change", loadSemesters);
+        semesterSelect.addEventListener("change", loadCourses);
+        loadSemesters();
     }
 
     function updateMaterialForm() {
@@ -129,21 +225,24 @@
         var quiz = type === "Quiz";
         var requiresAssessmentDetails = type === "Assignment" || type === "Test";
         var dueInput = document.querySelector("[data-due-date-field] input");
+        var dueTimeInput = document.querySelector("[data-due-time-field] input");
         var weightInput = document.querySelector("[data-weight-field] input");
         var fileInput = document.querySelector("[data-file-field] input[type='file']");
         var description = document.querySelector("[data-material-description]");
         var requiredMark = document.querySelector("[data-description-required]");
         var fileRequiredMark = document.querySelector("[data-file-required]");
         var dueDateRequiredMark = document.querySelector("[data-due-date-required]");
+        var dueTimeRequiredMark = document.querySelector("[data-due-time-required]");
         var weightRequiredMark = document.querySelector("[data-weight-required]");
         var weekField = document.querySelector("[data-week-field]");
         var weekSelect = document.querySelector("[data-material-week-select]");
 
-        [dueInput, weightInput].forEach(function (input) {
+        [dueInput, dueTimeInput, weightInput].forEach(function (input) {
             if (!input) return;
             input.disabled = lectureNotes;
             input.required = requiresAssessmentDetails;
             if (lectureNotes) input.value = "";
+            if (!lectureNotes && input === dueTimeInput && !input.value) input.value = "23:59";
             var field = input.closest("label");
             if (field) field.classList.toggle("opacity-45", lectureNotes);
         });
@@ -164,6 +263,7 @@
         if (requiredMark) requiredMark.classList.toggle("hidden", !quiz);
         if (fileRequiredMark) fileRequiredMark.classList.toggle("hidden", quiz);
         if (dueDateRequiredMark) dueDateRequiredMark.classList.toggle("hidden", !requiresAssessmentDetails);
+        if (dueTimeRequiredMark) dueTimeRequiredMark.classList.toggle("hidden", !requiresAssessmentDetails);
         if (weightRequiredMark) weightRequiredMark.classList.toggle("hidden", !requiresAssessmentDetails);
         if (weekField) weekField.classList.toggle("hidden", !lectureNotes);
         if (weekSelect) {
@@ -235,10 +335,14 @@
     }
 
     function validateMaterialPublish() {
+        var uploadYear = document.querySelector("[data-upload-year-select]");
+        var uploadSemester = document.querySelector("[data-upload-semester-select]");
+        var course = document.querySelector("[data-material-course-select]");
         var typeSelect = document.querySelector("[data-material-type-select]");
         var title = document.querySelector("[data-material-title]");
         var description = document.querySelector("[data-material-description]");
         var dueDate = document.querySelector("[data-material-due-date]");
+        var dueTime = document.querySelector("[data-material-due-time]");
         var weight = document.querySelector("[data-material-weight]");
         var week = document.querySelector("[data-material-week-select]");
         var file = document.querySelector("[data-material-file]");
@@ -246,6 +350,16 @@
         var requiresAssessment = type === "Assignment" || type === "Test";
         var lectureNotes = type === "Lecture Notes";
         var quiz = type === "Quiz";
+
+        if (uploadYear && !uploadYear.value) {
+            return showRequiredError("Choose an academic year first.", uploadYear);
+        }
+        if (uploadSemester && !uploadSemester.value) {
+            return showRequiredError("Choose a semester first.", uploadSemester);
+        }
+        if (course && !course.value) {
+            return showRequiredError("Choose a course before publishing.", course);
+        }
 
         if (title && !title.value.trim()) {
             return showRequiredError("Title is required.", title);
@@ -259,6 +373,10 @@
             return showRequiredError("Due date is required for assignments and tests.", dueDate);
         }
         if (dueDate) dueDate.setCustomValidity("");
+        if (requiresAssessment && dueTime && !dueTime.value) {
+            return showRequiredError("Due time is required for assignments and tests.", dueTime);
+        }
+        if (dueTime) dueTime.setCustomValidity("");
         if (requiresAssessment && weight && !weight.value) {
             return showRequiredError("Course weight is required for assignments and tests.", weight);
         }
@@ -322,6 +440,7 @@
         var title = document.querySelector("[data-material-title]");
         var description = document.querySelector("[data-material-description]");
         var dueDate = document.querySelector("[data-material-due-date]");
+        var dueTime = document.querySelector("[data-material-due-time]");
         var weight = document.querySelector("[data-material-weight]");
         var week = document.querySelector("[data-material-week-select]");
         var file = document.querySelector("[data-material-file]");
@@ -332,6 +451,7 @@
         formData.append("title", title ? title.value : "");
         formData.append("description", description ? description.value : "");
         formData.append("dueDate", dueDate ? dueDate.value : "");
+        formData.append("dueTime", dueTime ? dueTime.value : "");
         formData.append("weight", weight ? weight.value : "");
         formData.append("week", week ? week.value : "");
         if (file && file.files && file.files.length) formData.append("file", file.files[0]);
@@ -358,6 +478,7 @@
             if (title) title.value = "";
             if (description) description.value = "";
             if (dueDate) dueDate.value = "";
+            if (dueTime) dueTime.value = "23:59";
             if (weight) weight.value = "";
             if (file) file.value = "";
             applyMaterialFilters();
@@ -403,15 +524,23 @@
     document.addEventListener("DOMContentLoaded", function () {
         var search = document.querySelector("[data-filter-target='[data-material]']");
         var courseSelect = document.querySelector("[data-material-course-filter]");
+        var yearFilter = document.querySelector("[data-material-year-filter]");
+        var semesterFilter = document.querySelector("[data-material-semester-filter]");
         var typeSelect = document.querySelector("[data-material-type-select]");
         if (search) search.addEventListener("input", function () {
             saveMaterialView();
             applyMaterialFilters();
         });
         if (courseSelect) courseSelect.addEventListener("change", function () {
-            syncPublishCourseToFilter();
             saveMaterialView();
             applyMaterialFilters();
+        });
+        [yearFilter, semesterFilter].forEach(function (filter) {
+            if (!filter) return;
+            filter.addEventListener("change", function () {
+                saveMaterialView();
+                applyMaterialFilters();
+            });
         });
         if (typeSelect) typeSelect.addEventListener("change", updateMaterialForm);
 
@@ -427,7 +556,7 @@
             });
         });
         restoreMaterialView();
-        syncPublishCourseToFilter();
+        initUploadCourseFilters();
         syncPublishTypeToTab();
         applyMaterialFilters();
         updateMaterialForm();

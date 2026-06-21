@@ -20,6 +20,8 @@ namespace src.services
         public string CourseId { get; set; }
         public string CourseCode { get; set; }
         public string CourseName { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string SemesterName { get; set; }
         public int CreditHours { get; set; }
         public int EnrolledCount { get; set; }
@@ -124,13 +126,15 @@ namespace src.services
         public decimal? Marks { get; set; }
         public bool HasMarks { get; set; }
         public DateTime? SubmittedAt { get; set; }
+        public DateTime? DueDate { get; set; }
         public string FileUrl { get; set; }
         public string Grade { get; set; }
         public string SubmissionStatus { get; set; }
+        public bool IsMissing { get; set; }
         public string StudentName { get { return FullName; } }
         public string StudentNo { get { return StudentId; } }
         public string LetterGrade { get { return Grade; } }
-        public bool HasSubmission { get { return SubmissionId > 0; } }
+        public bool HasSubmission { get { return SubmissionId > 0 && !IsMissing; } }
         public string SubmissionFileUrl { get { return FileUrl; } }
         public string AnnotatedFileUrl { get; set; }
         public string Feedback { get; set; }
@@ -142,6 +146,8 @@ namespace src.services
         public int OfferingId { get; set; }
         public string CourseCode { get; set; }
         public string CourseName { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string Title { get; set; }
         public string FileUrl { get; set; }
         public DateTime UploadedAt { get; set; }
@@ -158,6 +164,9 @@ namespace src.services
     public class LecturerAnnouncementRow
     {
         public int AnnouncementId { get; set; }
+        public int OfferingId { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
         public string FileUrl { get; set; }

@@ -21,8 +21,11 @@ namespace student_information_management_system
         private LecturerAnnouncementRow _selectedAnnouncement;
         private int? _offeringFilter;
         private string _tabFilter = "all";
+        private string _yearFilter = "all";
+        private string _semesterFilter = "all";
+        private bool _isCourseScoped;
 
-        protected bool IsCourseScoped { get { return _offeringFilter.HasValue; } }
+        protected bool IsCourseScoped { get { return _isCourseScoped && _offeringFilter.HasValue; } }
         protected int SelectedOfferingId { get { return _offeringFilter.GetValueOrDefault(); } }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -44,6 +47,15 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
                 _offeringFilter = offeringId;
+            _isCourseScoped = string.Equals(Request.QueryString["context"], "course", StringComparison.OrdinalIgnoreCase);
+
+            _yearFilter = string.IsNullOrWhiteSpace(Request.QueryString["year"]) ? "all" : Request.QueryString["year"];
+            _semesterFilter = string.IsNullOrWhiteSpace(Request.QueryString["semester"]) ? "all" : Request.QueryString["semester"];
+            if (_isCourseScoped)
+            {
+                _yearFilter = "all";
+                _semesterFilter = "all";
+            }
 
             _tabFilter = (ViewState["AnnouncementTab"] as string) ?? "all";
 
@@ -150,11 +162,21 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(courseFilterSelect.SelectedValue, out offeringId) && offeringId > 0)
             {
-                Response.Redirect("~/lecturer/lecturer_announcement.aspx?offering=" + offeringId);
+                Response.Redirect(FilterUrl(offeringId, _yearFilter, _semesterFilter));
                 return;
             }
 
-            Response.Redirect("~/lecturer/lecturer_announcement.aspx");
+            Response.Redirect(FilterUrl(null, _yearFilter, _semesterFilter));
+        }
+
+        protected void YearFilterSelect_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Response.Redirect(FilterUrl(_offeringFilter, yearFilterSelect.SelectedValue, _semesterFilter));
+        }
+
+        protected void SemesterFilterSelect_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Response.Redirect(FilterUrl(_offeringFilter, _yearFilter, semesterFilterSelect.SelectedValue));
         }
 
         protected void TabButton_Command(object sender, CommandEventArgs e)
@@ -225,6 +247,16 @@ namespace student_information_management_system
             courseFilterSelect.DataBind();
             courseFilterSelect.Items.Insert(0, new ListItem("All courses", "0"));
 
+            yearFilterSelect.Items.Clear();
+            yearFilterSelect.Items.Add(new ListItem("All years", "all"));
+            foreach (string year in courses.Select(c => c.AcademicYear).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+                yearFilterSelect.Items.Add(new ListItem(year, year));
+
+            semesterFilterSelect.Items.Clear();
+            semesterFilterSelect.Items.Add(new ListItem("All semesters", "all"));
+            foreach (string semester in courses.Select(c => c.Semester).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+                semesterFilterSelect.Items.Add(new ListItem(semester, semester));
+
             if (_offeringFilter.HasValue)
             {
                 var value = _offeringFilter.Value.ToString(CultureInfo.InvariantCulture);
@@ -233,12 +265,20 @@ namespace student_information_management_system
                 if (courseFilterSelect.Items.FindByValue(value) != null)
                     courseFilterSelect.SelectedValue = value;
             }
+            if (yearFilterSelect.Items.FindByValue(_yearFilter) != null)
+                yearFilterSelect.SelectedValue = _yearFilter;
+            if (semesterFilterSelect.Items.FindByValue(_semesterFilter) != null)
+                semesterFilterSelect.SelectedValue = _semesterFilter;
         }
 
         private void LoadRows()
         {
             var user = UserContextFactory.FromSession(Session);
             _announcements = LecturerPortalService.GetAnnouncements(user, _offeringFilter);
+            if (_yearFilter != "all")
+                _announcements = _announcements.Where(a => string.Equals(a.AcademicYear, _yearFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (_semesterFilter != "all")
+                _announcements = _announcements.Where(a => string.Equals(a.Semester, _semesterFilter, StringComparison.OrdinalIgnoreCase)).ToList();
             if (_tabFilter == "pinned")
                 _announcements = _announcements.Where(a => a.IsPinned).ToList();
             else if (_tabFilter == "files")
@@ -279,7 +319,27 @@ namespace student_information_management_system
                 announcementId.ToString(CultureInfo.InvariantCulture));
             if (_offeringFilter.HasValue)
                 url += "&offering=" + _offeringFilter.Value.ToString(CultureInfo.InvariantCulture);
+            if (_yearFilter != "all")
+                url += (url.Contains("?") ? "&" : "?") + "year=" + HttpUtility.UrlEncode(_yearFilter);
+            if (_semesterFilter != "all")
+                url += (url.Contains("?") ? "&" : "?") + "semester=" + HttpUtility.UrlEncode(_semesterFilter);
+            if (_isCourseScoped)
+                url += (url.Contains("?") ? "&" : "?") + "context=course";
             return url;
+        }
+
+        private string FilterUrl(int? offeringId, string year, string semester)
+        {
+            var parts = new List<string>();
+            if (offeringId.HasValue)
+                parts.Add("offering=" + offeringId.Value.ToString(CultureInfo.InvariantCulture));
+            if (!string.IsNullOrWhiteSpace(year) && year != "all")
+                parts.Add("year=" + HttpUtility.UrlEncode(year));
+            if (!string.IsNullOrWhiteSpace(semester) && semester != "all")
+                parts.Add("semester=" + HttpUtility.UrlEncode(semester));
+            if (_isCourseScoped)
+                parts.Add("context=course");
+            return ResolveUrl("~/lecturer/lecturer_announcement.aspx") + (parts.Count == 0 ? "" : "?" + string.Join("&", parts));
         }
 
         private string SaveAttachment()

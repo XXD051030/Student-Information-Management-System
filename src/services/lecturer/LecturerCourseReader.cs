@@ -20,7 +20,7 @@ namespace src.services
 
             string sql =
                 "SELECT co.offer_id, c.course_id, c.course_code, c.course_name, c.credit_hour, c.colour, " +
-                "co.academic_year + ' ' + co.semester AS semester_name, " +
+                "co.academic_year, co.semester, co.academic_year + ' ' + co.semester AS semester_name, " +
                 "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'ENROLLED') AS enrolled_count " +
                 "FROM COURSE_OFFERINGS co " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
@@ -43,6 +43,8 @@ namespace src.services
                             CourseId = Text(reader["course_id"]),
                             CourseCode = code,
                             CourseName = Text(reader["course_name"]),
+                            AcademicYear = Text(reader["academic_year"]),
+                            Semester = Text(reader["semester"]),
                             SemesterName = semesterName,
                             CreditHours = IntValue(reader["credit_hour"]),
                             EnrolledCount = IntValue(reader["enrolled_count"]),

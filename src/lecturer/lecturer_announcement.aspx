@@ -2,19 +2,18 @@
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <div class="max-w-none">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <% if (IsCourseScoped) { %>
+        <a href="<%= ResolveUrl("~/lecturer/lecturer_course_dashboard.aspx") %>?offering=<%= SelectedOfferingId %>" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:500">
+            <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back to course dashboard
+        </a>
+        <% } %>
+        <div class="<%= IsCourseScoped ? "mt-4 " : "" %>flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <p class="text-slate-500" style="font-size:13px;font-weight:600">Course communication</p>
                 <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:800;letter-spacing:-0.015em">Announcements</h1>
                 <p class="mt-1 text-slate-500" style="font-size:14px">Announcements you have sent to your courses, plus pinned notices.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <% if (IsCourseScoped) { %>
-                <a href="<%= ResolveUrl("~/lecturer/lecturer_course_dashboard.aspx") %>?offering=<%= SelectedOfferingId %>" class="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-slate-600 hover:border-slate-300 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:700">
-                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                    Course
-                </a>
-                <% } %>
                 <asp:LinkButton ID="showComposeButton" runat="server" OnClick="ShowComposeButton_Click" CssClass="inline-flex h-10 items-center gap-2 rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020] transition-colors" style="font-size:13px;font-weight:800">
                     <i data-lucide="plus" class="h-4 w-4"></i>
                     Post announcement
@@ -64,10 +63,22 @@
         <section class="mt-6 grid gap-4 xl:grid-cols-[360px_1fr]">
             <aside class="rounded-lg border border-slate-200 bg-white">
                 <div class="border-b border-slate-100 p-3">
+                    <% if (!IsCourseScoped) { %>
+                    <div class="mb-3 grid grid-cols-2 gap-2">
+                        <label class="block">
+                            <span class="text-slate-500" style="font-size:11px;font-weight:900">ACADEMIC YEAR</span>
+                            <asp:DropDownList ID="yearFilterSelect" runat="server" AutoPostBack="true" OnSelectedIndexChanged="YearFilterSelect_SelectedIndexChanged" CssClass="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" />
+                        </label>
+                        <label class="block">
+                            <span class="text-slate-500" style="font-size:11px;font-weight:900">SEMESTER</span>
+                            <asp:DropDownList ID="semesterFilterSelect" runat="server" AutoPostBack="true" OnSelectedIndexChanged="SemesterFilterSelect_SelectedIndexChanged" CssClass="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" />
+                        </label>
+                    </div>
                     <label class="mb-3 block">
                         <span class="text-slate-500" style="font-size:11px;font-weight:900">COURSE</span>
                         <asp:DropDownList ID="courseFilterSelect" runat="server" AutoPostBack="true" OnSelectedIndexChanged="CourseFilterSelect_SelectedIndexChanged" CssClass="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" />
                     </label>
+                    <% } %>
                     <div class="relative">
                         <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
                         <input data-filter-input data-announcement-search data-filter-target="[data-announcement-item]" type="search" placeholder="Search notifications..." class="h-10 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" />
