@@ -52,7 +52,7 @@ namespace src.admin
                 html.Append("<td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\">");
                 if (status == "Pending")
                 {
-                    html.Append("<div class=\"flex items-center justify-end gap-1\"><button type=\"button\" data-request-action data-request-id=\"").Append(r.RequestId).Append("\" data-next-status=\"ENROLLED\" class=\"inline-flex h-7 items-center rounded-md bg-emerald-50 border border-emerald-200 px-2 text-emerald-700 hover:bg-emerald-100\" style=\"font-size:11.5px;font-weight:600\">Approve</button><button type=\"button\" data-request-action data-request-id=\"").Append(r.RequestId).Append("\" data-next-status=\"REJECTED\" class=\"inline-flex h-7 items-center rounded-md bg-[#e0162b]/10 border border-[#e0162b]/20 px-2 text-[#a01020] hover:bg-[#e0162b]/15\" style=\"font-size:11.5px;font-weight:600\">Reject</button></div>");
+                    html.Append("<div class=\"flex items-center justify-end gap-1\"><button type=\"button\" data-request-action data-request-id=\"").Append(r.RequestId).Append("\" data-action-type=\"approve\" class=\"inline-flex h-7 items-center rounded-md bg-emerald-50 border border-emerald-200 px-2 text-emerald-700 hover:bg-emerald-100\" style=\"font-size:11.5px;font-weight:600\">Approve</button><button type=\"button\" data-request-action data-request-id=\"").Append(r.RequestId).Append("\" data-action-type=\"reject\" class=\"inline-flex h-7 items-center rounded-md bg-[#e0162b]/10 border border-[#e0162b]/20 px-2 text-[#a01020] hover:bg-[#e0162b]/15\" style=\"font-size:11.5px;font-weight:600\">Reject</button></div>");
                 }
                 else
                 {
@@ -65,11 +65,11 @@ namespace src.admin
         }
 
         [WebMethod(EnableSession = true)]
-        public static object SetRequestStatus(int enrollmentId, string status)
+        public static object SetRequestStatus(int enrollmentId, string action)
         {
             EnsureAdmin();
-            new AdminPortalService().SetEnrollmentStatus(enrollmentId, status);
-            return new { ok = true };
+            bool ok = AdminPortalService.SetEnrollmentStatus(enrollmentId, action);
+            return new { ok = ok };
         }
 
         private static bool IsPending(string status) { return DisplayStatus(status) == "Pending"; }

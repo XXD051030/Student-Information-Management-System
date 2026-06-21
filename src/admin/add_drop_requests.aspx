@@ -143,14 +143,14 @@
           if (!action) return;
           e.preventDefault();
           e.stopPropagation();
-          var next = action.getAttribute("data-next-status");
-          var label = next === "ENROLLED" ? "approve" : "reject";
+          var actionType = action.getAttribute("data-action-type");
+          var label = actionType === "approve" ? "approve" : "reject";
           if (!confirm("Confirm " + label + " request?")) return;
           post("SetRequestStatus", {
             enrollmentId: parseInt(action.getAttribute("data-request-id"), 10),
-            status: next
+            action: actionType
           }).then(function () {
-            if (window.toast) window.toast.success(next === "ENROLLED" ? "Request approved" : "Request rejected");
+            if (window.toast) window.toast.success(actionType === "approve" ? "Request approved" : "Request rejected");
             setTimeout(function () { location.reload(); }, 450);
           }).catch(function () {
             if (window.toast) window.toast.error("Could not update request");

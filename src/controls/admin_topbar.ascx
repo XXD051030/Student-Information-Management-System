@@ -31,9 +31,8 @@
             <i data-lucide="bell" class="h-4 w-4"></i>
         </button>
 
-        <%-- Profile pill: same look as the student/lecturer topbars, but a plain
-             container because there is no admin account page to open. --%>
-        <div class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3">
+        <%-- Profile pill: opens the admin account page. --%>
+        <a href="<%= ResolveUrl("~/admin/admin_account.aspx") %>" class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 transition-colors hover:bg-slate-50">
 
             <% if (!string.IsNullOrEmpty(IconUrl)) { %>
                 <img src="<%= IconUrl %>"
@@ -52,7 +51,7 @@
                     <%= RoleLabel %>
                 </div>
             </div>
-        </div>
+        </a>
 
     </div>
 </header>

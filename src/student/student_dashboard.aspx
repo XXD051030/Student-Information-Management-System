@@ -69,7 +69,7 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Pending Tasks</p>
-                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= PendingTaskCount %></p>
+                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= AssignmentDueCount %></p>
                 </div>
                 <% if (AssignmentDueCount > 0) { %>
                 <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-slate-100 text-slate-600" style="font-size:11px;font-weight:600">

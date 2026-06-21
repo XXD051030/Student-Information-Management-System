@@ -10,10 +10,19 @@ namespace src.services
 {
     public static class AcademicTermReader
     {
+        // Credit-load bounds used when a session row leaves them unset (NULL).
+        private const int DefaultMinCredits = 12;
+        private const int DefaultMaxCredits = 21;
+
+        // The enrollment portal opens 7 days before a session starts and closes
+        // 7 days after it starts. These bounds are derived from start_date alone.
+        private const int WindowDaysBeforeStart = 7;
+        private const int WindowDaysAfterStart = 7;
+
         public static StudentRegistrationTerm GetCurrentTerm()
         {
             const string sql =
-                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date " +
+                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date, min_credits, max_credits " +
                 "FROM ACADEMIC_SESSIONS " +
                 "WHERE start_date <= @today AND end_date >= @today " +
                 "ORDER BY start_date DESC";
@@ -22,15 +31,22 @@ namespace src.services
 
         public static StudentRegistrationTerm GetRegistrationTerm()
         {
+            // If the current term's own add/drop window (start .. start+7) is still live,
+            // that is the relevant term — a student mid-term shouldn't be bounced ahead
+            // to the next term's pre-registration window. Otherwise registration is for
+            // the next upcoming term (the one that has not started yet), so the window
+            // sits before that term begins. Fall back to the current term only when there
+            // is no future session in the calendar.
             var current = GetCurrentTerm();
-            if (current != null) return current;
+            if (current != null && DateTime.Today <= current.StartDate.AddDays(WindowDaysAfterStart))
+                return current;
 
             const string sql =
-                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date " +
+                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date, min_credits, max_credits " +
                 "FROM ACADEMIC_SESSIONS " +
-                "WHERE start_date >= @today " +
+                "WHERE start_date > @today " +
                 "ORDER BY start_date";
-            return GetTerm(sql);
+            return GetTerm(sql) ?? current;
         }
 
         private static StudentRegistrationTerm GetTerm(string sql)
@@ -48,20 +64,35 @@ namespace src.services
                         AcademicYear = Text(reader["academic_year"]),
                         Name = Text(reader["semester"]),
                         StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
-                        EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4)
+                        EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4),
+                        MinCredits = NullableInt(reader["min_credits"]) ?? DefaultMinCredits,
+                        MaxCredits = NullableInt(reader["max_credits"]) ?? DefaultMaxCredits
                     };
                 }
             }
         }
 
-        public static StudentRegistrationWindow BuildRegistrationWindow(StudentRegistrationTerm term)
+        public static StudentRegistrationWindow BuildRegistrationWindow(StudentRegistrationTerm term, bool hasEnrollment)
         {
             if (term == null) return new StudentRegistrationWindow();
-            var registrationStart = term.StartDate.AddDays(-14);
-            var registrationEnd = term.StartDate.AddDays(21);
-            var addDropStart = term.StartDate;
-            var addDropEnd = term.StartDate.AddDays(14);
+
             var today = DateTime.Today;
+
+            // The portal opens 7 days before classes start and closes 7 days after.
+            // Phase 1 (registration) runs from start-7 up to the day before classes.
+            // Once classes start, a student with no enrollment yet stays in Phase 1
+            // (direct self-registration) through start+7; Phase 2 (request-based
+            // add/drop) only applies once the student actually holds an enrollment.
+            var registrationStart = term.StartDate.AddDays(-WindowDaysBeforeStart);
+            var registrationEnd = term.StartDate.AddDays(-1);
+            var addDropStart = term.StartDate;
+            var addDropEnd = term.StartDate.AddDays(WindowDaysAfterStart);
+
+            int activePhase;
+            if (today <= registrationEnd) activePhase = 1;
+            else if (today > addDropEnd) activePhase = 3;
+            else activePhase = hasEnrollment ? 2 : 1;
+
             return new StudentRegistrationWindow
             {
                 RegistrationStart = registrationStart,
@@ -69,8 +100,30 @@ namespace src.services
                 AddDropStart = addDropStart,
                 AddDropEnd = addDropEnd,
                 IsOpen = today >= registrationStart && today <= addDropEnd,
-                ActivePhase = today <= registrationEnd ? 1 : today <= addDropEnd ? 2 : 3
+                ActivePhase = activePhase
             };
+        }
+
+        /// <summary>
+        /// Returns true when today falls inside the registration phase (Phase 1):
+        /// the 7 days before the registration term's start date, or — once classes
+        /// start — any time before add/drop+7 as long as the student has no enrollment yet.
+        /// </summary>
+        public static bool IsRegistrationOpen(bool hasEnrollment)
+        {
+            var term = GetRegistrationTerm();
+            if (term == null) return false;
+            var window = BuildRegistrationWindow(term, hasEnrollment);
+            return window.IsOpen && window.ActivePhase == 1;
+        }
+
+        /// <summary>Returns true when today falls inside the add/drop window (ActivePhase == 2), which requires an existing enrollment.</summary>
+        public static bool IsAddDropOpen(bool hasEnrollment)
+        {
+            var term = GetRegistrationTerm();
+            if (term == null) return false;
+            var window = BuildRegistrationWindow(term, hasEnrollment);
+            return window.ActivePhase == 2;
         }
 
         public static Dictionary<string, DateTime> GetSessionLookup()

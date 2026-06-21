@@ -141,6 +141,8 @@ namespace src.services
         public string AcademicYear { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public int MinCredits { get; set; }
+        public int MaxCredits { get; set; }
     }
 
     public class StudentRegistrationWindow
@@ -177,6 +179,7 @@ namespace src.services
         public StudentRegistrationWindow Window { get; set; }
         public List<StudentOfferingOption> Offerings { get; set; }
         public int SemesterNo { get; set; }
+        public int AlreadyRegisteredCount { get; set; }
     }
 
     public class StudentAttendanceSession
@@ -320,5 +323,25 @@ namespace src.services
         public int CreditsEarned { get; set; }
         public int CreditsAttempted { get; set; }
         public int CoursesGraded { get; set; }
+    }
+
+    public class StudentPaymentRow
+    {
+        public string InvoiceNo { get; set; }
+        public string Description { get; set; }
+        public string TermLabel { get; set; }
+        public DateTime PaidDate { get; set; }
+        public string Method { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; }
+    }
+
+    public class StudentPaymentHistoryPage
+    {
+        public List<StudentPaymentRow> Rows { get; set; }
+        public decimal TotalPaid { get; set; }
+        public decimal PaidThisYear { get; set; }
+        public decimal Refunded { get; set; }
+        public int ReceiptCount { get; set; }
     }
 }
