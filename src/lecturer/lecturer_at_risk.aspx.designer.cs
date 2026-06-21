@@ -8,6 +8,9 @@ namespace student_information_management_system
 {
     public partial class lecturer_at_risk
     {
+        protected global::System.Web.UI.WebControls.DropDownList academicYearFilter;
+        protected global::System.Web.UI.WebControls.DropDownList semesterFilter;
+        protected global::System.Web.UI.WebControls.DropDownList courseFilter;
         protected global::System.Web.UI.WebControls.Repeater studentRepeater;
         protected global::System.Web.UI.WebControls.Repeater attendanceRepeater;
         protected global::System.Web.UI.WebControls.Repeater riskRepeater;

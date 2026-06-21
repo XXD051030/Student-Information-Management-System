@@ -210,6 +210,8 @@ namespace src.services
         public string StudentId { get; set; }
         public string FullName { get; set; }
         public string ProgrammeCode { get; set; }
+        public string AcademicYear { get; set; }
+        public string OfferingSemester { get; set; }
         public int Semester { get; set; }
         public string CourseCode { get; set; }
         public string CourseName { get; set; }
