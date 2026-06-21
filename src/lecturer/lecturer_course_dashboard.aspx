@@ -138,45 +138,96 @@
                     </span>
                     <i data-lucide="arrow-up-right" class="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors"></i>
                 </div>
-                <p class="mt-4 text-slate-900" style="font-size:15px;font-weight:600">Materials</p>
+                <p class="mt-4 text-slate-900" style="font-size:15px;font-weight:600">Upload Materials</p>
                 <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= MaterialLabel %></p>
             </a>
 
         </div>
     </section>
 
-    <%-- Latest announcements --%>
-    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-        <header class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg" style="background-color:var(--course-accent-soft);color:var(--course-accent)">
-                    <i data-lucide="megaphone" class="h-4 w-4"></i>
-                </span>
-                <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Latest announcements</h2>
+    <section class="mt-8">
+        <div class="flex items-end justify-between gap-4">
+            <div>
+                <h2 class="text-slate-900" style="font-size:18px;font-weight:700">Course Content</h2>
+                <p class="mt-0.5 text-slate-500" style="font-size:13px">Preview weekly lecture notes and published assessments as students see them.</p>
             </div>
-            <a href="<%= AnnouncementsUrl %>" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
-                See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+            <a href="<%= MaterialsUrl %>" class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#e0162b] px-3 text-white hover:bg-[#a01020]" style="font-size:12.5px;font-weight:700">
+                <i data-lucide="upload" class="h-4 w-4"></i>Upload Materials
             </a>
-        </header>
-        <asp:Repeater ID="announcementsRepeater" runat="server">
-            <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>
-            <ItemTemplate>
-                <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-slate-900" style="font-size:13.5px;font-weight:600"><%# Server.HtmlEncode(Eval("Title").ToString()) %></span>
-                        <%# (bool)Eval("IsPinned") ? "<span class=\"inline-flex items-center gap-1 rounded-md px-1.5 py-0.5\" style=\"background-color:var(--course-accent-soft);color:var(--course-accent-dark);font-size:10.5px;font-weight:600\">Pinned</span>" : "" %>
-                        <span class="text-slate-400" style="font-size:11.5px">&middot; <%# Server.HtmlEncode(Eval("AuthorName").ToString()) %> &middot; <%# ((System.DateTime)Eval("CreatedAt")).ToString("d MMM · HH:mm") %></span>
-                    </div>
-                    <p class="mt-1 text-slate-500 line-clamp-2" style="font-size:12.5px;line-height:1.55"><%# Server.HtmlEncode(Eval("Content").ToString()) %></p>
-                </li>
-            </ItemTemplate>
-            <FooterTemplate></ul></FooterTemplate>
-        </asp:Repeater>
-        <% if (AnnouncementCount == 0) { %>
-            <p class="py-8 text-center text-slate-400" style="font-size:13px">No announcements for this course yet.</p>
-        <% } %>
+        </div>
+
+        <div class="mt-4 grid gap-6 xl:grid-cols-2">
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <header class="border-b border-slate-100 px-6 py-5">
+                    <h3 class="text-slate-900" style="font-size:16px;font-weight:700">Weekly Modules</h3>
+                    <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= ModuleCount %> modules containing lecture notes</p>
+                </header>
+                <ul class="divide-y divide-slate-100">
+                    <asp:Repeater ID="modulesRepeater" runat="server">
+                        <ItemTemplate>
+                            <li>
+                                <button type="button" data-course-module-toggle class="flex w-full items-center gap-4 px-6 py-4 text-left hover:bg-slate-50/70">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style="background-color:var(--course-accent-soft);color:var(--course-accent);font-size:12px;font-weight:800"><%# Eval("Week") %></span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-slate-900" style="font-size:14px;font-weight:700"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                                        <p class="mt-0.5 truncate text-slate-500" style="font-size:12px"><%# Server.HtmlEncode(Eval("Description").ToString()) %></p>
+                                    </div>
+                                    <span class="text-slate-400" style="font-size:11.5px;font-weight:600"><%# ((System.Collections.ICollection)Eval("Items")).Count %> items</span>
+                                    <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 transition-transform" data-module-chevron></i>
+                                </button>
+                                <ul data-course-module-items class="hidden bg-slate-50/60 px-5 py-3">
+                                    <asp:Repeater runat="server" DataSource='<%# Eval("Items") %>'>
+                                        <ItemTemplate>
+                                            <li>
+                                                <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white">
+                                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-500"><i data-lucide="book-open" class="h-4 w-4"></i></span>
+                                                    <span class="min-w-0 flex-1 truncate text-slate-800" style="font-size:13px;font-weight:600"><%# Server.HtmlEncode(Eval("Title").ToString()) %></span>
+                                                    <i data-lucide="eye" class="h-4 w-4 text-slate-400"></i>
+                                                </a>
+                                            </li>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                </ul>
+                            </li>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </ul>
+                <% if (ModuleCount == 0) { %><p class="px-6 py-10 text-center text-slate-400" style="font-size:13px">No weekly lecture notes yet.</p><% } %>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <header class="border-b border-slate-100 px-6 py-5">
+                    <h3 class="text-slate-900" style="font-size:16px;font-weight:700">Assignments, Quizzes &amp; Tests</h3>
+                    <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= AssessmentCount %> published assessments</p>
+                </header>
+                <ul class="divide-y divide-slate-100">
+                    <asp:Repeater ID="assessmentsRepeater" runat="server">
+                        <ItemTemplate>
+                            <li>
+                                <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/70">
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style="background-color:var(--course-accent-soft);color:var(--course-accent)"><i data-lucide='<%# AssessmentIcon(Eval("MaterialType")) %>' class="h-5 w-5"></i></span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="truncate text-slate-900" style="font-size:14px;font-weight:700"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:700"><%# Server.HtmlEncode(Eval("MaterialType").ToString()) %></span>
+                                        </div>
+                                        <p class="mt-1 text-slate-500" style="font-size:12px">Due <%# DueDateDisplay(Eval("DueDate")) %> &middot; <%# WeightDisplay(Eval("Weight")) %></p>
+                                    </div>
+                                    <i data-lucide="eye" class="h-4 w-4 text-slate-400"></i>
+                                </a>
+                            </li>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </ul>
+                <% if (AssessmentCount == 0) { %><p class="px-6 py-10 text-center text-slate-400" style="font-size:13px">No assignments, quizzes, or tests yet.</p><% } %>
+            </div>
+        </div>
     </section>
 
     </div>
 
+</asp:Content>
+
+<asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
+    <script src="<%= ResolveUrl("~/js/lecturer/course-dashboard.js") %>?v=1"></script>
 </asp:Content>

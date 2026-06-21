@@ -80,6 +80,11 @@
         paintPin(btn);
     }
 
+    function openAssignmentMaterial(card) {
+        var url = card.getAttribute("data-preview-url");
+        if (url) { window.location.href = url; }
+    }
+
     function init() {
         // Tabs
         Array.prototype.forEach.call(
@@ -109,6 +114,25 @@
             function (btn) {
                 paintPin(btn);
                 btn.addEventListener("click", function () { togglePin(btn); });
+            }
+        );
+
+        Array.prototype.forEach.call(
+            document.querySelectorAll('[data-action="open-assignment-material"]'),
+            function (card) {
+                card.addEventListener("click", function (event) {
+                    if (event.target.closest("a, button, input, textarea, select, summary, details, label")) {
+                        return;
+                    }
+                    openAssignmentMaterial(card);
+                });
+                card.addEventListener("keydown", function (event) {
+                    if (event.target !== card || (event.key !== "Enter" && event.key !== " ")) {
+                        return;
+                    }
+                    event.preventDefault();
+                    openAssignmentMaterial(card);
+                });
             }
         );
     }

@@ -13,11 +13,15 @@ namespace src.services
         public static List<StudentCourseAssignment> GetAssignments(UserContext user, string studentId, int? offeringId)
         {
             if (string.IsNullOrWhiteSpace(studentId)) return new List<StudentCourseAssignment>();
+            EnsureReviewColumns();
 
             var sql =
-                "SELECT a.assignment_id, a.offer_id, a.title, CAST(a.description AS varchar(max)) AS description, a.total_marks, a.due_date, " +
-                "c.course_code, sub.submission_id, sub.file_url, sub.marks_obtained, sub.status AS submission_status " +
+                "SELECT mat.material_id, a.assignment_id, a.offer_id, a.title, CAST(a.description AS varchar(max)) AS description, a.total_marks, a.due_date, " +
+                "mat.material_type, mat.weight, mat.file_url AS material_file_url, " +
+                "c.course_code, sub.submission_id, sub.file_url, sub.marks_obtained, sub.status AS submission_status, " +
+                "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url " +
                 "FROM ASSIGNMENTS a " +
+                "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "JOIN ENROLLMENTS e ON e.offer_id = co.offer_id AND e.student_id = @studentId AND e.status IN ('ENROLLED', 'PENDING') " +
@@ -45,18 +49,21 @@ namespace src.services
                             var marks = DecimalValue(reader["marks_obtained"]);
                             assignments.Add(new StudentCourseAssignment
                             {
+                                MaterialId = IntValue(reader["material_id"]),
                                 AssignmentId = IntValue(reader["assignment_id"]),
                                 OfferId = IntValue(reader["offer_id"]),
                                 Title = Text(reader["title"]),
                                 Description = Text(reader["description"]),
                                 DueDate = dueDate,
-                                Weight = null,
-                                AssignmentType = "Assignment",
+                                Weight = DecimalValue(reader["weight"]),
+                                AssignmentType = Text(reader["material_type"]),
                                 GroupSize = "",
                                 SubmissionStatus = marks.HasValue || rawStatus == "GRADED" ? "MARKED" : hasSubmission ? "SUBMITTED" : "PENDING",
                                 HasSubmission = hasSubmission,
                                 SubmissionFileUrl = Text(reader["file_url"]),
-                                Feedback = "",
+                                MaterialFileUrl = Text(reader["material_file_url"]),
+                                Feedback = Text(reader["feedback"]),
+                                AnnotatedFileUrl = Text(reader["annotated_file_url"]),
                                 Marks = marks,
                                 CourseCode = Text(reader["course_code"])
                             });
@@ -67,10 +74,30 @@ namespace src.services
 
             if (assignments.Count > 0)
             {
-                var weight = Math.Round(100m / assignments.Count, 2);
-                foreach (var assignment in assignments) assignment.Weight = weight;
+                var missingWeight = assignments.Where(a => !a.Weight.HasValue).ToList();
+                if (missingWeight.Count > 0)
+                {
+                    var assignedWeight = assignments.Where(a => a.Weight.HasValue).Sum(a => a.Weight.Value);
+                    var fallbackWeight = Math.Round(Math.Max(0m, 100m - assignedWeight) / missingWeight.Count, 2);
+                    foreach (var assignment in missingWeight) assignment.Weight = fallbackWeight;
+                }
             }
             return assignments;
+        }
+
+        private static void EnsureReviewColumns()
+        {
+            const string sql =
+                "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD feedback varchar(2000) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'annotated_file_url') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD annotated_file_url varchar(255) NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'assignment_id') IS NULL " +
+                "ALTER TABLE MATERIALS ADD assignment_id int NULL;";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+                cmd.ExecuteNonQuery();
+            LecturerMaterialReader.EnsureAssessmentAssignments();
         }
 
         public static StudentGradebook GetGradebook(UserContext user, string studentId, int offeringId)
@@ -88,9 +115,9 @@ namespace src.services
                 };
             }
 
-            var weight = Math.Round(100m / assignments.Count, 2);
             foreach (var assignment in assignments)
             {
+                var weight = assignment.Weight.GetValueOrDefault();
                 var maxMarks = 100;
                 var isGraded = assignment.Marks.HasValue;
                 var contribution = isGraded ? Math.Round((assignment.Marks.Value / maxMarks) * weight, 2) : (decimal?)null;

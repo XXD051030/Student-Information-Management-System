@@ -104,6 +104,27 @@ namespace src.student
             }
         }
 
+        protected bool HasLecturerFeedback(object dataItem)
+        {
+            var assignment = dataItem as StudentCourseAssignment;
+            return assignment != null &&
+                (!string.IsNullOrWhiteSpace(assignment.Feedback) ||
+                 !string.IsNullOrWhiteSpace(assignment.AnnotatedFileUrl));
+        }
+
+        protected string FeedbackFileUrl(object value)
+        {
+            string url = Convert.ToString(value);
+            return string.IsNullOrWhiteSpace(url) ? "" : ResolveUrl(url);
+        }
+
+        protected bool IsQuiz(object dataItem)
+        {
+            var assignment = dataItem as StudentCourseAssignment;
+            return assignment != null &&
+                string.Equals(assignment.AssignmentType, "Quiz", StringComparison.OrdinalIgnoreCase);
+        }
+
         private string SaveUploadedSubmission(FileUpload upload, int assignmentId)
         {
             string extension = Path.GetExtension(upload.FileName);

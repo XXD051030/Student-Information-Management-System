@@ -96,6 +96,7 @@ namespace src.services
 
     public class StudentCourseAssignment
     {
+        public int MaterialId { get; set; }
         public int AssignmentId { get; set; }
         public int OfferId { get; set; }
         public string Title { get; set; }
@@ -107,7 +108,9 @@ namespace src.services
         public string SubmissionStatus { get; set; }
         public bool HasSubmission { get; set; }
         public string SubmissionFileUrl { get; set; }
+        public string MaterialFileUrl { get; set; }
         public string Feedback { get; set; }
+        public string AnnotatedFileUrl { get; set; }
         public decimal? Marks { get; set; }
         public string CourseCode { get; set; }
     }

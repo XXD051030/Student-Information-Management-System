@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Web;
+using System.Web.Script.Services;
+using System.Web.Services;
 using System.Web.UI.WebControls;
 using src.services;
 
@@ -50,6 +52,10 @@ namespace student_information_management_system
                 materialTypeSelect.Items.Add(new ListItem("Quiz", "Quiz"));
                 materialTypeSelect.Items.Add(new ListItem("Test", "Test"));
 
+                weekSelect.Items.Clear();
+                for (int week = 1; week <= 14; week++)
+                    weekSelect.Items.Add(new ListItem("Week " + week, week.ToString(CultureInfo.InvariantCulture)));
+
                 if (_offeringFilter.HasValue)
                 {
                     var value = _offeringFilter.Value.ToString(CultureInfo.InvariantCulture);
@@ -74,6 +80,12 @@ namespace student_information_management_system
             bool requiresAssessmentDetails =
                 string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase);
+            int selectedWeek;
+            int? weekNumber = isLectureNotes &&
+                int.TryParse(weekSelect.SelectedValue, out selectedWeek) &&
+                selectedWeek >= 1 && selectedWeek <= 14
+                    ? (int?)selectedWeek
+                    : null;
 
             DateTime dueDate;
             DateTime? parsedDueDate = DateTime.TryParse(dueDateInput.Text, out dueDate) ? (DateTime?)dueDate : null;
@@ -87,6 +99,11 @@ namespace student_information_management_system
             {
                 parsedDueDate = null;
                 parsedWeight = null;
+                if (!weekNumber.HasValue)
+                {
+                    ShowStatus("Please choose a week between Week 1 and Week 14 for lecture notes.", false);
+                    return;
+                }
             }
 
             if (offeringId <= 0)
@@ -112,15 +129,19 @@ namespace student_information_management_system
                 ShowStatus("Course weight is required for assignments and tests.", false);
                 return;
             }
+            if (requiresAssessmentDetails && parsedWeight.Value <= 0m)
+            {
+                ShowStatus("Course weight for assignments and tests must be greater than 0%.", false);
+                return;
+            }
 
             Uri quizUrl;
             string description = (descriptionInput.Text ?? "").Trim();
-            bool validQuizUrl = Uri.TryCreate(description, UriKind.Absolute, out quizUrl)
-                && (quizUrl.Scheme == Uri.UriSchemeHttp || quizUrl.Scheme == Uri.UriSchemeHttps);
+            bool validQuizUrl = IsGoogleFormsUrl(description, out quizUrl);
 
             if (isQuiz && !validQuizUrl)
             {
-                ShowStatus("For quizzes, please paste the full Google Forms sharing link in Description (starting with https://).", false);
+                ShowStatus("Quiz links must use Google Forms. Please paste a forms.gle or docs.google.com/forms sharing link.", false);
                 return;
             }
 
@@ -144,6 +165,13 @@ namespace student_information_management_system
 
             var user = UserContextFactory.FromSession(Session);
             decimal currentWeight = LecturerPortalService.GetMaterialWeightTotal(user, offeringId);
+            if (requiresAssessmentDetails && currentWeight >= 100m)
+            {
+                ShowStatus(
+                    "This course has already reached 100% course weight. Assignments and Tests cannot be added until the course weight is below 100%.",
+                    false);
+                return;
+            }
             if (parsedWeight.HasValue && currentWeight + parsedWeight.Value > 100m)
             {
                 decimal remaining = Math.Max(0m, 100m - currentWeight);
@@ -176,6 +204,7 @@ namespace student_information_management_system
                 Title = titleInput.Text,
                 Description = description,
                 MaterialType = materialType,
+                Week = weekNumber,
                 DueDate = parsedDueDate,
                 Weight = parsedWeight,
                 FileUrl = fileUrl,
@@ -216,6 +245,23 @@ namespace student_information_management_system
             bool deleted = LecturerPortalService.DeleteMaterial(UserContextFactory.FromSession(Session), materialId);
             ShowStatus(deleted ? "Material deleted." : "Material could not be deleted.", deleted);
             LoadRows();
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object DeleteMaterial(int materialId)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired." };
+
+            bool deleted = LecturerPortalService.DeleteMaterial(user, materialId);
+            return new
+            {
+                success = deleted,
+                message = deleted ? "Material deleted." : "Material could not be deleted."
+            };
         }
 
         private string SaveMaterialFile(FileUpload upload, int offeringId, out string fileType, out int fileSizeBytes)
@@ -261,6 +307,18 @@ namespace student_information_management_system
                 File.Delete(physicalPath);
         }
 
+        private static bool IsGoogleFormsUrl(string value, out Uri uri)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                return false;
+
+            string host = uri.Host.TrimEnd('.').ToLowerInvariant();
+            if (host == "forms.gle") return true;
+            return host == "docs.google.com" &&
+                uri.AbsolutePath.StartsWith("/forms/", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void LoadRows()
         {
             var user = UserContextFactory.FromSession(Session);
@@ -278,6 +336,15 @@ namespace student_information_management_system
         protected string UploadedLabel(object value)
         {
             return ((DateTime)value).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+        }
+
+        protected string WeekLabel(object materialType, object week)
+        {
+            if (!string.Equals(Convert.ToString(materialType), "Lecture Notes", StringComparison.OrdinalIgnoreCase) ||
+                week == null || week == DBNull.Value)
+                return "";
+            return "<span class=\"rounded bg-blue-50 px-1.5 py-0.5 text-blue-700\" style=\"font-size:11px;font-weight:700\">Week " +
+                Convert.ToInt32(week).ToString(CultureInfo.InvariantCulture) + "</span>";
         }
 
         protected int CountByType(string materialType)

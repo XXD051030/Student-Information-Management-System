@@ -4,7 +4,7 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Lecturer Module</p>
-            <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700">Course Materials</h1>
+            <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700">Upload Materials</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">Organise assignments, lecture notes, quizzes, and tests for your students.</p>
         </div>
     </div>
@@ -12,6 +12,7 @@
     <asp:Panel ID="statusBanner" runat="server" Visible="false" CssClass="mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800" style="font-size:13px;font-weight:600">
         <asp:Literal ID="statusMessage" runat="server" />
     </asp:Panel>
+    <div data-material-client-status class="mt-4 hidden rounded-md border px-4 py-3" style="font-size:13px;font-weight:600"></div>
 
     <section class="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_340px]">
         <div class="min-w-0 rounded-lg border border-slate-200 bg-white">
@@ -38,10 +39,10 @@
             </div>
 
             <asp:Panel ID="emptyPanel" runat="server" Visible="false" CssClass="px-6 py-10 text-center text-slate-500" style="font-size:13px">No materials have been published yet.</asp:Panel>
-            <ul class="max-h-[620px] overflow-y-auto divide-y divide-slate-100">
+            <ul data-material-list class="max-h-[620px] overflow-y-auto divide-y divide-slate-100">
                 <asp:Repeater ID="materialsRepeater" runat="server" OnItemCommand="MaterialsRepeater_ItemCommand">
                     <ItemTemplate>
-                        <li data-material data-material-url='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' data-material-category='<%# Html(Eval("MaterialType")) %>' data-material-course='<%# Html(Eval("CourseCode")) %>' data-filter-text='<%# Html(Eval("Title")) %> <%# Html(Eval("CourseCode")) %> <%# Html(Eval("CourseName")) %> <%# Html(Eval("MaterialType")) %>' class="flex cursor-pointer flex-col gap-3 px-6 py-4 hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
+                        <li data-material data-material-id='<%# Eval("MaterialId") %>' data-material-url='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' data-material-category='<%# Html(Eval("MaterialType")) %>' data-material-course='<%# Html(Eval("CourseCode")) %>' data-filter-text='<%# Html(Eval("Title")) %> <%# Html(Eval("CourseCode")) %> <%# Html(Eval("CourseName")) %> <%# Html(Eval("MaterialType")) %>' class="flex cursor-pointer flex-col gap-3 px-6 py-4 hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
                             <div class="flex min-w-0 items-start gap-3">
                                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#e0162b]/10 text-[#e0162b]"><i data-lucide='<%# MaterialIcon(Eval("MaterialType")) %>' class="h-5 w-5"></i></span>
                                 <div class="min-w-0">
@@ -53,6 +54,7 @@
                                         <span><%# Html(Eval("CourseCode")) %></span>
                                         <span>Due <%# DueDateLabel(Eval("DueDate")) %></span>
                                         <span>Uploaded <%# UploadedLabel(Eval("UploadedAt")) %></span>
+                                        <%# WeekLabel(Eval("MaterialType"), Eval("Week")) %>
                                         <span><%# FileMeta(Eval("FileType"), Eval("FileSizeBytes")) %></span>
                                     </p>
                                     <p class="mt-1 text-slate-500" style="font-size:12.5px"><%# Html(Eval("Description")) %></p>
@@ -63,7 +65,7 @@
                                     <p class="text-slate-400" style="font-size:10.5px;font-weight:800;letter-spacing:0.08em">COURSE WEIGHT</p>
                                     <p class="text-slate-900" style="font-size:14px;font-weight:800"><%# WeightLabel(Eval("Weight")) %></p>
                                 </div>
-                                <asp:LinkButton runat="server" CommandName="DeleteMaterial" CommandArgument='<%# Eval("MaterialId") %>' OnClientClick="return confirm('Delete this material?');" CssClass="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-[#e0162b]" ToolTip="Delete material"><i data-lucide="trash-2" class="h-4 w-4"></i></asp:LinkButton>
+                                <button type="button" data-delete-material='<%# Eval("MaterialId") %>' class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-[#e0162b]" title="Delete material"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
                             </div>
                         </li>
                     </ItemTemplate>
@@ -77,16 +79,17 @@
                 <p class="mt-0.5 text-slate-500" style="font-size:12.5px">Publish a new student-facing file.</p>
             </div>
             <div class="space-y-4 px-6 py-5">
-                <label class="block"><span class="text-slate-500" style="font-size:12px;font-weight:700">COURSE</span><asp:DropDownList ID="courseSelect" runat="server" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3" style="font-size:13px" /></label>
+                <label class="block"><span class="text-slate-500" style="font-size:12px;font-weight:700">COURSE</span><asp:DropDownList ID="courseSelect" runat="server" data-material-course-select="true" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3" style="font-size:13px" /></label>
                 <label class="block"><span class="text-slate-500" style="font-size:12px;font-weight:700">TYPE</span><asp:DropDownList ID="materialTypeSelect" runat="server" data-material-type-select="true" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3" style="font-size:13px" /></label>
-                <label class="block"><span class="text-slate-500" style="font-size:12px;font-weight:700">TITLE <span class="text-[#e0162b]">*</span></span><asp:TextBox ID="titleInput" runat="server" required="required" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3" placeholder="Material title" style="font-size:13px" /></label>
+                <label data-week-field class="hidden"><span class="text-slate-500" style="font-size:12px;font-weight:700">WEEK <span class="text-[#e0162b]">*</span></span><asp:DropDownList ID="weekSelect" runat="server" data-material-week-select="true" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3" style="font-size:13px" /></label>
+                <label class="block"><span class="text-slate-500" style="font-size:12px;font-weight:700">TITLE <span class="text-[#e0162b]">*</span></span><asp:TextBox ID="titleInput" runat="server" data-material-title="true" required="required" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3" placeholder="Material title" style="font-size:13px" /></label>
                 <label class="block"><span class="text-slate-500" style="font-size:12px;font-weight:700">DESCRIPTION <span data-description-required class="hidden text-[#e0162b]">*</span></span><asp:TextBox ID="descriptionInput" runat="server" data-material-description="true" TextMode="MultiLine" CssClass="mt-1.5 min-h-[88px] w-full rounded-md border border-slate-200 px-3 py-2" placeholder="Short student-facing description" style="font-size:13px" /></label>
                 <div class="grid grid-cols-2 gap-2">
-                    <label data-due-date-field class="block transition-opacity"><span class="text-slate-500" style="font-size:12px;font-weight:700">DUE DATE <span data-due-date-required class="hidden text-[#e0162b]">*</span></span><asp:TextBox ID="dueDateInput" runat="server" TextMode="Date" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>
-                    <label data-weight-field class="block transition-opacity"><span class="text-slate-500" style="font-size:12px;font-weight:700">WEIGHT % <span data-weight-required class="hidden text-[#e0162b]">*</span></span><asp:TextBox ID="weightInput" runat="server" TextMode="Number" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>
+                    <label data-due-date-field class="block transition-opacity"><span class="text-slate-500" style="font-size:12px;font-weight:700">DUE DATE <span data-due-date-required class="hidden text-[#e0162b]">*</span></span><asp:TextBox ID="dueDateInput" runat="server" data-material-due-date="true" TextMode="Date" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>
+                    <label data-weight-field class="block transition-opacity"><span class="text-slate-500" style="font-size:12px;font-weight:700">WEIGHT % <span data-weight-required class="hidden text-[#e0162b]">*</span></span><asp:TextBox ID="weightInput" runat="server" data-material-weight="true" TextMode="Number" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>
                 </div>
-                <label data-file-field class="block transition-opacity"><span class="text-slate-500" style="font-size:12px;font-weight:700">FILE <span data-file-required class="text-[#e0162b]">*</span></span><asp:FileUpload ID="materialFileInput" runat="server" CssClass="mt-1.5 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>
-                <asp:LinkButton ID="publishButton" runat="server" OnClick="PublishMaterial_Click" CssClass="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020]" style="font-size:13px;font-weight:700"><i data-lucide="upload" class="h-4 w-4"></i>Publish material</asp:LinkButton>
+                <label data-file-field class="block transition-opacity"><span class="text-slate-500" style="font-size:12px;font-weight:700">FILE <span data-file-required class="text-[#e0162b]">*</span></span><asp:FileUpload ID="materialFileInput" runat="server" data-material-file="true" CssClass="mt-1.5 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>
+                <asp:LinkButton ID="publishButton" runat="server" data-publish-material="true" OnClick="PublishMaterial_Click" CssClass="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020]" style="font-size:13px;font-weight:700"><i data-lucide="upload" class="h-4 w-4"></i><span data-publish-label>Publish material</span></asp:LinkButton>
             </div>
         </aside>
     </section>
@@ -124,5 +127,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=8"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=14"></script>
 </asp:Content>

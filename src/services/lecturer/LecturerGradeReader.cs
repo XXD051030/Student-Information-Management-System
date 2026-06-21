@@ -17,10 +17,12 @@ namespace src.services
         {
             var options = new List<LecturerAssessmentOption>();
             if (user == null || !user.IsLecturer) return options;
+            LecturerMaterialReader.EnsureAssessmentAssignments();
 
             string sql =
                 "SELECT a.assignment_id, a.offer_id, a.title, c.course_code " +
                 "FROM ASSIGNMENTS a " +
+                "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
@@ -57,12 +59,15 @@ namespace src.services
         {
             var rows = new List<LecturerGradeRow>();
             if (user == null) return rows;
+            EnsureReviewColumns();
 
             // Every enrolled student in the assignment's offering, with their submission (if any)
             // and their current published course letter grade (if any).
             const string sql =
                 "SELECT s.student_id, s.student_name, s.student_email, " +
-                "sub.submission_id, sub.marks_obtained, sub.submitted_at, sub.file_url, ISNULL(sub.status, '') AS sub_status, " +
+                "sub.submission_id, sub.marks_obtained, sub.submitted_at, sub.file_url, " +
+                "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url, " +
+                "ISNULL(sub.status, '') AS sub_status, " +
                 "ISNULL(g.letter_grade, '') AS letter_grade " +
                 "FROM ASSIGNMENTS a " +
                 "JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
@@ -96,6 +101,8 @@ namespace src.services
                                 HasMarks = marks.HasValue,
                                 SubmittedAt = DateValue(reader["submitted_at"]),
                                 FileUrl = Text(reader["file_url"]),
+                                Feedback = Text(reader["feedback"]),
+                                AnnotatedFileUrl = Text(reader["annotated_file_url"]),
                                 Grade = string.IsNullOrWhiteSpace(letter) ? "N/A" : letter,
                                 SubmissionStatus = !string.IsNullOrWhiteSpace(subStatus)
                                     ? subStatus
@@ -106,6 +113,81 @@ namespace src.services
                 }
             }
             return rows;
+        }
+
+        public static bool SaveReview(UserContext user, int submissionId, string feedback, string annotatedFileUrl)
+        {
+            if (user == null || submissionId <= 0) return false;
+            EnsureReviewColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return false;
+                const string sql =
+                    "UPDATE SUBMISSIONS SET feedback = @feedback, " +
+                    "annotated_file_url = CASE WHEN @annotatedFileUrl IS NULL THEN annotated_file_url ELSE @annotatedFileUrl END " +
+                    "WHERE submission_id = @submissionId";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@feedback", ServiceAccess.DbValue(feedback));
+                    cmd.Parameters.AddWithValue("@annotatedFileUrl",
+                        string.IsNullOrWhiteSpace(annotatedFileUrl) ? (object)DBNull.Value : annotatedFileUrl);
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        public static string GetAnnotationDraft(UserContext user, int submissionId)
+        {
+            if (user == null || submissionId <= 0) return "";
+            EnsureReviewColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return "";
+                using (var cmd = new SqlCommand(
+                    "SELECT ISNULL(annotation_draft_json, '') FROM SUBMISSIONS WHERE submission_id = @submissionId",
+                    conn))
+                {
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return Convert.ToString(cmd.ExecuteScalar()) ?? "";
+                }
+            }
+        }
+
+        public static bool SaveAnnotationDraft(UserContext user, int submissionId, string annotationsJson)
+        {
+            if (user == null || submissionId <= 0) return false;
+            EnsureReviewColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return false;
+                using (var cmd = new SqlCommand(
+                    "UPDATE SUBMISSIONS SET annotation_draft_json = @annotationsJson WHERE submission_id = @submissionId",
+                    conn))
+                {
+                    cmd.Parameters.AddWithValue("@annotationsJson",
+                        string.IsNullOrWhiteSpace(annotationsJson) ? (object)DBNull.Value : annotationsJson);
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        private static void EnsureReviewColumns()
+        {
+            const string sql =
+                "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD feedback varchar(2000) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'annotated_file_url') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD annotated_file_url varchar(255) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'annotation_draft_json') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD annotation_draft_json nvarchar(max) NULL;";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+                cmd.ExecuteNonQuery();
         }
 
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks)

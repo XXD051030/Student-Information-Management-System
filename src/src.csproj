@@ -101,6 +101,7 @@
     <Content Include="js\lecturer\attendance.js" />
     <Content Include="js\lecturer\attendance-export.js" />
     <Content Include="js\lecturer\courses.js" />
+    <Content Include="js\lecturer\course-dashboard.js" />
     <Content Include="js\lecturer\grades.js" />
     <Content Include="js\lecturer\lecturer-portal.js" />
     <Content Include="js\login\login.js" />
@@ -114,6 +115,7 @@
     <Content Include="js\student\timetable.js" />
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
+    <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
     <Content Include="lecturer\lecturer_at_risk.aspx" />
@@ -288,6 +290,9 @@
     <Compile Include="lecturer\lecturer_materials.aspx.cs">
       <DependentUpon>lecturer_materials.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\material_publish.ashx.cs">
+      <DependentUpon>material_publish.ashx</DependentUpon>
     </Compile>
     <Compile Include="lecturer\lecturer_materials.aspx.designer.cs">
       <DependentUpon>lecturer_materials.aspx</DependentUpon>

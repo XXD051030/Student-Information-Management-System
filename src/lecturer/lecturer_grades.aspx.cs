@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Web;
+using System.Web.Script.Services;
+using System.Web.Services;
 using System.Web.UI.WebControls;
 using src.services;
 
@@ -9,6 +12,8 @@ namespace student_information_management_system
 {
     public partial class lecturer_grades : src.security.LecturerPage
     {
+        private const int MaximumAnnotationDraftLength = 2 * 1024 * 1024;
+
         private LecturerProfile _lecturer;
         private List<LecturerAssessmentOption> _assessments = new List<LecturerAssessmentOption>();
         private List<LecturerGradeRow> _rows = new List<LecturerGradeRow>();
@@ -107,8 +112,111 @@ namespace student_information_management_system
         {
             if (e.CommandName != "SaveReview") return;
 
-            ShowStatus("Feedback is not available in this version.", false);
-            return;
+            int submissionId;
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out submissionId) || submissionId <= 0)
+            {
+                ShowStatus("The submission could not be identified.", false);
+                return;
+            }
+
+            var feedbackInput = e.Item.FindControl("reviewFeedbackInput") as TextBox;
+            var annotatedUpload = e.Item.FindControl("annotatedFileInput") as FileUpload;
+            string feedback = feedbackInput == null ? "" : feedbackInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(feedback))
+            {
+                ShowStatus("Feedback is required before saving.", false);
+                return;
+            }
+
+            string annotatedFileUrl = "";
+
+            if (annotatedUpload != null && annotatedUpload.HasFile)
+            {
+                try
+                {
+                    annotatedFileUrl = SaveAnnotatedFile(annotatedUpload, submissionId);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ShowStatus(ex.Message, false);
+                    return;
+                }
+            }
+
+            bool saved = LecturerPortalService.SaveSubmissionReview(
+                UserContextFactory.FromSession(Session),
+                submissionId,
+                feedback,
+                annotatedFileUrl);
+
+            if (!saved && !string.IsNullOrWhiteSpace(annotatedFileUrl))
+                TryDeleteAnnotatedFile(annotatedFileUrl);
+
+            ShowStatus(saved ? "Submission feedback saved." : "Submission feedback could not be saved.", saved);
+            LoadRows();
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object LoadAnnotationDraft(int submissionId)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired.", annotationsJson = "" };
+
+            string annotationsJson = LecturerPortalService.GetAnnotationDraft(user, submissionId);
+            return new { success = true, message = "", annotationsJson = annotationsJson };
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object SaveAnnotationDraft(int submissionId, string annotationsJson)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired." };
+
+            annotationsJson = annotationsJson ?? "[]";
+            if (annotationsJson.Length > MaximumAnnotationDraftLength)
+                return new { success = false, message = "This annotation draft is too large to save." };
+
+            bool saved = LecturerPortalService.SaveAnnotationDraft(user, submissionId, annotationsJson);
+            return new
+            {
+                success = saved,
+                message = saved ? "Annotation progress saved." : "Annotation progress could not be saved."
+            };
+        }
+
+        private string SaveAnnotatedFile(FileUpload upload, int submissionId)
+        {
+            string extension = Path.GetExtension(upload.FileName);
+            extension = string.IsNullOrWhiteSpace(extension) ? "" : extension.ToLowerInvariant();
+            string[] allowed = { ".pdf", ".png", ".jpg", ".jpeg" };
+            if (Array.IndexOf(allowed, extension) < 0)
+                throw new InvalidOperationException("Annotated files must be PDF, PNG, JPG, or JPEG.");
+            if (upload.PostedFile.ContentLength > 10 * 1024 * 1024)
+                throw new InvalidOperationException("Annotated file is larger than 10 MB.");
+
+            string folder = Server.MapPath("~/uploads/feedback");
+            Directory.CreateDirectory(folder);
+            string baseName = Path.GetFileNameWithoutExtension(upload.FileName);
+            foreach (char c in Path.GetInvalidFileNameChars()) baseName = baseName.Replace(c, '-');
+            if (string.IsNullOrWhiteSpace(baseName)) baseName = "annotated";
+
+            string fileName = "submission-" + submissionId + "-" +
+                DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) + "-" + baseName + extension;
+            upload.SaveAs(Path.Combine(folder, fileName));
+            return "~/uploads/feedback/" + fileName;
+        }
+
+        private void TryDeleteAnnotatedFile(string url)
+        {
+            if (!url.StartsWith("~/uploads/feedback/", StringComparison.OrdinalIgnoreCase)) return;
+            string path = Server.MapPath(url);
+            if (File.Exists(path)) File.Delete(path);
         }
 
         private void LoadRows()
