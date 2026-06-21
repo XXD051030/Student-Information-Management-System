@@ -89,12 +89,15 @@
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
                     <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Full Name</span><div class="mt-1.5"><input data-field="fullName" placeholder="e.g. Lim Wei Jian" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
                     <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Email</span><div class="mt-1.5"><input data-field="email" type="email" placeholder="name@inti.edu.my" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
+                    <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Personal Email</span><div class="mt-1.5"><input data-field="personalEmail" type="email" placeholder="personal@gmail.com" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div><p class="mt-1 text-slate-400" style="font-size:11px">The temporary password is emailed here.</p></label>
                     <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Phone</span><div class="mt-1.5"><input data-field="phone" placeholder="+60 12-345 6789" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
-                    <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Role</span><div class="mt-1.5"><select data-field="role" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= RoleOptionsHtml %></select></div></label>
-                    <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme / Department</span><div class="mt-1.5"><select data-field="programmeOrDepartment" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= ProgrammeDepartmentOptionsHtml %></select></div></label>
+                    <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Role</span><div class="mt-1.5"><select data-field="role" data-create-role class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= RoleOptionsHtml %></select></div></label>
+                    <label class="block"><span data-create-programme-label class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme</span><div class="mt-1.5"><select data-field="programmeOrDepartment" data-create-programme-department class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= ProgrammeOnlyOptionsHtml %></select></div></label>
                     <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Status</span><div class="mt-1.5"><select data-field="status" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-900 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= UserStatusOptionsHtml %></select></div></label>
                 </div>
-                <div class="mt-5"><label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Initial Notes (optional)</span><div class="mt-1.5"><textarea placeholder="Onboarding notes, advisor assignment, etc." class="w-full min-h-[88px] rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px;line-height:1.5"></textarea></div></label></div>
+                <div class="mt-5"><label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Initial Notes (optional)</span><div class="mt-1.5"><textarea data-field="notes" placeholder="Onboarding notes, advisor assignment, etc." class="w-full min-h-[88px] rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px;line-height:1.5"></textarea></div></label></div>
+                <script type="text/plain" data-create-programme-options><%= ProgrammeOnlyOptionsHtml %></script>
+                <script type="text/plain" data-create-department-options><%= DepartmentOnlyOptionsHtml %></script>
             </div>
             <div class="flex items-center justify-end gap-2 border-t border-slate-100 px-6 py-4 bg-slate-50/40">
                 <button type="button" data-modal-close class="inline-flex items-center rounded-md px-4 h-10 text-slate-600 hover:bg-slate-100" style="font-size:13px;font-weight:600">Cancel</button>
@@ -196,6 +199,25 @@
           setTimeout(function () { location.reload(); }, 450);
         }
 
+        function applyCreateRoleOptions() {
+          var modal = document.getElementById("create-user");
+          if (!modal) return;
+          var roleSelect = modal.querySelector("[data-create-role]");
+          var targetSelect = modal.querySelector("[data-create-programme-department]");
+          var label = modal.querySelector("[data-create-programme-label]");
+          if (!roleSelect || !targetSelect) return;
+          var isLecturer = roleSelect.value === "Lecturer";
+          var optionsHtml = modal.querySelector(isLecturer ? "[data-create-department-options]" : "[data-create-programme-options]").textContent;
+          targetSelect.innerHTML = optionsHtml;
+          if (label) label.textContent = isLecturer ? "Department" : "Programme";
+        }
+
+        var createRoleSelect = document.querySelector("#create-user [data-create-role]");
+        if (createRoleSelect) {
+          createRoleSelect.addEventListener("change", applyCreateRoleOptions);
+          applyCreateRoleOptions();
+        }
+
         document.addEventListener("click", function (e) {
           var view = e.target.closest("[data-admin-view-user]");
           if (view) {
@@ -247,18 +269,34 @@
           if (create) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (create.disabled) return;
             var modal = document.getElementById("create-user");
             var request = {
               fullName: field(modal, "fullName"),
               email: field(modal, "email"),
+              personalEmail: field(modal, "personalEmail"),
               phone: field(modal, "phone"),
               role: field(modal, "role"),
               programmeOrDepartment: field(modal, "programmeOrDepartment"),
-              status: field(modal, "status")
+              status: field(modal, "status"),
+              notes: field(modal, "notes")
             };
+            var origInner = create.innerHTML;
+            create.disabled = true;
+            create.style.opacity = "0.7";
+            create.style.cursor = "not-allowed";
+            create.innerHTML = '<svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">'
+              + '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>'
+              + '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Creating...';
             post("CreateUser", { request: request })
               .then(function () { reloadSuccess("User created"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not create user"); });
+              .catch(function () {
+                if (window.toast) window.toast.error("Could not create user");
+                create.disabled = false;
+                create.style.opacity = "";
+                create.style.cursor = "";
+                create.innerHTML = origInner;
+              });
             return;
           }
 
