@@ -81,14 +81,4 @@
     });
 
     calendar.render();
-
-    // Fonts, Lucide icons and the horizontal scrollbar can reflow the grid after
-    // FullCalendar's initial measure, which desyncs the absolutely-positioned event
-    // overlay from the time-axis grid lines (events drift upward, worse further down).
-    // Force a re-measure once the layout has settled so the columns line up exactly.
-    function syncCalendarSize() {
-        calendar.updateSize();
-    }
-    requestAnimationFrame(syncCalendarSize);
-    window.addEventListener('load', syncCalendarSize);
 });
