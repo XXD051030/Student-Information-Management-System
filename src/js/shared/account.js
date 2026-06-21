@@ -110,6 +110,65 @@
         });
     }
 
+    // Profile icon upload
+    var changeIconBtn = document.getElementById('change-icon-btn');
+    var iconFileInput = document.getElementById('icon-file-input');
+    if (changeIconBtn && iconFileInput) {
+        var uploadUrl = changeIconBtn.getAttribute('data-upload-url');
+
+        changeIconBtn.addEventListener('click', function () {
+            iconFileInput.click();
+        });
+
+        iconFileInput.addEventListener('change', function () {
+            var file = iconFileInput.files[0];
+            if (!file) return;
+
+            var form = new FormData();
+            form.append('icon', file);
+
+            changeIconBtn.disabled = true;
+            var origInner = changeIconBtn.innerHTML;
+            changeIconBtn.innerHTML = '<svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+
+            fetch(uploadUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: form
+            }).then(function (r) {
+                return r.json();
+            }).then(function (data) {
+                if (data && data.success) {
+                    var newSrc = data.iconUrl + '?t=' + Date.now();
+                    var img = document.getElementById('profile-icon-img');
+                    var initials = document.getElementById('profile-icon-initials');
+                    if (!img) {
+                        img = document.createElement('img');
+                        img.id = 'profile-icon-img';
+                        img.alt = 'Profile photo';
+                        img.className = 'h-20 w-20 rounded-full object-cover';
+                        var anchor = initials || changeIconBtn;
+                        anchor.parentNode.insertBefore(img, anchor);
+                    }
+                    img.src = newSrc;
+                    img.style.display = '';
+                    if (initials) initials.style.display = 'none';
+                    var topbarImg = document.querySelector('header img[alt="Profile picture"]');
+                    if (topbarImg) topbarImg.src = newSrc;
+                } else {
+                    alert((data && data.message) || 'Photo could not be saved.');
+                }
+            }).catch(function () {
+                alert('Photo could not be saved. Please try again.');
+            }).then(function () {
+                changeIconBtn.disabled = false;
+                changeIconBtn.innerHTML = origInner;
+                if (window.lucide) lucide.createIcons();
+                iconFileInput.value = '';
+            });
+        });
+    }
+
     // Email notifications toggle
     var notifBtn = document.getElementById('email-notif-toggle');
     var notifKnob = document.getElementById('email-notif-knob');
