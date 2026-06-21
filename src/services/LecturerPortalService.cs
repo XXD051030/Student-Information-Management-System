@@ -8,6 +8,7 @@ namespace src.services
         public static LecturerProfile GetProfile(UserContext user) => LecturerProfileReader.GetProfile(user);
 
         public static List<LecturerCourseCard> GetCourses(UserContext user) => LecturerCourseReader.GetCourses(user);
+        public static List<StudentCourseModule> GetCourseModules(UserContext user, int offeringId) => StudentCourseReader.GetCourseModules(user, offeringId);
 
         public static CourseDashboardStats GetCourseStats(UserContext user, int offeringId) => LecturerCourseReader.GetCourseStats(user, offeringId);
 
@@ -34,6 +35,10 @@ namespace src.services
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks) => LecturerGradeReader.SaveGradeMarks(user, assessmentId, marks);
 
         public static void PublishGrades(UserContext user, int assessmentId) => LecturerGradeReader.PublishGrades(user, assessmentId);
+
+        public static bool SaveSubmissionReview(UserContext user, int submissionId, string feedback, string annotatedFileUrl) => LecturerGradeReader.SaveReview(user, submissionId, feedback, annotatedFileUrl);
+        public static string GetAnnotationDraft(UserContext user, int submissionId) => LecturerGradeReader.GetAnnotationDraft(user, submissionId);
+        public static bool SaveAnnotationDraft(UserContext user, int submissionId, string annotationsJson) => LecturerGradeReader.SaveAnnotationDraft(user, submissionId, annotationsJson);
 
         public static List<LecturerAnnouncementRow> GetAnnouncements(UserContext user, int? offeringId) => LecturerAnnouncementReader.GetAnnouncements(user, offeringId);
 

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
 using src.services;
 
@@ -10,6 +11,8 @@ namespace src.lecturer
         private int _offeringId;
         private CourseDashboardStats _stats;
         private int _announcementCount;
+        private List<StudentCourseModule> _modules = new List<StudentCourseModule>();
+        private List<LecturerMaterialRow> _assessments = new List<LecturerMaterialRow>();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -43,20 +46,18 @@ namespace src.lecturer
 
             var announcements = LecturerPortalService.GetAnnouncements(user, _offeringId);
             _announcementCount = announcements.Count;
-            announcementsRepeater.DataSource = announcements
-                .OrderByDescending(a => a.CreatedAt)
-                .Take(3)
-                .Select(a => new
-                {
-                    a.AnnouncementId,
-                    a.Title,
-                    Content = a.Content,
-                    a.CreatedAt,
-                    IsPinned = false,
-                    AuthorName = "Lecturer"
-                })
+
+            _modules = LecturerPortalService.GetCourseModules(user, _offeringId);
+            modulesRepeater.DataSource = _modules;
+            modulesRepeater.DataBind();
+
+            _assessments = LecturerPortalService.GetMaterials(user, _offeringId)
+                .Where(m => !string.Equals(m.MaterialType, "Lecture Notes", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.DueDate ?? DateTime.MaxValue)
+                .ThenBy(m => m.Title)
                 .ToList();
-            announcementsRepeater.DataBind();
+            assessmentsRepeater.DataSource = _assessments;
+            assessmentsRepeater.DataBind();
         }
 
         // ----- Header -----
@@ -135,6 +136,8 @@ namespace src.lecturer
 
         /// <summary>Number of announcements (drives the empty-state on the latest panel).</summary>
         protected int AnnouncementCount { get { return _announcementCount; } }
+        protected int ModuleCount { get { return _modules.Count; } }
+        protected int AssessmentCount { get { return _assessments.Count; } }
 
         // ----- Sub-page links (carry the offering id) -----
 
@@ -142,6 +145,33 @@ namespace src.lecturer
         protected string PeopleUrl { get { return SubUrl("lecturer_course_people.aspx"); } }
         protected string GradesUrl { get { return SubUrl("lecturer_grades.aspx"); } }
         protected string MaterialsUrl { get { return SubUrl("lecturer_materials.aspx"); } }
+
+        protected string MaterialPreviewUrl(object materialId)
+        {
+            return ResolveUrl("~/shared/material_preview.aspx?id=" + materialId);
+        }
+
+        protected string DueDateDisplay(object value)
+        {
+            return value == null || value == DBNull.Value
+                ? "No due date"
+                : Convert.ToDateTime(value).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+        }
+
+        protected string WeightDisplay(object value)
+        {
+            return value == null || value == DBNull.Value
+                ? "Unweighted"
+                : Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+        }
+
+        protected string AssessmentIcon(object type)
+        {
+            string value = Convert.ToString(type);
+            if (value == "Quiz") return "circle-help";
+            if (value == "Test") return "clipboard-list";
+            return "clipboard-check";
+        }
 
         private string SubUrl(string page)
         {

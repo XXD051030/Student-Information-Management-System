@@ -132,8 +132,8 @@ namespace src.services
         public string LetterGrade { get { return Grade; } }
         public bool HasSubmission { get { return SubmissionId > 0; } }
         public string SubmissionFileUrl { get { return FileUrl; } }
-        public string AnnotatedFileUrl { get { return ""; } }
-        public string Feedback { get { return ""; } }
+        public string AnnotatedFileUrl { get; set; }
+        public string Feedback { get; set; }
     }
 
     public class LecturerMaterialRow
@@ -149,6 +149,7 @@ namespace src.services
         public string Description { get; set; }
         public string FileType { get; set; }
         public string MaterialType { get; set; }
+        public int? Week { get; set; }
         public DateTime? DueDate { get; set; }
         public decimal? Weight { get; set; }
         public int? FileSizeBytes { get; set; }
@@ -260,6 +261,7 @@ namespace src.services
         public string Title { get; set; }
         public string Description { get; set; }
         public string MaterialType { get; set; }
+        public int? Week { get; set; }
         public DateTime? DueDate { get; set; }
         public decimal? Weight { get; set; }
         public string FileUrl { get; set; }

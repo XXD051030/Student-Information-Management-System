@@ -9,6 +9,11 @@ namespace src.services
 {
     public static class LecturerMaterialReader
     {
+        public static void EnsureAssessmentAssignments()
+        {
+            EnsureMaterialColumns();
+        }
+
         public static LecturerMaterialRow GetMaterial(UserContext user, int materialId)
         {
             if (user == null || materialId <= 0) return null;
@@ -16,7 +21,7 @@ namespace src.services
 
             string sql =
                 "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, " +
-                "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, " +
+                "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, md.week_number, " +
                 "c.course_code, c.course_name " +
                 "FROM MATERIALS mat " +
                 "JOIN MODULES md ON md.module_id = mat.module_id " +
@@ -44,6 +49,7 @@ namespace src.services
                         FileType = Text(reader["file_type"]),
                         FileSizeBytes = NullableInt(reader["file_size_bytes"]),
                         MaterialType = Text(reader["material_type"]),
+                        Week = NullableInt(reader["week_number"]),
                         DueDate = DateValue(reader["due_date"]),
                         Weight = DecimalValue(reader["weight"]),
                         UploadedAt = DateValue(reader["uploaded_at"]) ?? DateTime.Now
@@ -79,7 +85,7 @@ namespace src.services
 
             string sql =
                 "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, " +
-                "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, " +
+                "mat.file_type, mat.file_size_bytes, mat.material_type, mat.due_date, mat.weight, mat.uploaded_at, md.week_number, " +
                 "c.course_code, c.course_name " +
                 "FROM MATERIALS mat " +
                 "JOIN MODULES md ON md.module_id = mat.module_id " +
@@ -111,6 +117,7 @@ namespace src.services
                             FileType = Text(reader["file_type"]),
                             FileSizeBytes = NullableInt(reader["file_size_bytes"]),
                             MaterialType = Text(reader["material_type"]),
+                            Week = NullableInt(reader["week_number"]),
                             DueDate = DateValue(reader["due_date"]),
                             Weight = DecimalValue(reader["weight"])
                         });
@@ -133,6 +140,14 @@ namespace src.services
 
                 using (var transaction = conn.BeginTransaction(IsolationLevel.Serializable))
                 {
+                    string normalizedType = NormalizeMaterialType(input.MaterialType);
+                    if (normalizedType == "Lecture Notes" &&
+                        (!input.Week.HasValue || input.Week.Value < 1 || input.Week.Value > 14))
+                    {
+                        transaction.Rollback();
+                        return 0;
+                    }
+
                     decimal existingWeight;
                     using (var weightCommand = new SqlCommand(
                         "SELECT ISNULL(SUM(mat.weight), 0) " +
@@ -152,26 +167,77 @@ namespace src.services
                     }
 
                     string moduleId;
-                    using (var moduleCommand = new SqlCommand(
-                        "SELECT TOP 1 module_id FROM MODULES WHERE offer_id = @offerId ORDER BY module_id",
-                        conn, transaction))
+                    if (normalizedType == "Lecture Notes" && input.Week.HasValue)
                     {
-                        moduleCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
-                        var value = moduleCommand.ExecuteScalar();
-                        if (value == null || value == DBNull.Value)
+                        using (var moduleCommand = new SqlCommand(
+                            "SELECT TOP 1 module_id FROM MODULES WITH (UPDLOCK, HOLDLOCK) " +
+                            "WHERE offer_id = @offerId AND week_number = @week ORDER BY module_id",
+                            conn, transaction))
                         {
-                            transaction.Rollback();
-                            return 0;
+                            moduleCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
+                            moduleCommand.Parameters.AddWithValue("@week", input.Week.Value);
+                            var value = moduleCommand.ExecuteScalar();
+                            moduleId = value == null || value == DBNull.Value ? "" : value.ToString();
                         }
-                        moduleId = value.ToString();
+
+                        if (string.IsNullOrWhiteSpace(moduleId))
+                        {
+                            moduleId = "MOD_" + input.OfferingId + "_W" + input.Week.Value;
+                            using (var createModule = new SqlCommand(
+                                "INSERT INTO MODULES (module_id, offer_id, module_title, module_description, week_number) " +
+                                "VALUES (@moduleId, @offerId, @title, @description, @week)",
+                                conn, transaction))
+                            {
+                                createModule.Parameters.AddWithValue("@moduleId", moduleId);
+                                createModule.Parameters.AddWithValue("@offerId", input.OfferingId);
+                                createModule.Parameters.AddWithValue("@title", "Week " + input.Week.Value);
+                                createModule.Parameters.AddWithValue("@description", "Lecture materials for Week " + input.Week.Value + ".");
+                                createModule.Parameters.AddWithValue("@week", input.Week.Value);
+                                createModule.ExecuteNonQuery();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        using (var moduleCommand = new SqlCommand(
+                            "SELECT TOP 1 module_id FROM MODULES WHERE offer_id = @offerId ORDER BY week_number, module_id",
+                            conn, transaction))
+                        {
+                            moduleCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
+                            var value = moduleCommand.ExecuteScalar();
+                            if (value == null || value == DBNull.Value)
+                            {
+                                transaction.Rollback();
+                                return 0;
+                            }
+                            moduleId = value.ToString();
+                        }
+                    }
+
+                    int? assignmentId = null;
+                    if (normalizedType == "Assignment" || normalizedType == "Quiz" || normalizedType == "Test")
+                    {
+                        const string assignmentSql =
+                            "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date) " +
+                            "OUTPUT INSERTED.assignment_id " +
+                            "VALUES (@offerId, @title, @description, @filePath, 100, @dueDate)";
+                        using (var assignmentCommand = new SqlCommand(assignmentSql, conn, transaction))
+                        {
+                            assignmentCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
+                            assignmentCommand.Parameters.AddWithValue("@title", ServiceAccess.DbValue(input.Title));
+                            assignmentCommand.Parameters.AddWithValue("@description", ServiceAccess.DbValue(input.Description));
+                            assignmentCommand.Parameters.AddWithValue("@filePath", ServiceAccess.DbValue(input.FileUrl));
+                            assignmentCommand.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(input.DueDate));
+                            assignmentId = Convert.ToInt32(assignmentCommand.ExecuteScalar());
+                        }
                     }
 
                     const string sql =
                         "INSERT INTO MATERIALS (module_id, title, description, file_url, file_type, file_size_bytes, " +
-                        "material_type, due_date, weight, uploaded_at) " +
+                        "material_type, due_date, weight, uploaded_at, assignment_id) " +
                         "OUTPUT INSERTED.material_id " +
                         "VALUES (@moduleId, @title, @description, @fileUrl, @fileType, @fileSizeBytes, " +
-                        "@materialType, @dueDate, @weight, @uploadedAt)";
+                        "@materialType, @dueDate, @weight, @uploadedAt, @assignmentId)";
                     using (var cmd = new SqlCommand(sql, conn, transaction))
                     {
                         cmd.Parameters.AddWithValue("@moduleId", moduleId);
@@ -180,13 +246,14 @@ namespace src.services
                         cmd.Parameters.AddWithValue("@fileUrl", ServiceAccess.DbValue(input.FileUrl));
                         cmd.Parameters.AddWithValue("@fileType", ServiceAccess.DbValue(input.FileType));
                         cmd.Parameters.AddWithValue("@fileSizeBytes", ServiceAccess.DbValue(input.FileSizeBytes));
-                        cmd.Parameters.AddWithValue("@materialType", NormalizeMaterialType(input.MaterialType));
+                        cmd.Parameters.AddWithValue("@materialType", normalizedType);
                         cmd.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(input.DueDate));
                         var weightParameter = cmd.Parameters.Add("@weight", SqlDbType.Decimal);
                         weightParameter.Precision = 5;
                         weightParameter.Scale = 2;
                         weightParameter.Value = ServiceAccess.DbValue(input.Weight);
                         cmd.Parameters.AddWithValue("@uploadedAt", input.UploadedAt == default(DateTime) ? DateTime.Now : input.UploadedAt);
+                        cmd.Parameters.AddWithValue("@assignmentId", ServiceAccess.DbValue(assignmentId));
                         var id = cmd.ExecuteScalar();
                         transaction.Commit();
                         return id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
@@ -217,7 +284,8 @@ namespace src.services
                 "IF COL_LENGTH('MATERIALS', 'file_size_bytes') IS NULL ALTER TABLE MATERIALS ADD file_size_bytes int NULL; " +
                 "IF COL_LENGTH('MATERIALS', 'material_type') IS NULL ALTER TABLE MATERIALS ADD material_type varchar(30) NULL; " +
                 "IF COL_LENGTH('MATERIALS', 'due_date') IS NULL ALTER TABLE MATERIALS ADD due_date date NULL; " +
-                "IF COL_LENGTH('MATERIALS', 'weight') IS NULL ALTER TABLE MATERIALS ADD weight decimal(5,2) NULL";
+                "IF COL_LENGTH('MATERIALS', 'weight') IS NULL ALTER TABLE MATERIALS ADD weight decimal(5,2) NULL; " +
+                "IF COL_LENGTH('MATERIALS', 'assignment_id') IS NULL ALTER TABLE MATERIALS ADD assignment_id int NULL";
 
             const string dataSql =
                 "UPDATE MATERIALS SET material_type = CASE " +
@@ -238,6 +306,70 @@ namespace src.services
                 using (var dataCommand = new SqlCommand(dataSql, conn))
                 {
                     dataCommand.ExecuteNonQuery();
+                }
+                BackfillAssessmentAssignments(conn);
+            }
+        }
+
+        private static void BackfillAssessmentAssignments(SqlConnection conn)
+        {
+            const string selectSql =
+                "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, mat.due_date " +
+                "FROM MATERIALS mat JOIN MODULES md ON md.module_id = mat.module_id " +
+                "WHERE mat.assignment_id IS NULL AND mat.material_type IN ('Assignment', 'Quiz', 'Test')";
+
+            var pending = new List<Tuple<int, int, string, string, string, DateTime?>>();
+            using (var select = new SqlCommand(selectSql, conn))
+            using (var reader = select.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    pending.Add(Tuple.Create(
+                        IntValue(reader["material_id"]),
+                        IntValue(reader["offer_id"]),
+                        Text(reader["title"]),
+                        Text(reader["description"]),
+                        Text(reader["file_url"]),
+                        DateValue(reader["due_date"])));
+                }
+            }
+
+            foreach (var material in pending)
+            {
+                using (var transaction = conn.BeginTransaction())
+                {
+                    const string insertSql =
+                        "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date) " +
+                        "OUTPUT INSERTED.assignment_id " +
+                        "VALUES (@offerId, @title, @description, @filePath, 100, @dueDate)";
+                    int assignmentId;
+                    using (var insert = new SqlCommand(insertSql, conn, transaction))
+                    {
+                        insert.Parameters.AddWithValue("@offerId", material.Item2);
+                        insert.Parameters.AddWithValue("@title", ServiceAccess.DbValue(material.Item3));
+                        insert.Parameters.AddWithValue("@description", ServiceAccess.DbValue(material.Item4));
+                        insert.Parameters.AddWithValue("@filePath", ServiceAccess.DbValue(material.Item5));
+                        insert.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(material.Item6));
+                        assignmentId = Convert.ToInt32(insert.ExecuteScalar());
+                    }
+
+                    using (var update = new SqlCommand(
+                        "UPDATE MATERIALS SET assignment_id = @assignmentId " +
+                        "WHERE material_id = @materialId AND assignment_id IS NULL", conn, transaction))
+                    {
+                        update.Parameters.AddWithValue("@assignmentId", assignmentId);
+                        update.Parameters.AddWithValue("@materialId", material.Item1);
+                        if (update.ExecuteNonQuery() == 0)
+                        {
+                            using (var cleanup = new SqlCommand(
+                                "DELETE FROM ASSIGNMENTS WHERE assignment_id = @assignmentId", conn, transaction))
+                            {
+                                cleanup.Parameters.AddWithValue("@assignmentId", assignmentId);
+                                cleanup.ExecuteNonQuery();
+                            }
+                        }
+                    }
+                    transaction.Commit();
                 }
             }
         }

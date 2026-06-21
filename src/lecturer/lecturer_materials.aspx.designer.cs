@@ -78,6 +78,11 @@ namespace student_information_management_system
         protected global::System.Web.UI.WebControls.DropDownList materialTypeSelect;
 
         /// <summary>
+        /// weekSelect control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.DropDownList weekSelect;
+
+        /// <summary>
         /// titleInput control.
         /// </summary>
         /// <remarks>

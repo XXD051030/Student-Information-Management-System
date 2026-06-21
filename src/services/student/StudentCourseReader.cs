@@ -108,13 +108,14 @@ namespace src.services
         public static List<StudentCourseModule> GetCourseModules(UserContext user, int offeringId)
         {
             if (user == null) return new List<StudentCourseModule>();
+            LecturerMaterialReader.EnsureAssessmentAssignments();
 
             var sql =
                 "SELECT m.module_id, m.module_title, CAST(m.module_description AS varchar(max)) AS module_description, m.week_number, " +
                 "mat.material_id, mat.title AS material_title, mat.file_url " +
                 "FROM MODULES m " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = m.offer_id " +
-                "LEFT JOIN MATERIALS mat ON mat.module_id = m.module_id " +
+                "LEFT JOIN MATERIALS mat ON mat.module_id = m.module_id AND mat.material_type = 'Lecture Notes' " +
                 "WHERE m.offer_id = @offerId AND " + ServiceAccess.VisibleOfferScope("co") + " " +
                 "ORDER BY m.week_number, m.module_id, mat.uploaded_at DESC, mat.material_id DESC";
 
