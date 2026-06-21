@@ -150,6 +150,7 @@
     <Content Include="student\course_detail.aspx" />
     <Content Include="student\enrollment.aspx" />
     <Content Include="student\grades.aspx" />
+    <Content Include="student\transcript.ashx" />
     <Content Include="student\student_dashboard.aspx" />
     <Content Include="student\timetable.aspx" />
     <Content Include="student\payment.aspx" />
@@ -348,6 +349,7 @@
     <Compile Include="services\ServiceMap.cs" />
     <Compile Include="services\StudentPortalService.cs" />
     <Compile Include="services\SubmissionService.cs" />
+    <Compile Include="services\TranscriptPdfService.cs" />
     <Compile Include="services\UserContext.cs" />
     <Compile Include="services\UserContextFactory.cs" />
     <Compile Include="services\student\StudentPortalFormat.cs" />
@@ -585,6 +587,9 @@
     </Compile>
     <Compile Include="student\grades.aspx.designer.cs">
       <DependentUpon>grades.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\transcript.ashx.cs">
+      <DependentUpon>transcript.ashx</DependentUpon>
     </Compile>
     <Compile Include="student\student_dashboard.aspx.cs">
       <DependentUpon>student_dashboard.aspx</DependentUpon>
