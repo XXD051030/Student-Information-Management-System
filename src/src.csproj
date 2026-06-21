@@ -146,6 +146,7 @@
     <Content Include="student\account.aspx" />
     <Content Include="student\notifications.aspx" />
     <Content Include="student\attendance.aspx" />
+    <Content Include="student\attendance-report.ashx" />
     <Content Include="student\courses.aspx" />
     <Content Include="student\course_detail.aspx" />
     <Content Include="student\enrollment.aspx" />
@@ -339,6 +340,7 @@
     <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\AssignmentService.cs" />
+    <Compile Include="services\AttendancePdfService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />
     <Compile Include="services\CookieService.cs" />
     <Compile Include="services\email\EmailLayout.cs" />
@@ -559,6 +561,9 @@
     </Compile>
     <Compile Include="student\attendance.aspx.designer.cs">
       <DependentUpon>attendance.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\attendance-report.ashx.cs">
+      <DependentUpon>attendance-report.ashx</DependentUpon>
     </Compile>
     <Compile Include="student\courses.aspx.cs">
       <DependentUpon>courses.aspx</DependentUpon>
