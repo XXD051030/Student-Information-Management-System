@@ -13,27 +13,20 @@
                 OnClientClick="return confirm('This will email academic-warning notices to all at-risk students. Continue?');"
                 CssClass="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-3 h-10 text-white hover:bg-[#a01020] transition-colors"
                 Style="font-size:13px;font-weight:600" />
-            <div class="relative" data-dropdown>
+            <div class="relative" data-dropdown data-scope>
                 <button type="button" data-dropdown-toggle class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600"><i data-lucide="filter" class="h-4 w-4"></i> Filter</button>
                 <div data-dropdown-menu style="display:none" class="absolute right-0 z-20 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
                     <div class="text-slate-900" style="font-size:13px;font-weight:700">Scope</div>
                     <p class="mt-0.5 text-slate-500" style="font-size:12px">Applied across every tab.</p>
                     <div class="mt-3 space-y-3">
-                        <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Academic Year</span><div class="mt-1.5"><select class="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= AcademicYearOptionsHtml %></select></div></label>
-                        <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Semester</span><div class="mt-1.5"><select class="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= SemesterOptionsHtml %></select></div></label>
-                        <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme</span><div class="mt-1.5"><select class="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= ProgrammeOptionsHtml %></select></div></label>
+                        <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Academic Year</span><div class="mt-1.5"><select data-scope-year class="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= AcademicYearOptionsHtml %></select></div></label>
+                        <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Semester</span><div class="mt-1.5"><select data-scope-sem class="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= SemesterOptionsHtml %></select></div></label>
+                        <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme</span><div class="mt-1.5"><select data-scope-prog class="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= ProgrammeOptionsHtml %></select></div></label>
                     </div>
                     <div class="mt-4 flex items-center justify-between">
-                        <button type="button" class="text-slate-500 hover:text-slate-900" style="font-size:12px;font-weight:600">Clear</button>
-                        <button type="button" data-toast="Scope filtering is not connected yet" data-toast-type="info" class="inline-flex items-center rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020]" style="font-size:13px;font-weight:600">Apply</button>
+                        <button type="button" data-scope-clear class="text-slate-500 hover:text-slate-900" style="font-size:12px;font-weight:600">Clear</button>
+                        <button type="button" data-scope-apply class="inline-flex items-center rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020]" style="font-size:13px;font-weight:600">Apply</button>
                     </div>
-                </div>
-            </div>
-            <div class="relative" data-dropdown>
-                <button type="button" data-dropdown-toggle class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600"><i data-lucide="download" class="h-4 w-4"></i> Export Report <i data-lucide="chevron-down" class="h-3.5 w-3.5"></i></button>
-                <div data-dropdown-menu style="display:none" class="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-                    <button type="button" data-toast="Use Reports to generate downloadable files" data-toast-type="info" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-slate-700 hover:bg-slate-50" style="font-size:13px;font-weight:500"><i data-lucide="file-text" class="h-4 w-4 text-[#e0162b]"></i> Export as PDF</button>
-                    <button type="button" data-toast="Use Reports to generate downloadable files" data-toast-type="info" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-slate-700 hover:bg-slate-50" style="font-size:13px;font-weight:500"><i data-lucide="file-spreadsheet" class="h-4 w-4 text-emerald-600"></i> Export as Excel</button>
                 </div>
             </div>
         </div>
@@ -48,12 +41,12 @@
 
     <%-- KPI strip --%>
     <section class="mt-6" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Average GPA</div><i data-lucide="trending-up" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= DecimalNumber(Summary.AverageCgpa) %></div><div class="text-slate-400" style="font-size:11.5px">Current semester</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-slate-400" style="width:62%"></div></div></div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Average CGPA</div><i data-lucide="graduation-cap" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= DecimalNumber(Summary.AverageCgpa) %></div><div class="text-slate-400" style="font-size:11.5px">Cumulative average</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-slate-400" style="width:64%"></div></div></div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Pass Rate</div><i data-lucide="check-circle-2" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-emerald-600" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Summary.PassRate) %></div><div class="text-slate-400" style="font-size:11.5px">Across all courses</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width:86%"></div></div></div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Fail Rate</div><i data-lucide="x-circle" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-[#a01020]" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Summary.FailRate) %></div><div class="text-slate-400" style="font-size:11.5px">Across all courses</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:14%"></div></div></div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">At-Risk Students</div><i data-lucide="alert-triangle" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-[#a01020]" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Summary.AtRiskStudents.ToString("N0") %></div><div class="text-slate-400" style="font-size:11.5px">Intervention required</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:24%"></div></div></div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Top Performers</div><i data-lucide="award" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-emerald-600" style="font-size:22px;font-weight:700;letter-spacing:-0.01em">112</div><div class="text-slate-400" style="font-size:11.5px">CGPA &ge; 3.7</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width:88%"></div></div></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Average GPA</div><i data-lucide="trending-up" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= DecimalNumber(Summary.AverageCgpa) %></div><div class="text-slate-400" style="font-size:11.5px">Current semester</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-slate-400" style="width:<%= BarWidth(Summary.AverageCgpa / 4m * 100m) %>%"></div></div></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Average CGPA</div><i data-lucide="graduation-cap" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= DecimalNumber(Summary.AverageCgpa) %></div><div class="text-slate-400" style="font-size:11.5px">Cumulative average</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-slate-400" style="width:<%= BarWidth(Summary.AverageCgpa / 4m * 100m) %>%"></div></div></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Pass Rate</div><i data-lucide="check-circle-2" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-emerald-600" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Summary.PassRate) %></div><div class="text-slate-400" style="font-size:11.5px">Across all courses</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width:<%= BarWidth(Summary.PassRate) %>%"></div></div></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Fail Rate</div><i data-lucide="x-circle" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-[#a01020]" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Summary.FailRate) %></div><div class="text-slate-400" style="font-size:11.5px">Across all courses</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:<%= BarWidth(Summary.FailRate) %>%"></div></div></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">At-Risk Students</div><i data-lucide="alert-triangle" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-[#a01020]" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Summary.AtRiskStudents.ToString("N0") %></div><div class="text-slate-400" style="font-size:11.5px">Intervention required</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:<%= BarWidth(Summary.TotalStudents > 0 ? (decimal)Summary.AtRiskStudents * 100m / Summary.TotalStudents : 0m) %>%"></div></div></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm transition-all"><div class="flex items-center justify-between"><div class="text-slate-500" style="font-size:11.5px;font-weight:500">Top Performers</div><i data-lucide="award" class="h-4 w-4 text-slate-300"></i></div><div class="mt-1 text-emerald-600" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= TopPerformerCount.ToString("N0") %></div><div class="text-slate-400" style="font-size:11.5px">CGPA &ge; 3.7</div><div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width:<%= BarWidth(Summary.TotalStudents > 0 ? (decimal)TopPerformerCount * 100m / Summary.TotalStudents : 0m) %>%"></div></div></div>
     </section>
 
     <%-- Tab card --%>
@@ -72,24 +65,16 @@
             <div class="p-6" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px">
                 <div class="rounded-xl border border-slate-200 p-5">
                     <h3 class="text-slate-900" style="font-size:14px;font-weight:700">Grade Distribution</h3>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12px">Letter grades across the current semester.</p>
+                    <p class="mt-0.5 text-slate-500" style="font-size:12px">Letter grades across all recorded results.</p>
                     <div class="mt-4 space-y-3">
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">A / A+</span><span class="text-slate-500 tabular-nums">32%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width:32%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">B / B+</span><span class="text-slate-500 tabular-nums">38%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-sky-500" style="width:38%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">C / C+</span><span class="text-slate-500 tabular-nums">16%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-amber-500" style="width:16%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">D</span><span class="text-slate-500 tabular-nums">8%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-orange-500" style="width:8%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">F</span><span class="text-slate-500 tabular-nums">6%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:6%"></div></div></div>
+                        <%= GradeDistributionHtml %>
                     </div>
                 </div>
                 <div class="rounded-xl border border-slate-200 p-5">
                     <h3 class="text-slate-900" style="font-size:14px;font-weight:700">Pass Rate by Programme</h3>
                     <p class="mt-0.5 text-slate-500" style="font-size:12px">Programme comparison across the cohort.</p>
                     <div class="mt-4 space-y-3">
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">BCS</span><span class="text-slate-500 tabular-nums">89%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:89%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">BIT</span><span class="text-slate-500 tabular-nums">84%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:84%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">BBA</span><span class="text-slate-500 tabular-nums">88%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:88%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">BME</span><span class="text-slate-500 tabular-nums">80%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:80%"></div></div></div>
-                        <div><div class="flex items-center justify-between" style="font-size:12.5px"><span class="text-slate-700 font-medium">BDS</span><span class="text-slate-500 tabular-nums">92%</span></div><div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:92%"></div></div></div>
+                        <%= ProgrammePassRatesHtml %>
                     </div>
                 </div>
             </div>
@@ -141,11 +126,11 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <select data-table-filter="prog" class="h-9 rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= ProgrammeOptionsHtml %></select>
                         <select data-table-filter="sem" class="h-9 rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= SemesterOptionsHtml %></select>
-                        <div data-table-chip="band" class="inline-flex items-center rounded-md border border-slate-200 bg-white p-0.5">
+                        <div data-table-chip="status" class="inline-flex items-center rounded-md border border-slate-200 bg-white p-0.5">
                             <button type="button" data-chip="All" data-active="true" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">All</button>
-                            <button type="button" data-chip="High" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">High</button>
-                            <button type="button" data-chip="Medium" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">Medium</button>
-                            <button type="button" data-chip="Low" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">Low</button>
+                            <button type="button" data-chip="Healthy" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">Healthy</button>
+                            <button type="button" data-chip="Warning" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">Warning</button>
+                            <button type="button" data-chip="Critical" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">Critical</button>
                         </div>
                     </div>
                 </div>
@@ -261,6 +246,41 @@
         replaceRows("students", "backend-student-rows");
         replaceRows("atrisk", "backend-risk-rows");
         replaceRows("top", "backend-top-rows");
+      })();
+
+      // Scope filter: push the selected programme/semester into every tab's table
+      // filters (which are populated from the database) and re-run the client-side filter.
+      (function () {
+        var scope = document.querySelector("[data-scope]");
+        if (!scope) return;
+        var progSel = scope.querySelector("[data-scope-prog]");
+        var semSel = scope.querySelector("[data-scope-sem]");
+        var yearSel = scope.querySelector("[data-scope-year]");
+
+        function applyToTables(key, value) {
+          document.querySelectorAll("[data-table-filter='" + key + "']").forEach(function (sel) {
+            sel.value = value;
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+        }
+
+        var applyBtn = scope.querySelector("[data-scope-apply]");
+        if (applyBtn) applyBtn.addEventListener("click", function () {
+          if (progSel) applyToTables("prog", progSel.value);
+          if (semSel) applyToTables("sem", semSel.value);
+          var menu = scope.querySelector("[data-dropdown-menu]");
+          if (menu) menu.style.display = "none";
+          if (window.toast) window.toast.success("Filter applied across all tabs");
+        });
+
+        var clearBtn = scope.querySelector("[data-scope-clear]");
+        if (clearBtn) clearBtn.addEventListener("click", function () {
+          if (progSel) progSel.value = "";
+          if (semSel) semSel.value = "";
+          if (yearSel) yearSel.selectedIndex = 0;
+          applyToTables("prog", "");
+          applyToTables("sem", "");
+        });
       })();
     </script>
 </asp:Content>

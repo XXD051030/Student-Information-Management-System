@@ -22,6 +22,8 @@ namespace src.admin
         protected string SemesterOptionsHtml { get; private set; }
         protected string ProgrammeOptionsHtml { get; private set; }
         protected string LecturerOptionsHtml { get; private set; }
+        protected string GradeDistributionHtml { get; private set; }
+        protected string ProgrammePassRatesHtml { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -34,6 +36,8 @@ namespace src.admin
             AtRiskRowsHtml = BuildAtRiskRows(students);
             TopPerformerRowsHtml = BuildTopRows(students);
             TopPerformerCount = new List<AdminStudentPerformanceRow>(students).FindAll(s => s.Cgpa >= 3.7m).Count;
+            GradeDistributionHtml = BuildGradeDistribution(service.GetGradeDistribution());
+            ProgrammePassRatesHtml = BuildProgrammePassRates(service.GetProgrammePassRates());
             var lookups = service.GetLookups();
             AcademicYearOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicYears, null);
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.StudentSemesters, "All semesters");
@@ -108,6 +112,40 @@ namespace src.admin
             return html.ToString();
         }
 
+        private static string BuildGradeDistribution(IEnumerable<AdminGradeBand> bands)
+        {
+            var html = new StringBuilder();
+            foreach (var b in bands)
+            {
+                var width = Clamp(b.Percent);
+                html.Append("<div><div class=\"flex items-center justify-between\" style=\"font-size:12.5px\">");
+                html.Append("<span class=\"text-slate-700 font-medium\">").Append(Html(b.Label)).Append("</span>");
+                html.Append("<span class=\"text-slate-500 tabular-nums\">").Append(b.Percent.ToString("0")).Append("%</span></div>");
+                html.Append("<div class=\"mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100\"><div class=\"h-full rounded-full ").Append(b.Color).Append("\" style=\"width:").Append(width).Append("%\"></div></div></div>");
+            }
+            return html.ToString();
+        }
+
+        private static string BuildProgrammePassRates(IEnumerable<AdminProgrammePassRate> rows)
+        {
+            var html = new StringBuilder();
+            var any = false;
+            foreach (var r in rows)
+            {
+                any = true;
+                var width = Clamp(r.PassRate);
+                html.Append("<div><div class=\"flex items-center justify-between\" style=\"font-size:12.5px\">");
+                html.Append("<span class=\"text-slate-700 font-medium\">").Append(Html(r.Code)).Append("</span>");
+                html.Append("<span class=\"text-slate-500 tabular-nums\">").Append(r.PassRate.ToString("0")).Append("%</span></div>");
+                html.Append("<div class=\"mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100\"><div class=\"h-full rounded-full bg-[#e0162b]\" style=\"width:").Append(width).Append("%\"></div></div></div>");
+            }
+            if (!any)
+            {
+                html.Append("<p class=\"text-slate-400\" style=\"font-size:12.5px\">No programme grades recorded yet.</p>");
+            }
+            return html.ToString();
+        }
+
         protected string Percent(decimal value)
         {
             return value.ToString("0.0") + "%";
@@ -132,7 +170,7 @@ namespace src.admin
             {
                 var status = c.PassRate >= 80 ? "Healthy" : c.PassRate >= 60 ? "Warning" : "Critical";
                 var statusClass = Badge(status);
-                html.Append("<tr data-row data-search=\"").Append(Attr((c.Code + " " + c.Title).ToLowerInvariant())).Append("\" data-prog=\"").Append(Attr(c.Programme)).Append("\" data-status=\"").Append(Attr(status)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<tr data-row data-search=\"").Append(Attr((c.Code + " " + c.Title).ToLowerInvariant())).Append("\" data-prog=\"").Append(Attr(c.Programme)).Append("\" data-sem=\"").Append(c.Semester).Append("\" data-status=\"").Append(Attr(status)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
                 html.Append("<td class=\"px-6 py-3 text-slate-500\" style=\"font-size:12.5px\"><span class=\"font-medium\">").Append(Html(c.Code)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"text-slate-900 font-medium\">").Append(Html(c.Title)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(c.Programme)).Append("</span></td>");
