@@ -87,9 +87,80 @@ namespace src.services.admin
                 data.AverageCgpa = perf.AverageCgpa;
                 data.PassRate = perf.PassRate;
                 data.FailRate = perf.FailRate;
+                data.CriticalAtRiskStudents = Count(conn,
+                    "SELECT COUNT(*) FROM (SELECT g.student_id FROM GRADES g " +
+                    "GROUP BY g.student_id HAVING AVG(CAST(g.grade_point AS float)) < 2.0) x");
+                data.RecentNotices = QueryRecentNotices(conn);
             }
 
             return data;
+        }
+
+        // Letter-grade distribution across all recorded grades, bucketed by the leading
+        // letter (A+/A/A- -> A, etc.) so the Overview chart reflects real data.
+        public List<AdminGradeBand> GetGradeDistribution()
+        {
+            var bands = new List<AdminGradeBand>
+            {
+                new AdminGradeBand { Key = "A", Label = "A / A+", Color = "bg-emerald-500" },
+                new AdminGradeBand { Key = "B", Label = "B / B+", Color = "bg-sky-500" },
+                new AdminGradeBand { Key = "C", Label = "C / C+", Color = "bg-amber-500" },
+                new AdminGradeBand { Key = "D", Label = "D", Color = "bg-orange-500" },
+                new AdminGradeBand { Key = "F", Label = "F", Color = "bg-[#e0162b]" }
+            };
+
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(
+                "SELECT UPPER(LEFT(LTRIM(letter_grade), 1)) AS band, COUNT(*) AS cnt " +
+                "FROM GRADES WHERE letter_grade IS NOT NULL AND LTRIM(letter_grade) <> '' " +
+                "GROUP BY UPPER(LEFT(LTRIM(letter_grade), 1))", conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                int total = 0;
+                var counts = new Dictionary<string, int>();
+                while (reader.Read())
+                {
+                    var band = Text(reader["band"]);
+                    var cnt = Int(reader["cnt"]);
+                    if (!string.IsNullOrEmpty(band)) { counts[band] = cnt; total += cnt; }
+                }
+                foreach (var b in bands)
+                {
+                    b.Count = counts.ContainsKey(b.Key) ? counts[b.Key] : 0;
+                    b.Percent = Percentage(b.Count, total);
+                }
+            }
+            return bands;
+        }
+
+        // Pass rate per programme (non-F grades), one entry per programme that has grades.
+        public List<AdminProgrammePassRate> GetProgrammePassRates()
+        {
+            const string sql =
+                "SELECT p.programme_code, " +
+                "SUM(CASE WHEN g.letter_grade <> 'F' THEN 1 ELSE 0 END) AS passed, COUNT(*) AS total " +
+                "FROM GRADES g " +
+                "JOIN STUDENTS s ON s.student_id = g.student_id " +
+                "JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
+                "WHERE g.letter_grade IS NOT NULL AND LTRIM(g.letter_grade) <> '' " +
+                "GROUP BY p.programme_code ORDER BY p.programme_code";
+            var rows = new List<AdminProgrammePassRate>();
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var passed = Int(reader["passed"]);
+                    var total = Int(reader["total"]);
+                    rows.Add(new AdminProgrammePassRate
+                    {
+                        Code = Text(reader["programme_code"]),
+                        PassRate = Percentage(passed, total)
+                    });
+                }
+            }
+            return rows;
         }
 
         public List<AdminUserRow> GetUsers()
@@ -864,6 +935,147 @@ namespace src.services.admin
                         }
                     }
                 }
+
+                // Per-semester GPA for the CGPA trend chart. Cumulative GPA is built up in
+                // code so it stays consistent with the overall CGPA (simple grade-point average).
+                using (var cmd = new SqlCommand(
+                    "SELECT g.semester, AVG(CAST(g.grade_point AS float)) AS sem_gpa, " +
+                    "COUNT(*) AS grade_count, MIN(g.grade_id) AS first_id " +
+                    "FROM GRADES g WHERE g.student_id = @id AND g.semester IS NOT NULL " +
+                    "GROUP BY g.semester ORDER BY MIN(g.grade_id)", conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", summary.StudentId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        double runningSum = 0;
+                        int runningCount = 0;
+                        while (reader.Read())
+                        {
+                            var semGpa = reader.IsDBNull(1) ? 0d : Convert.ToDouble(reader.GetValue(1));
+                            var count = reader.IsDBNull(2) ? 0 : Convert.ToInt32(reader.GetValue(2));
+                            runningSum += semGpa * count;
+                            runningCount += count;
+                            summary.CgpaTrend.Add(new AdminStudentSemesterGpa
+                            {
+                                SemesterLabel = Text(reader["semester"]),
+                                SemesterGpa = Math.Round((decimal)semGpa, 2),
+                                CumulativeGpa = runningCount == 0 ? 0m : Math.Round((decimal)(runningSum / runningCount), 2)
+                            });
+                        }
+                    }
+                }
+
+                // Per-course attendance, grouped into the semesters the student was enrolled in.
+                using (var cmd = new SqlCommand(
+                    "SELECT co.semester AS semester_name, ISNULL(co.academic_year, '') AS academic_year, " +
+                    "c.course_code, c.course_name, " +
+                    "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                    "COUNT(ar.attendance_id) AS total_count " +
+                    "FROM ENROLLMENTS e " +
+                    "JOIN COURSE_OFFERINGS co ON co.offer_id = e.offer_id " +
+                    "JOIN COURSES c ON c.course_id = co.course_id " +
+                    "LEFT JOIN ATTENDANCE_SESSIONS ats ON ats.offer_id = co.offer_id " +
+                    "LEFT JOIN ATTENDANCE_RECORDS ar ON ar.session_id = ats.session_id AND ar.student_id = e.student_id " +
+                    "WHERE e.student_id = @id AND e.status IN ('ENROLLED','PENDING') " +
+                    "GROUP BY co.semester, co.academic_year, c.course_code, c.course_name " +
+                    "ORDER BY co.academic_year, co.semester, c.course_code", conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", summary.StudentId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        AdminStudentSemesterAttendance current = null;
+                        while (reader.Read())
+                        {
+                            var semesterLabel = Text(reader["semester_name"]);
+                            var academicYear = Text(reader["academic_year"]);
+                            var present = Int(reader["present_count"]);
+                            var total = Int(reader["total_count"]);
+
+                            if (current == null || current.SemesterLabel != semesterLabel || current.AcademicYear != academicYear)
+                            {
+                                current = new AdminStudentSemesterAttendance
+                                {
+                                    SemesterLabel = semesterLabel,
+                                    AcademicYear = academicYear
+                                };
+                                summary.AttendanceBySemester.Add(current);
+                            }
+
+                            current.Courses.Add(new AdminStudentCourseAttendance
+                            {
+                                Code = Text(reader["course_code"]),
+                                Name = Text(reader["course_name"]),
+                                Present = present,
+                                Total = total,
+                                Rate = Percentage(present, total)
+                            });
+                        }
+
+                        // Overall semester rate is records-weighted, not an average of per-course rates.
+                        foreach (var sem in summary.AttendanceBySemester)
+                        {
+                            var totalRecords = sem.Courses.Sum(x => x.Total);
+                            var presentRecords = sem.Courses.Sum(x => x.Present);
+                            sem.Rate = Percentage(presentRecords, totalRecords);
+                        }
+                    }
+                }
+
+                // Course grades grouped by semester for the "Semester Results" accordion.
+                using (var cmd = new SqlCommand(
+                    "SELECT g.semester AS semester_name, ISNULL(co.academic_year, '') AS academic_year, " +
+                    "c.course_code, c.course_name, c.credit_hour, " +
+                    "ISNULL(g.letter_grade, '') AS letter_grade, g.grade_point, g.grade_id " +
+                    "FROM GRADES g " +
+                    "JOIN COURSE_OFFERINGS co ON co.offer_id = g.offer_id " +
+                    "JOIN COURSES c ON c.course_id = co.course_id " +
+                    "WHERE g.student_id = @id " +
+                    "ORDER BY g.grade_id", conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", summary.StudentId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        AdminStudentSemesterResult current = null;
+                        while (reader.Read())
+                        {
+                            var semesterLabel = Text(reader["semester_name"]);
+                            var academicYear = Text(reader["academic_year"]);
+
+                            if (current == null || current.SemesterLabel != semesterLabel || current.AcademicYear != academicYear)
+                            {
+                                current = new AdminStudentSemesterResult
+                                {
+                                    SemesterLabel = semesterLabel,
+                                    AcademicYear = academicYear
+                                };
+                                summary.SemesterResults.Add(current);
+                            }
+
+                            current.Courses.Add(new AdminStudentCourseGrade
+                            {
+                                Code = Text(reader["course_code"]),
+                                Name = Text(reader["course_name"]),
+                                Credits = Int(reader["credit_hour"]),
+                                LetterGrade = Text(reader["letter_grade"]),
+                                GradePoint = Decimal(reader["grade_point"])
+                            });
+                        }
+
+                        // Sem GPA / cumulative CGPA use the same simple grade-point average as
+                        // the overall CGPA and the trend chart, so all three stay consistent.
+                        decimal runningSum = 0m;
+                        int runningCount = 0;
+                        foreach (var sem in summary.SemesterResults)
+                        {
+                            var semSum = sem.Courses.Sum(x => x.GradePoint);
+                            var semCount = sem.Courses.Count;
+                            sem.SemGpa = semCount == 0 ? 0m : Math.Round(semSum / semCount, 2);
+                            runningSum += semSum;
+                            runningCount += semCount;
+                            sem.Cgpa = runningCount == 0 ? 0m : Math.Round(runningSum / runningCount, 2);
+                        }
+                    }
+                }
             }
             return summary;
         }
@@ -1031,6 +1243,51 @@ namespace src.services.admin
                 course.PassRate = Percentage(course.Passed, course.Passed + course.Failed);
                 if (students.Count > 0) course.AverageMarks = students.Average(s => s.Marks);
             }
+        }
+
+        private static List<AdminDashboardNotice> QueryRecentNotices(SqlConnection conn)
+        {
+            const string sql =
+                "SELECT TOP 4 academic_year, semester, start_date, end_date " +
+                "FROM ACADEMIC_SESSIONS " +
+                "WHERE end_date >= DATEADD(day, -7, GETDATE()) " +
+                "ORDER BY start_date ASC";
+            var notices = new List<AdminDashboardNotice>();
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var academicYear = Text(reader["academic_year"]);
+                    var semester = Text(reader["semester"]);
+                    var start = Convert.ToDateTime(reader["start_date"]);
+                    var end = Convert.ToDateTime(reader["end_date"]);
+                    var today = DateTime.Today;
+                    string title, description;
+                    DateTime date;
+                    if (today < start.Date)
+                    {
+                        title = semester + " " + academicYear + " Starting Soon";
+                        description = "Semester begins " + start.ToString("d MMM yyyy") + ". Ensure all course offerings and enrolments are finalized.";
+                        date = start;
+                    }
+                    else if (today <= end.Date)
+                    {
+                        var daysLeft = (end.Date - today).Days;
+                        title = semester + " " + academicYear + " In Progress";
+                        description = "Currently in session, ending " + end.ToString("d MMM yyyy") + ". " + daysLeft + " day" + (daysLeft != 1 ? "s" : "") + " remaining.";
+                        date = end;
+                    }
+                    else
+                    {
+                        title = semester + " " + academicYear + " Recently Ended";
+                        description = "Semester ended " + end.ToString("d MMM yyyy") + ". Final grades and results may still require review.";
+                        date = end;
+                    }
+                    notices.Add(new AdminDashboardNotice { Title = title, Description = description, Date = date });
+                }
+            }
+            return notices;
         }
 
         private static List<ProgrammeEnrolment> QueryProgrammeEnrolment(SqlConnection conn)
@@ -1496,6 +1753,66 @@ namespace src.services.admin
         public int CompletedCourses { get; set; }
         public int CreditHours { get; set; }
         public decimal Attendance { get; set; }
+        public List<AdminStudentSemesterGpa> CgpaTrend { get; set; } = new List<AdminStudentSemesterGpa>();
+        public List<AdminStudentSemesterAttendance> AttendanceBySemester { get; set; } = new List<AdminStudentSemesterAttendance>();
+        public List<AdminStudentSemesterResult> SemesterResults { get; set; } = new List<AdminStudentSemesterResult>();
+    }
+
+    public class AdminStudentSemesterGpa
+    {
+        public string SemesterLabel { get; set; }
+        public decimal SemesterGpa { get; set; }
+        public decimal CumulativeGpa { get; set; }
+    }
+
+    public class AdminStudentSemesterAttendance
+    {
+        public string SemesterLabel { get; set; }
+        public string AcademicYear { get; set; }
+        public decimal Rate { get; set; }
+        public List<AdminStudentCourseAttendance> Courses { get; set; } = new List<AdminStudentCourseAttendance>();
+    }
+
+    public class AdminStudentCourseAttendance
+    {
+        public string Code { get; set; }
+        public string Name { get; set; }
+        public int Present { get; set; }
+        public int Total { get; set; }
+        public decimal Rate { get; set; }
+    }
+
+    public class AdminStudentSemesterResult
+    {
+        public string SemesterLabel { get; set; }
+        public string AcademicYear { get; set; }
+        public decimal SemGpa { get; set; }
+        public decimal Cgpa { get; set; }
+        public List<AdminStudentCourseGrade> Courses { get; set; } = new List<AdminStudentCourseGrade>();
+    }
+
+    public class AdminStudentCourseGrade
+    {
+        public string Code { get; set; }
+        public string Name { get; set; }
+        public int Credits { get; set; }
+        public string LetterGrade { get; set; }
+        public decimal GradePoint { get; set; }
+    }
+
+    public class AdminGradeBand
+    {
+        public string Key { get; set; }
+        public string Label { get; set; }
+        public string Color { get; set; }
+        public int Count { get; set; }
+        public decimal Percent { get; set; }
+    }
+
+    public class AdminProgrammePassRate
+    {
+        public string Code { get; set; }
+        public decimal PassRate { get; set; }
     }
 
     public class AdminDashboardData
@@ -1504,11 +1821,20 @@ namespace src.services.admin
         public int TotalLecturers { get; set; }
         public int PendingRequests { get; set; }
         public int AtRiskStudents { get; set; }
+        public int CriticalAtRiskStudents { get; set; }
         public decimal AverageAttendance { get; set; }
         public decimal AverageCgpa { get; set; }
         public decimal PassRate { get; set; }
         public decimal FailRate { get; set; }
         public List<ProgrammeEnrolment> Programmes { get; set; }
+        public List<AdminDashboardNotice> RecentNotices { get; set; } = new List<AdminDashboardNotice>();
+    }
+
+    public class AdminDashboardNotice
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime Date { get; set; }
     }
 
     public class ProgrammeEnrolment

@@ -93,26 +93,7 @@
                 </div>
             </header>
             <ul class="px-3 pb-3">
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#e0162b]/10 text-[#e0162b]"><i data-lucide="file-text" class="h-4 w-4"></i></span>
-                    <div class="min-w-0 flex-1"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">12 new admission applications</div><div class="text-slate-500 truncate" style="font-size:12px">Awaiting review &middot; BCS, BIT, BBA</div></div>
-                </li>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700"><i data-lucide="inbox" class="h-4 w-4"></i></span>
-                    <div class="min-w-0 flex-1"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">9 add/drop requests pending</div><div class="text-slate-500 truncate" style="font-size:12px">Submitted in the last 24 hours</div></div>
-                </li>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#e0162b]/10 text-[#e0162b]"><i data-lucide="alert-triangle" class="h-4 w-4"></i></span>
-                    <div class="min-w-0 flex-1"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">5 critical at-risk students</div><div class="text-slate-500 truncate" style="font-size:12px">CGPA below 2.00 &mdash; intervention required</div></div>
-                </li>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700"><i data-lucide="calendar" class="h-4 w-4"></i></span>
-                    <div class="min-w-0 flex-1"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Course registration closes Fri</div><div class="text-slate-500 truncate" style="font-size:12px">Reminder due to all students</div></div>
-                </li>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><i data-lucide="calendar" class="h-4 w-4"></i></span>
-                    <div class="min-w-0 flex-1"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Final exam period in 2 weeks</div><div class="text-slate-500 truncate" style="font-size:12px">Confirm room allocations</div></div>
-                </li>
+                <%= PendingActionsHtml %>
             </ul>
         </div>
     </section>
@@ -162,22 +143,7 @@
                 <a href="<%= ResolveUrl("~/admin/academic_calendar.aspx") %>" class="text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:600">All</a>
             </header>
             <ul class="mt-4 space-y-4">
-                <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                    <div class="flex items-center justify-between gap-2"><div class="text-slate-900" style="font-size:13px;font-weight:600">Final Exam Timetable Published</div><div class="text-slate-400 shrink-0" style="font-size:11.5px">May 28, 2026</div></div>
-                    <div class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Examination period: 12&ndash;25 June 2026. Lecturers must confirm invigilation slots by 5 June.</div>
-                </li>
-                <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                    <div class="flex items-center justify-between gap-2"><div class="text-slate-900" style="font-size:13px;font-weight:600">Admission Period Closing</div><div class="text-slate-400 shrink-0" style="font-size:11.5px">May 26, 2026</div></div>
-                    <div class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Sep 2026 intake applications close 14 June. Current pending: 38 applications.</div>
-                </li>
-                <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                    <div class="flex items-center justify-between gap-2"><div class="text-slate-900" style="font-size:13px;font-weight:600">Add/Drop Deadline Reminder</div><div class="text-slate-400 shrink-0" style="font-size:11.5px">May 24, 2026</div></div>
-                    <div class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Final add/drop deadline is 30 May, 11:59 PM. Late requests need HOP approval.</div>
-                </li>
-                <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                    <div class="flex items-center justify-between gap-2"><div class="text-slate-900" style="font-size:13px;font-weight:600">Result Release Schedule</div><div class="text-slate-400 shrink-0" style="font-size:11.5px">May 22, 2026</div></div>
-                    <div class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Semester 1 results will be released to students on 10 June at 9:00 AM.</div>
-                </li>
+                <%= AdminNoticesHtml %>
             </ul>
         </div>
     </section>
