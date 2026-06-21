@@ -16,9 +16,9 @@
                     <%= SemesterOptionsHtml %>
                 </select>
             </div>
-            <button type="button" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
+            <a id="export-attendance" href="<%= ResolveUrl("~/student/attendance-report.ashx") %>" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
                 <i data-lucide="download" class="h-4 w-4"></i> Export report
-            </button>
+            </a>
         </div>
     </div>
 

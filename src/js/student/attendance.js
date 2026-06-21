@@ -117,6 +117,15 @@
     }
 
     function applyFilter(value) {
+        var exportLink = document.getElementById("export-attendance");
+        if (exportLink) {
+            var baseUrl = exportLink.getAttribute("data-base-url") || exportLink.href.split("?")[0];
+            exportLink.setAttribute("data-base-url", baseUrl);
+            exportLink.href = value === "all"
+                ? baseUrl
+                : baseUrl + "?semesterId=" + encodeURIComponent(value);
+        }
+
         var visible = [];
         cards().forEach(function (card) {
             var sid = card.getAttribute("data-semester-id");
