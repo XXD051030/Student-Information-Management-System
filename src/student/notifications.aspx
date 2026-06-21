@@ -42,7 +42,8 @@
                                 data-author="<%# Server.HtmlEncode((string)Eval("AuthorName")) %>"
                                 data-time="<%# ListTime((DateTime)Eval("CreatedAt")) %>"
                                 data-fulltime="<%# FullTime((DateTime)Eval("CreatedAt")) %>"
-                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>">
+                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>"
+                                data-fileurl="<%# AttachmentUrl(Eval("FileUrl")) %>">
                                 <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
@@ -101,6 +102,13 @@
                     </div>
 
                     <div id="detail-content" class="mt-5 text-slate-700" style="font-size:14px;line-height:1.7;white-space:pre-line"></div>
+
+                    <a id="detail-attachment" href="#" target="_blank" hidden
+                        class="mt-5 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-slate-700 hover:border-slate-300 hover:text-slate-900 transition-colors"
+                        style="font-size:13px;font-weight:600">
+                        <i data-lucide="paperclip" class="h-4 w-4"></i>
+                        Open attachment
+                    </a>
                 </div>
 
                 <footer class="border-t border-slate-100 bg-slate-50/40 px-5 py-3 flex items-center justify-end gap-2">
@@ -116,5 +124,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=4"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=5"></script>
 </asp:Content>

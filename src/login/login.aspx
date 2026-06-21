@@ -77,7 +77,7 @@
                             <input id="remember" name="remember" type="checkbox" checked class="h-4 w-4 cursor-pointer rounded border-gray-300 text-indigo-600" />
                             <span class="text-gray-700" style="font-size:13px;font-weight:500">Remember me</span>
                         </label>
-                        <a href="#" class="text-indigo-600 hover:text-indigo-700 transition-colors" style="font-size:13px;font-weight:600">Forgot password?</a>
+                        <a href="<%= ResolveUrl("~/login/forgot_password.aspx") %>" class="text-indigo-600 hover:text-indigo-700 transition-colors" style="font-size:13px;font-weight:600">Forgot password?</a>
                     </div>
 
                     <button id="pw_submit" runat="server" type="submit" onserverclick="PwSubmit_Click" ClientIDMode="Static" disabled="disabled" class="mt-6 group flex w-full items-center justify-center gap-2 rounded-xl px-4 transition-all h-12 bg-indigo-300 text-white cursor-not-allowed" style="font-size:15px;font-weight:600">

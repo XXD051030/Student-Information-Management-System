@@ -150,6 +150,17 @@
         var detailContent = document.getElementById('detail-content');
         if (detailContent) detailContent.textContent = body ? body.textContent : '';
 
+        var fileUrl = item.getAttribute('data-fileurl') || '';
+        var attachEl = document.getElementById('detail-attachment');
+        if (attachEl) {
+            if (fileUrl) {
+                attachEl.href = fileUrl;
+                attachEl.hidden = false;
+            } else {
+                attachEl.hidden = true;
+            }
+        }
+
         var pin = document.getElementById('detail-pin');
         if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
 
