@@ -67,7 +67,7 @@
                             <p id="pw-helper" class="text-gray-500" style="font-size:13px">Your password is encrypted and never shared.</p>
                             <div id="pw-error" class="hidden items-center gap-1.5 text-red-600" style="font-size:13px">
                                 <i data-lucide="alert-circle" class="h-3.5 w-3.5"></i>
-                                <span id="pw-error-text">Password must be at least 6 characters.</span>
+                                <span id="pw-error-text"></span>
                             </div>
                         </div>
                     </div>
