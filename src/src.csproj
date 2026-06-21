@@ -138,6 +138,7 @@
     <Content Include="lecturer\lecturer_notifications.aspx" />
     <Content Include="devtools\ai_console.aspx" />
     <Content Include="shared\email_test.aspx" />
+    <Content Include="shared\help.aspx" />
     <Content Include="shared\material_preview.aspx" />
     <Content Include="student\account.aspx" />
     <Content Include="student\notifications.aspx" />
@@ -500,6 +501,13 @@
     </Compile>
     <Compile Include="shared\email_test.aspx.designer.cs">
       <DependentUpon>email_test.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\help.aspx.cs">
+      <DependentUpon>help.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\help.aspx.designer.cs">
+      <DependentUpon>help.aspx</DependentUpon>
     </Compile>
     <Compile Include="shared\material_preview.aspx.cs">
       <DependentUpon>material_preview.aspx</DependentUpon>

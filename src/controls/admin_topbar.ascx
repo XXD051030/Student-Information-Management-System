@@ -12,13 +12,11 @@
 
     <div class="ml-auto flex items-center gap-2">
 
-        <button type="button"
-                data-toast="Help resources are not configured yet"
-                data-toast-type="info"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                aria-label="Help">
+        <a href="<%= ResolveUrl("~/shared/help.aspx") %>"
+           class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+           aria-label="Help">
             <i data-lucide="help-circle" class="h-5 w-5"></i>
-        </button>
+        </a>
 
         <%-- Notifications: styled to match the student topbar but not wired
              (no admin unread-count source), so it is a plain non-navigating
