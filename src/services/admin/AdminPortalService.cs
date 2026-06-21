@@ -4,8 +4,10 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using src.db;
+using src.services.email;
 
 namespace src.services.admin
 {
@@ -229,6 +231,10 @@ namespace src.services.admin
             if (string.IsNullOrWhiteSpace(request.FullName)) throw new ArgumentException("Full name is required.");
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email is required.");
 
+            var tempPassword = GenerateTempPassword();
+            string detailLabel;
+            string detailId;
+
             using (var conn = Db.OpenConnection())
             using (var tx = conn.BeginTransaction())
             {
@@ -243,7 +249,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@id", userId);
                     cmd.Parameters.AddWithValue("@username", username);
                     cmd.Parameters.AddWithValue("@email", request.Email.Trim());
-                    cmd.Parameters.AddWithValue("@hash", Sha256Hex(string.IsNullOrWhiteSpace(request.Password) ? "Password@123" : request.Password));
+                    cmd.Parameters.AddWithValue("@hash", Sha256Hex(tempPassword));
                     cmd.Parameters.AddWithValue("@role", role);
                     cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
@@ -266,6 +272,8 @@ namespace src.services.admin
                         cmd.Parameters.AddWithValue("@status", status);
                         cmd.ExecuteNonQuery();
                     }
+                    detailLabel = "Programme";
+                    detailId = programmeId;
                 }
                 else
                 {
@@ -284,9 +292,29 @@ namespace src.services.admin
                         cmd.Parameters.AddWithValue("@status", status);
                         cmd.ExecuteNonQuery();
                     }
+                    detailLabel = "Department";
+                    detailId = departmentId;
                 }
 
                 tx.Commit();
+
+                var personalEmail = string.IsNullOrWhiteSpace(request.PersonalEmail)
+                    ? request.Email.Trim() : request.PersonalEmail.Trim();
+                var fullName = request.FullName.Trim();
+                var email = request.Email.Trim();
+                var notes = request.Notes;
+                var isStudent = role == "STUDENT";
+
+                // Resolving the display name and sending the email both need extra DB/SMTP
+                // round trips that the account creation itself doesn't — push both off the
+                // request thread so the admin UI gets its response as soon as the user exists.
+                Task.Run(() =>
+                {
+                    var detailValue = isStudent ? ProgrammeNameStandalone(detailId) : DepartmentNameStandalone(detailId);
+                    EmailService.SendNewAccount(
+                        personalEmail, fullName, email, tempPassword, detailLabel, detailValue, notes);
+                });
+
                 return userId;
             }
         }
@@ -1192,6 +1220,57 @@ namespace src.services.admin
             }
         }
 
+        /// <summary>Opens its own connection; only called from the background email task
+        /// after CreateUser's transaction has already committed and closed.</summary>
+        private static string ProgrammeNameStandalone(string programmeId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("SELECT programme_name FROM PROGRAMMES WHERE programme_id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@id", programmeId);
+                var found = cmd.ExecuteScalar();
+                return found == null || found == DBNull.Value ? programmeId : Convert.ToString(found);
+            }
+        }
+
+        /// <summary>Opens its own connection; only called from the background email task
+        /// after CreateUser's transaction has already committed and closed.</summary>
+        private static string DepartmentNameStandalone(string departmentId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("SELECT department_name FROM DEPARTMENTS WHERE department_id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@id", departmentId);
+                var found = cmd.ExecuteScalar();
+                return found == null || found == DBNull.Value ? departmentId : Convert.ToString(found);
+            }
+        }
+
+        /// <summary>12-char random password meeting AccountPasswordService strength rules
+        /// (upper, lower, digit, symbol) for new-account emails.</summary>
+        private static string GenerateTempPassword()
+        {
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghijkmnopqrstuvwxyz";
+            const string digits = "23456789";
+            const string symbols = "!@#$%&*";
+            const string all = upper + lower + digits + symbols;
+
+            var bytes = new byte[12];
+            using (var rng = RandomNumberGenerator.Create())
+                rng.GetBytes(bytes);
+
+            var chars = new char[12];
+            chars[0] = upper[bytes[0] % upper.Length];
+            chars[1] = lower[bytes[1] % lower.Length];
+            chars[2] = digits[bytes[2] % digits.Length];
+            chars[3] = symbols[bytes[3] % symbols.Length];
+            for (int i = 4; i < chars.Length; i++)
+                chars[i] = all[bytes[i] % all.Length];
+
+            return new string(chars);
+        }
+
         private static string ResolveCourse(SqlConnection conn, SqlTransaction tx, string value)
         {
             using (var cmd = new SqlCommand("SELECT TOP 1 course_id FROM COURSES WHERE course_id = @v OR course_code = @v ORDER BY course_id", conn, tx))
@@ -1290,11 +1369,13 @@ namespace src.services.admin
         public int UserId { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
+        public string PersonalEmail { get; set; }
         public string Phone { get; set; }
         public string Role { get; set; }
         public string ProgrammeOrDepartment { get; set; }
         public string Status { get; set; }
         public string Password { get; set; }
+        public string Notes { get; set; }
     }
 
     public class AdminOption
