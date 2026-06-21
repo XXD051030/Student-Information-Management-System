@@ -89,3 +89,5 @@ Desktop.ini
 # AI assistant config (holds the API key; use src/ai.config.example as template)
 src/ai.config
 src/smtp.config
+# Google Cloud Translation key (use src/translate.config.example as template)
+src/translate.config

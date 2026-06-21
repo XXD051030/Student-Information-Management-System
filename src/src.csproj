@@ -78,6 +78,7 @@
     <Content Include="assistant\chat.aspx" />
     <Content Include="ai.config.example" />
     <Content Include="smtp.config" />
+    <Content Include="translate.config.example" />
     <Content Include="admin\AdminLayout.master" />
     <Content Include="admin\academic_calendar.aspx" />
     <Content Include="admin\academic_performance.aspx" />
@@ -121,6 +122,8 @@
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
     <Content Include="icon_upload.ashx" />
+    <Content Include="translate.ashx" />
+    <Content Include="js\shared\translate.js" />
     <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
@@ -171,6 +174,7 @@
       <DependentUpon>assistant_widget.ascx</DependentUpon>
     </Compile>
     <Compile Include="services\AiConsoleService.cs" />
+    <Compile Include="services\TranslationService.cs" />
     <Compile Include="controls\sidebar.ascx.cs">
       <DependentUpon>sidebar.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -311,6 +315,9 @@
     </Compile>
     <Compile Include="icon_upload.ashx.cs">
       <DependentUpon>icon_upload.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="translate.ashx.cs">
+      <DependentUpon>translate.ashx</DependentUpon>
     </Compile>
     <Compile Include="lecturer\material_publish.ashx.cs">
       <DependentUpon>material_publish.ashx</DependentUpon>

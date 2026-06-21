@@ -332,7 +332,7 @@ namespace src.services.admin
                     var programmeId = ResolveProgramme(conn, tx, request.ProgrammeOrDepartment);
                     using (var cmd = new SqlCommand(
                         "INSERT INTO STUDENTS (student_id, user_id, programme_id, student_name, student_email, phone, semester, current_standing, session, status) " +
-                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', '', @status)", conn, tx))
+                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 0, 'Good Standing', '', @status)", conn, tx))
                     {
                         cmd.Parameters.AddWithValue("@sid", studentId);
                         cmd.Parameters.AddWithValue("@uid", userId);

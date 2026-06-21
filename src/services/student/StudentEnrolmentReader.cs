@@ -20,6 +20,8 @@ namespace src.services
             var account = StudentProfileReader.GetAccount(user);
             if (account == null) return null;
 
+            var semesterCount = account.ProgrammeSemesterCount;
+            var isGraduated = semesterCount > 0 && account.CurrentSemesterNo >= semesterCount;
             var term = AcademicTermReader.GetRegistrationTerm();
             var alreadyRegisteredCount = term == null ? 0 : GetRegisteredCount(account.StudentId, term);
             return new StudentEnrollmentPage
@@ -27,7 +29,8 @@ namespace src.services
                 Term = term,
                 Window = AcademicTermReader.BuildRegistrationWindow(term, alreadyRegisteredCount > 0),
                 SemesterNo = account.CurrentSemesterNo,
-                Offerings = term == null ? new List<StudentOfferingOption>() : GetOfferingOptions(user, account.StudentId, term),
+                SemesterCount = semesterCount,
+                Offerings = (isGraduated || term == null) ? new List<StudentOfferingOption>() : GetOfferingOptions(user, account.StudentId, term),
                 AlreadyRegisteredCount = alreadyRegisteredCount
             };
         }
@@ -137,6 +140,9 @@ namespace src.services
             var account = StudentProfileReader.GetAccount(user);
             if (account == null) return 0;
 
+            if (account.ProgrammeSemesterCount > 0 && account.CurrentSemesterNo >= account.ProgrammeSemesterCount)
+                return 0;
+
             // Block enrollment when today is outside every session's registration window.
             var term = AcademicTermReader.GetRegistrationTerm();
             var hasEnrollment = term != null && GetRegisteredCount(account.StudentId, term) > 0;
@@ -160,6 +166,20 @@ namespace src.services
                         cmd.Parameters.AddWithValue("@studentId", account.StudentId);
                         cmd.Parameters.AddWithValue("@offerId", offerId);
                         inserted += Convert.ToInt32(cmd.ExecuteScalar());
+                    }
+                }
+
+                if (inserted > 0 && term != null)
+                {
+                    var termLabel = term.AcademicYear + " " + term.Name;
+                    const string updateSession =
+                        "UPDATE STUDENTS SET session = @session " +
+                        "WHERE student_id = @studentId AND (session IS NULL OR session = '' OR session <> @session)";
+                    using (var cmd = new SqlCommand(updateSession, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@studentId", account.StudentId);
+                        cmd.Parameters.AddWithValue("@session", termLabel);
+                        cmd.ExecuteNonQuery();
                     }
                 }
             }

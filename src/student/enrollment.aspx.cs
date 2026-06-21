@@ -14,6 +14,7 @@ namespace src.student
         private StudentRegistrationWindow _window;
         private List<StudentOfferingOption> _offerings;
         private int _semesterNo;
+        private int _semesterCount;
         private int _alreadyRegisteredCount;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -40,6 +41,7 @@ namespace src.student
             _window = page.Window;
             _offerings = page.Offerings ?? new List<StudentOfferingOption>();
             _semesterNo = page.SemesterNo;
+            _semesterCount = page.SemesterCount;
             _alreadyRegisteredCount = page.AlreadyRegisteredCount;
 
             // Once enrollment is closed (Phase 3) there is nothing left to register,
@@ -84,6 +86,8 @@ namespace src.student
         {
             get
             {
+                if (_semesterCount > 0 && _semesterNo >= _semesterCount)
+                    return "Graduated";
                 // _semesterNo = 0 means "not yet started" — registering for semester 1.
                 int regNo = _semesterNo + 1;
                 int year = ((regNo - 1) / 3) + 1;

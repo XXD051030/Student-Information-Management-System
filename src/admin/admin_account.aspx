@@ -6,7 +6,7 @@
     <div>
         <p class="text-slate-500" style="font-size:13px;font-weight:500">Settings</p>
         <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Account</h1>
-        <p class="mt-1 text-slate-500" style="font-size:14px">Manage your profile and password.</p>
+        <p class="mt-1 text-slate-500" style="font-size:14px">Manage your profile, password, and preferences.</p>
     </div>
 
     <div class="mt-6 space-y-5">
@@ -126,6 +126,56 @@
 
                 <div class="flex items-center justify-end gap-2 pt-1" style="grid-column:1 / -1">
                     <button type="button" id="pw-submit-btn" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.6)]" style="font-size:13px;font-weight:600">Update password</button>
+                </div>
+            </div>
+        </section>
+
+        <%-- Preferences --%>
+        <section class="rounded-lg border border-slate-200 bg-white">
+            <div class="border-b border-slate-100 px-6 py-4">
+                <h2 class="text-slate-900" style="font-size:15px;font-weight:700">Preferences</h2>
+                <p class="text-slate-500" style="font-size:12.5px">Customize how you receive updates.</p>
+            </div>
+            <div class="divide-y divide-slate-100">
+
+                <%-- Email notifications toggle --%>
+                <div class="flex items-start gap-4 px-6 py-4">
+                    <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                        <i data-lucide="bell" class="h-4 w-4"></i>
+                    </span>
+                    <div class="flex-1">
+                        <p class="text-slate-900" style="font-size:13.5px;font-weight:600">Email notifications</p>
+                        <p class="text-slate-500" style="font-size:12px">Submission alerts, grade reminders, and announcements.</p>
+                    </div>
+                    <button type="button" id="email-notif-toggle" data-on="true" class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors bg-[#e0162b]" aria-pressed="true">
+                        <span id="email-notif-knob" class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform translate-x-[18px]"></span>
+                    </button>
+                </div>
+
+                <%-- Display language --%>
+                <div class="flex items-start gap-4 px-6 py-4">
+                    <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                        <i data-lucide="globe" class="h-4 w-4"></i>
+                    </span>
+                    <div class="flex-1">
+                        <p class="text-slate-900" style="font-size:13.5px;font-weight:600">Display language</p>
+                        <p class="text-slate-500" style="font-size:12px">Translated across the portal interface.</p>
+                    </div>
+                    <select id="portal-lang-select" translate="no"
+                            class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 h-9 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
+                            style="font-size:12.5px;font-weight:600">
+                        <option value="en">English</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="zh-CN">中文 (简体)</option>
+                        <option value="zh-TW">中文 (繁體)</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="ar">العربية</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                    </select>
                 </div>
             </div>
         </section>

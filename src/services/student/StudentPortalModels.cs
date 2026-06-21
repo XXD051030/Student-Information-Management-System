@@ -12,6 +12,7 @@ namespace src.services
         public string ProgrammeName { get; set; }
         public DateTime? IntakeDate { get; set; }
         public int CurrentSemesterNo { get; set; }
+        public int ProgrammeSemesterCount { get; set; }
         public string Phone { get; set; }
         public string MailingAddress { get; set; }
         public string IconPath { get; set; }
@@ -181,6 +182,7 @@ namespace src.services
         public StudentRegistrationWindow Window { get; set; }
         public List<StudentOfferingOption> Offerings { get; set; }
         public int SemesterNo { get; set; }
+        public int SemesterCount { get; set; }
         public int AlreadyRegisteredCount { get; set; }
     }
 
