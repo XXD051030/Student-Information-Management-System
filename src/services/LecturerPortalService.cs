@@ -57,6 +57,7 @@ namespace src.services
         public static decimal GetMaterialWeightTotal(UserContext user, int offeringId) => LecturerMaterialReader.GetWeightTotal(user, offeringId);
 
         public static bool DeleteMaterial(UserContext user, int materialId) => LecturerMaterialReader.Delete(user, materialId);
+        public static bool UpdateModule(UserContext user, int offeringId, string moduleId, string title, string description) => LecturerMaterialReader.UpdateModule(user, offeringId, moduleId, title, description);
 
         public static List<AtRiskStudentRow> GetAtRisk(UserContext user) => LecturerAtRiskReader.GetAtRisk(user);
 

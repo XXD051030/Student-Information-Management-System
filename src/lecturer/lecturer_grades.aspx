@@ -174,5 +174,5 @@
     <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="<%= ResolveUrl("~/js/lecturer/grades.js") %>?v=12"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/grades.js") %>?v=13"></script>
 </asp:Content>

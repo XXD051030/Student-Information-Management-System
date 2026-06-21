@@ -1,6 +1,124 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_materials.aspx.cs" Inherits="student_information_management_system.lecturer_materials" Title="Course Materials - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
+    <asp:Panel ID="courseModulesPanel" runat="server" Visible="false">
+        <div id="course-materials-root" style="--course-accent:<%= CourseAccentColor %>;--course-accent-soft:<%= CourseAccentColor %>15">
+            <a href="<%= CourseDashboardUrl %>" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:500">
+                <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back to course
+            </a>
+
+            <nav class="mt-5 border-b border-slate-200">
+                <div class="flex gap-1">
+                    <button type="button" data-course-material-tab="modules" data-active="true" class="relative inline-flex items-center gap-2 px-4 py-3 text-slate-900 transition-colors" style="font-size:13.5px;font-weight:600">
+                        <i data-lucide="book-open" class="h-4 w-4"></i>Modules
+                        <span data-course-material-indicator class="absolute inset-x-2 -bottom-px h-0.5 rounded-full" style="background-color:var(--course-accent)"></span>
+                    </button>
+                    <button type="button" data-course-material-tab="assignments" data-active="false" class="relative inline-flex items-center gap-2 px-4 py-3 text-slate-500 transition-colors hover:text-slate-900" style="font-size:13.5px;font-weight:600">
+                        <i data-lucide="clipboard-list" class="h-4 w-4"></i>Assignments
+                        <span data-course-material-indicator class="absolute inset-x-2 -bottom-px hidden h-0.5 rounded-full" style="background-color:var(--course-accent)"></span>
+                    </button>
+                </div>
+            </nav>
+
+            <asp:Panel ID="courseModuleStatusPanel" runat="server" Visible="false" CssClass="mt-4 rounded-md border px-4 py-3" style="font-size:13px;font-weight:600">
+                <asp:Literal ID="courseModuleStatusMessage" runat="server" />
+            </asp:Panel>
+
+            <section data-course-material-pane="modules" class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <header class="p-6 pb-4">
+                    <h1 class="text-slate-900" style="font-size:16px;font-weight:600">Course Modules</h1>
+                    <p class="mt-0.5 text-slate-500" style="font-size:13px"><%= CourseModuleCount %> weekly modules</p>
+                </header>
+                <ul class="divide-y divide-slate-100">
+                    <asp:Repeater ID="courseModulesRepeater" runat="server" OnItemCommand="CourseModulesRepeater_ItemCommand">
+                        <ItemTemplate>
+                            <li>
+                                <div class="flex items-center pr-4 transition-colors hover:bg-slate-50/60">
+                                    <button type="button" data-course-module-toggle class="flex min-w-0 flex-1 items-center gap-4 px-6 py-4 pr-2 text-left">
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style="background-color:var(--course-accent-soft);color:var(--course-accent);font-size:12px;font-weight:700"><%# Eval("Week") %></span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-slate-900" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                                            <p class="mt-0.5 truncate text-slate-500" style="font-size:12.5px"><%# Server.HtmlEncode(Eval("Description").ToString()) %></p>
+                                        </div>
+                                        <span class="text-slate-400" style="font-size:11.5px;font-weight:600"><%# ((System.Collections.ICollection)Eval("Items")).Count %> items</span>
+                                        <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 transition-transform" data-module-chevron></i>
+                                    </button>
+                                    <button type="button" data-module-edit-toggle class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:border-slate-300 hover:text-slate-900" style="font-size:12px;font-weight:600">
+                                        <i data-lucide="pencil" class="h-3.5 w-3.5"></i>Edit
+                                    </button>
+                                </div>
+                                <div data-module-edit-form class="hidden border-t border-slate-100 bg-slate-50/70 px-6 py-4">
+                                    <div class="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(320px,2fr)_auto] lg:items-end">
+                                        <label class="block">
+                                            <span class="text-slate-500" style="font-size:11.5px;font-weight:700">WEEK TITLE</span>
+                                            <asp:TextBox ID="moduleTitleInput" runat="server" Text='<%# Eval("Title") %>' MaxLength="100" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800" style="font-size:13px" />
+                                        </label>
+                                        <label class="block">
+                                            <span class="text-slate-500" style="font-size:11.5px;font-weight:700">DESCRIPTION</span>
+                                            <asp:TextBox ID="moduleDescriptionInput" runat="server" Text='<%# Eval("Description") %>' MaxLength="255" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800" style="font-size:13px" />
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <asp:LinkButton runat="server" CommandName="SaveModule" CommandArgument='<%# Eval("ModuleId") %>' CausesValidation="false" CssClass="inline-flex h-10 items-center justify-center rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020]" style="font-size:12.5px;font-weight:700">Save changes</asp:LinkButton>
+                                            <button type="button" data-module-edit-cancel class="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 text-slate-600 hover:bg-slate-50" style="font-size:12.5px;font-weight:600">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <ul data-course-module-items class="hidden bg-slate-50/50 px-6 pb-4">
+                                    <asp:Repeater runat="server" DataSource='<%# Eval("Items") %>'>
+                                        <ItemTemplate>
+                                            <li class="ml-12">
+                                                <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white">
+                                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><i data-lucide='<%# CourseFileIcon(Eval("FileType").ToString()) %>' class="h-4 w-4"></i></span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="truncate text-slate-900" style="font-size:13px;font-weight:500"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                                                        <p class="text-slate-400" style="font-size:11px"><%# CourseFileSize(Eval("FileSizeBytes")) %></p>
+                                                    </div>
+                                                    <span class="rounded-lg p-1.5 text-slate-400"><i data-lucide="eye" class="h-4 w-4"></i></span>
+                                                </a>
+                                            </li>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                </ul>
+                            </li>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </ul>
+                <asp:Panel ID="courseModulesEmptyPanel" runat="server" Visible="false" CssClass="border-t border-slate-100 px-6 py-10 text-center text-slate-500" style="font-size:13px">No weekly lecture notes yet.</asp:Panel>
+            </section>
+
+            <section data-course-material-pane="assignments" class="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <header class="p-6 pb-4">
+                    <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Assignments</h2>
+                    <p class="mt-0.5 text-slate-500" style="font-size:13px"><%= CourseAssignmentCount %> published assignments, quizzes, and tests</p>
+                </header>
+                <ul class="divide-y divide-slate-100">
+                    <asp:Repeater ID="courseAssignmentsRepeater" runat="server">
+                        <ItemTemplate>
+                            <li>
+                                <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/60">
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style="background-color:var(--course-accent-soft);color:var(--course-accent)"><i data-lucide='<%# MaterialIcon(Eval("MaterialType")) %>' class="h-5 w-5"></i></span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="truncate text-slate-900" style="font-size:14px;font-weight:600"><%# Html(Eval("Title")) %></p>
+                                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:700"><%# Html(Eval("MaterialType")) %></span>
+                                        </div>
+                                        <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500" style="font-size:12px">
+                                            <span>Due <%# DueDateLabel(Eval("DueDate")) %></span>
+                                            <span class="font-semibold text-slate-600">Course weight: <%# CourseWeightLabel(Eval("Weight")) %></span>
+                                        </p>
+                                    </div>
+                                    <i data-lucide="eye" class="h-4 w-4 text-slate-400"></i>
+                                </a>
+                            </li>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </ul>
+                <asp:Panel ID="courseAssignmentsEmptyPanel" runat="server" Visible="false" CssClass="border-t border-slate-100 px-6 py-10 text-center text-slate-500" style="font-size:13px">No assignments, quizzes, or tests yet.</asp:Panel>
+            </section>
+        </div>
+    </asp:Panel>
+
+    <asp:Panel ID="materialsManagerPanel" runat="server">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Lecturer Module</p>
@@ -49,12 +167,12 @@
                                     <div class="flex flex-wrap items-center gap-2">
                                         <p class="truncate text-slate-900" style="font-size:14px;font-weight:700"><%# Html(Eval("Title")) %></p>
                                         <span class='rounded px-2 py-0.5 <%# TypeBadgeClass(Eval("MaterialType")) %>' style="font-size:11px;font-weight:800"><%# Html(Eval("MaterialType")) %></span>
+                                        <%# WeekLabel(Eval("MaterialType"), Eval("Week")) %>
                                     </div>
                                     <p class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500" style="font-size:12.5px">
                                         <span><%# Html(Eval("CourseCode")) %></span>
                                         <span>Due <%# DueDateLabel(Eval("DueDate")) %></span>
                                         <span>Uploaded <%# UploadedLabel(Eval("UploadedAt")) %></span>
-                                        <%# WeekLabel(Eval("MaterialType"), Eval("Week")) %>
                                         <span><%# FileMeta(Eval("FileType"), Eval("FileSizeBytes")) %></span>
                                     </p>
                                     <p class="mt-1 text-slate-500" style="font-size:12.5px"><%# Html(Eval("Description")) %></p>
@@ -93,6 +211,7 @@
             </div>
         </aside>
     </section>
+    </asp:Panel>
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="HeadPlaceholder" runat="server">
@@ -128,4 +247,23 @@
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
     <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=14"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/course-dashboard.js") %>?v=2"></script>
+    <script>
+        document.addEventListener("click", function (event) {
+            var tab = event.target.closest("[data-course-material-tab]");
+            if (!tab) return;
+            var selected = tab.getAttribute("data-course-material-tab");
+            document.querySelectorAll("[data-course-material-tab]").forEach(function (button) {
+                var active = button === tab;
+                button.setAttribute("data-active", active ? "true" : "false");
+                button.classList.toggle("text-slate-900", active);
+                button.classList.toggle("text-slate-500", !active);
+                var indicator = button.querySelector("[data-course-material-indicator]");
+                if (indicator) indicator.classList.toggle("hidden", !active);
+            });
+            document.querySelectorAll("[data-course-material-pane]").forEach(function (pane) {
+                pane.classList.toggle("hidden", pane.getAttribute("data-course-material-pane") !== selected);
+            });
+        });
+    </script>
 </asp:Content>

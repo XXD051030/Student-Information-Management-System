@@ -27,6 +27,9 @@
             <button type="button" data-action="filter-semester" data-semester="all"
                 class="rounded-full px-3.5 py-1.5 bg-slate-900 text-white transition-all"
                 style="font-size:12.5px;font-weight:600">All semesters</button>
+            <button type="button" data-action="filter-pinned"
+                class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-slate-600 hover:border-slate-300 hover:text-slate-900 transition-all"
+                style="font-size:12.5px;font-weight:600"><i data-lucide="pin" class="h-3.5 w-3.5"></i>Pinned courses</button>
             <asp:Repeater ID="semesterRepeater" runat="server">
                 <ItemTemplate>
                     <button type="button" data-action="filter-semester" data-semester='<%# Server.HtmlEncode(Container.DataItem.ToString()) %>'
@@ -95,5 +98,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=2"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=4"></script>
 </asp:Content>

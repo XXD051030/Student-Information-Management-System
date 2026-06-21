@@ -49,7 +49,14 @@ namespace student_information_management_system
                 assessmentSelect.DataTextField = "Label";
                 assessmentSelect.DataValueField = "AssessmentId";
                 assessmentSelect.DataBind();
-                if (_assessments.Count > 0) assessmentSelect.SelectedIndex = 0;
+                int requestedAssessmentId;
+                string requestedValue = int.TryParse(Request.QueryString["assessment"], out requestedAssessmentId)
+                    ? requestedAssessmentId.ToString(CultureInfo.InvariantCulture)
+                    : "";
+                if (assessmentSelect.Items.FindByValue(requestedValue) != null)
+                    assessmentSelect.SelectedValue = requestedValue;
+                else if (_assessments.Count > 0)
+                    assessmentSelect.SelectedIndex = 0;
             }
 
             if (!int.TryParse(assessmentSelect.SelectedValue, out _assessmentId) && _assessments.Count > 0)

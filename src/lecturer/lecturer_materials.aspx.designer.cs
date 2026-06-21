@@ -14,6 +14,15 @@ namespace student_information_management_system
     public partial class lecturer_materials
     {
 
+        protected global::System.Web.UI.WebControls.Panel courseModulesPanel;
+        protected global::System.Web.UI.WebControls.Panel courseModuleStatusPanel;
+        protected global::System.Web.UI.WebControls.Literal courseModuleStatusMessage;
+        protected global::System.Web.UI.WebControls.Repeater courseModulesRepeater;
+        protected global::System.Web.UI.WebControls.Panel courseModulesEmptyPanel;
+        protected global::System.Web.UI.WebControls.Repeater courseAssignmentsRepeater;
+        protected global::System.Web.UI.WebControls.Panel courseAssignmentsEmptyPanel;
+        protected global::System.Web.UI.WebControls.Panel materialsManagerPanel;
+
         /// <summary>
         /// statusBanner control.
         /// </summary>

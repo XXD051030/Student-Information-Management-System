@@ -132,7 +132,8 @@
             <asp:Repeater ID="gradeRepeater" runat="server">
                 <HeaderTemplate><ul class="space-y-2 px-3 pb-4"></HeaderTemplate>
                 <ItemTemplate>
-                    <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
+                    <li>
+                      <a href='<%# GradeUrl(Eval("OfferingId"), Eval("AssessmentId")) %>' class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
                         <span class='mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg <%# DueBadgeClass((DateTime)Eval("DueDate")) %>'>
                             <i data-lucide='<%# DueIcon((DateTime)Eval("DueDate")) %>' class="h-4 w-4"></i>
                         </span>
@@ -146,6 +147,7 @@
                                 <span class="text-slate-500"><%# Eval("PendingCount") %> to mark</span>
                             </p>
                         </div>
+                      </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>
@@ -179,7 +181,8 @@
             <asp:Repeater ID="coursesRepeater" runat="server">
                 <HeaderTemplate><ul class="grid gap-3 sm:grid-cols-2"></HeaderTemplate>
                 <ItemTemplate>
-                    <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
+                    <li class="group rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all">
+                      <a href='<%# CourseUrl(Eval("OfferingId")) %>' class="block p-4">
                         <div class="flex items-center justify-between">
                             <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:<%# AccentColor(Eval("Color") as string) %>15;color:<%# AccentColor(Eval("Color") as string) %>">
                                 <i data-lucide="book-open" class="h-4 w-4"></i>
@@ -188,6 +191,7 @@
                         </div>
                         <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseName").ToString()) %></p>
                         <p class="mt-0.5 text-slate-500" style="font-size:12px"><%# EnrolledLabel((int)Eval("EnrolledCount")) %></p>
+                      </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>

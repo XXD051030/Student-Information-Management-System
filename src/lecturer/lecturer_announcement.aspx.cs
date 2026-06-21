@@ -187,7 +187,8 @@ namespace student_information_management_system
             statusMessage.Text = newState ? "Announcement pinned." : "Announcement unpinned.";
             statusBanner.CssClass = "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
             statusBanner.Visible = true;
-            LoadRows();
+            Response.Redirect(AnnouncementUrl(_selectedAnnouncement.AnnouncementId), false);
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         protected void DeleteButton_Click(object sender, EventArgs e)
@@ -270,6 +271,15 @@ namespace student_information_management_system
             if (value == null) return 0;
             int id;
             return int.TryParse(value.ToString(), out id) ? id : 0;
+        }
+
+        private string AnnouncementUrl(int announcementId)
+        {
+            string url = ResolveUrl("~/lecturer/lecturer_announcement.aspx?id=" +
+                announcementId.ToString(CultureInfo.InvariantCulture));
+            if (_offeringFilter.HasValue)
+                url += "&offering=" + _offeringFilter.Value.ToString(CultureInfo.InvariantCulture);
+            return url;
         }
 
         private string SaveAttachment()

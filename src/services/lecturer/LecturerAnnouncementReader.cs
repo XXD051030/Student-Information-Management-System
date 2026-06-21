@@ -24,7 +24,7 @@ namespace src.services
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
                 "AND (@offerId = 0 OR an.offer_id = @offerId) " +
-                "ORDER BY an.created_at DESC";
+                "ORDER BY an.is_pinned DESC, an.created_at DESC";
 
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))

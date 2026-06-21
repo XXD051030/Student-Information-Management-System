@@ -53,13 +53,15 @@ namespace src.services
         private static List<LecturerGradingItem> GetGradingItems(UserContext user)
         {
             string sql =
-                "SELECT a.title, a.due_date, c.course_code, " +
+                "SELECT a.assignment_id, a.offer_id, a.title, a.due_date, c.course_code, " +
                 "(SELECT COUNT(*) FROM SUBMISSIONS sub WHERE sub.assignment_id = a.assignment_id " +
                 " AND sub.marks_obtained IS NULL) AS pending_count " +
                 "FROM ASSIGNMENTS a " +
+                "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
-                "WHERE " + ServiceAccess.VisibleOfferScope("co");
+                "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
+                "AND mat.weight IS NOT NULL AND mat.weight > 0";
 
             var list = new List<LecturerGradingItem>();
             using (var conn = Db.OpenConnection())
@@ -74,6 +76,8 @@ namespace src.services
                         if (pending == 0) continue;
                         list.Add(new LecturerGradingItem
                         {
+                            AssessmentId = IntValue(reader["assignment_id"]),
+                            OfferingId = IntValue(reader["offer_id"]),
                             Title = Text(reader["title"]),
                             CourseCode = Text(reader["course_code"]),
                             DueDate = DateValue(reader["due_date"]) ?? DateTime.Today,

@@ -225,6 +225,8 @@ namespace src.services
 
     public class LecturerGradingItem
     {
+        public int AssessmentId { get; set; }
+        public int OfferingId { get; set; }
         public string Title { get; set; }
         public string CourseCode { get; set; }
         public DateTime DueDate { get; set; }

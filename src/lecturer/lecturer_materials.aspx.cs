@@ -6,6 +6,7 @@ using System.Web;
 using System.Web.Script.Services;
 using System.Web.Services;
 using System.Web.UI.WebControls;
+using System.Linq;
 using src.services;
 
 namespace student_information_management_system
@@ -15,6 +16,9 @@ namespace student_information_management_system
         private LecturerProfile _lecturer;
         private List<LecturerMaterialRow> _materials = new List<LecturerMaterialRow>();
         private int? _offeringFilter;
+        private CourseDashboardStats _courseStats;
+        private List<StudentCourseModule> _courseModules = new List<StudentCourseModule>();
+        private List<LecturerMaterialRow> _courseAssignments = new List<LecturerMaterialRow>();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -30,6 +34,32 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
                 _offeringFilter = offeringId;
+
+            if (_offeringFilter.HasValue)
+            {
+                _courseStats = LecturerPortalService.GetCourseStats(user, _offeringFilter.Value);
+                if (_courseStats == null)
+                {
+                    Response.Redirect("~/lecturer/lecturer_courses.aspx");
+                    return;
+                }
+
+                _courseModules = LecturerPortalService.GetCourseModules(user, _offeringFilter.Value);
+                courseModulesRepeater.DataSource = _courseModules;
+                courseModulesRepeater.DataBind();
+                courseModulesEmptyPanel.Visible = _courseModules.Count == 0;
+                _courseAssignments = LecturerPortalService.GetMaterials(user, _offeringFilter.Value)
+                    .Where(material => !string.Equals(material.MaterialType, "Lecture Notes", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(material => material.DueDate ?? DateTime.MaxValue)
+                    .ThenBy(material => material.Title)
+                    .ToList();
+                courseAssignmentsRepeater.DataSource = _courseAssignments;
+                courseAssignmentsRepeater.DataBind();
+                courseAssignmentsEmptyPanel.Visible = _courseAssignments.Count == 0;
+                courseModulesPanel.Visible = true;
+                materialsManagerPanel.Visible = false;
+                return;
+            }
 
             if (!IsPostBack)
             {
@@ -397,12 +427,104 @@ namespace student_information_management_system
             return Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
         }
 
+        protected string CourseWeightLabel(object value)
+        {
+            if (value == null || value == DBNull.Value) return "Unweighted";
+            return Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+        }
+
         protected string MaterialPreviewUrl(object value)
         {
             string id = value == null || value == DBNull.Value ? "" : value.ToString();
             return string.IsNullOrWhiteSpace(id)
                 ? ""
                 : ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(id));
+        }
+
+        protected void CourseModulesRepeater_ItemCommand(object source, RepeaterCommandEventArgs e)
+        {
+            if (e.CommandName != "SaveModule" || !_offeringFilter.HasValue) return;
+
+            var titleInput = e.Item.FindControl("moduleTitleInput") as TextBox;
+            var descriptionInput = e.Item.FindControl("moduleDescriptionInput") as TextBox;
+            string postedTitle = titleInput == null ? null : Request.Form[titleInput.UniqueID];
+            string postedDescription = descriptionInput == null ? null : Request.Form[descriptionInput.UniqueID];
+            string title = (postedTitle ?? (titleInput == null ? "" : titleInput.Text)).Trim();
+            string description = (postedDescription ?? (descriptionInput == null ? "" : descriptionInput.Text)).Trim();
+
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(description))
+            {
+                ShowCourseModuleStatus("Enter both a week title and description.", false);
+                return;
+            }
+
+            bool updated = LecturerPortalService.UpdateModule(
+                UserContextFactory.FromSession(Session),
+                _offeringFilter.Value,
+                Convert.ToString(e.CommandArgument),
+                title,
+                description);
+
+            ShowCourseModuleStatus(updated ? "Week details updated." : "The week details could not be updated.", updated);
+            if (updated)
+            {
+                _courseModules = LecturerPortalService.GetCourseModules(
+                    UserContextFactory.FromSession(Session), _offeringFilter.Value);
+                courseModulesRepeater.DataSource = _courseModules;
+                courseModulesRepeater.DataBind();
+            }
+        }
+
+        private void ShowCourseModuleStatus(string message, bool success)
+        {
+            courseModuleStatusMessage.Text = Server.HtmlEncode(message);
+            courseModuleStatusPanel.CssClass = success
+                ? "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+                : "mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+            courseModuleStatusPanel.Visible = true;
+        }
+
+        protected int CourseModuleCount { get { return _courseModules.Count; } }
+        protected int CourseAssignmentCount { get { return _courseAssignments.Count; } }
+
+        protected string CourseAccentColor
+        {
+            get
+            {
+                string color = _courseStats == null ? null : _courseStats.Color;
+                return !string.IsNullOrEmpty(color) && System.Text.RegularExpressions.Regex.IsMatch(color, @"^#[0-9A-Fa-f]{6}$")
+                    ? color
+                    : "#10b981";
+            }
+        }
+
+        protected string CourseDashboardUrl
+        {
+            get
+            {
+                return ResolveUrl("~/lecturer/lecturer_course_dashboard.aspx?offering=" +
+                    _offeringFilter.GetValueOrDefault().ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        protected string CourseFileSize(object bytes)
+        {
+            if (bytes == null || bytes is DBNull) return "";
+            int value = Convert.ToInt32(bytes);
+            if (value >= 1048576) return Math.Round(value / 1048576.0, 1) + " MB";
+            if (value >= 1024) return Math.Round(value / 1024.0, 0) + " KB";
+            return value + " B";
+        }
+
+        protected string CourseFileIcon(string fileType)
+        {
+            switch ((fileType ?? "").ToLowerInvariant())
+            {
+                case "video": return "play-circle";
+                case "pdf": return "file-text";
+                case "docx": return "file-text";
+                default: return "paperclip";
+            }
         }
 
         private void ShowStatus(string message, bool success)

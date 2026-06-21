@@ -276,6 +276,36 @@ namespace src.services
             }
         }
 
+        public static bool UpdateModule(UserContext user, int offeringId, string moduleId, string title, string description)
+        {
+            if (user == null || offeringId <= 0 || string.IsNullOrWhiteSpace(moduleId) ||
+                string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(description))
+                return false;
+
+            title = title.Trim();
+            description = description.Trim();
+            if (title.Length > 100 || description.Length > 255) return false;
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageOffer(conn, user, offeringId) ||
+                    !ServiceAccess.CanManageModule(conn, user, moduleId))
+                    return false;
+
+                const string sql =
+                    "UPDATE MODULES SET module_title = @title, module_description = @description " +
+                    "WHERE module_id = @moduleId AND offer_id = @offerId";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@title", title);
+                    cmd.Parameters.AddWithValue("@description", description);
+                    cmd.Parameters.AddWithValue("@moduleId", moduleId.Trim());
+                    cmd.Parameters.AddWithValue("@offerId", offeringId);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
         private static void EnsureMaterialColumns()
         {
             const string schemaSql =

@@ -138,7 +138,7 @@
                     </span>
                     <i data-lucide="arrow-up-right" class="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors"></i>
                 </div>
-                <p class="mt-4 text-slate-900" style="font-size:15px;font-weight:600">Upload Materials</p>
+                <p class="mt-4 text-slate-900" style="font-size:15px;font-weight:600">Materials</p>
                 <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= MaterialLabel %></p>
             </a>
 
@@ -146,14 +146,11 @@
     </section>
 
     <section class="mt-8">
-        <div class="flex items-end justify-between gap-4">
+        <div>
             <div>
                 <h2 class="text-slate-900" style="font-size:18px;font-weight:700">Course Content</h2>
                 <p class="mt-0.5 text-slate-500" style="font-size:13px">Preview weekly lecture notes and published assessments as students see them.</p>
             </div>
-            <a href="<%= MaterialsUrl %>" class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#e0162b] px-3 text-white hover:bg-[#a01020]" style="font-size:12.5px;font-weight:700">
-                <i data-lucide="upload" class="h-4 w-4"></i>Upload Materials
-            </a>
         </div>
 
         <div class="mt-4 grid gap-6 xl:grid-cols-2">
@@ -229,5 +226,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/course-dashboard.js") %>?v=1"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/course-dashboard.js") %>?v=2"></script>
 </asp:Content>

@@ -76,7 +76,9 @@ namespace src.services
                 "co.academic_year + ' ' + co.semester AS semester_name, " +
                 "ISNULL(p.education_level, '') AS education_level, " +
                 "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'ENROLLED') AS enrolled_count, " +
-                "(SELECT COUNT(*) FROM ASSIGNMENTS a WHERE a.offer_id = co.offer_id) AS assessment_count, " +
+                "(SELECT COUNT(DISTINCT a.assignment_id) FROM ASSIGNMENTS a " +
+                " JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
+                " WHERE a.offer_id = co.offer_id AND mat.weight IS NOT NULL AND mat.weight > 0) AS assessment_count, " +
                 "(SELECT COUNT(*) FROM MATERIALS m JOIN MODULES md ON md.module_id = m.module_id WHERE md.offer_id = co.offer_id) AS material_count " +
                 "FROM COURSE_OFFERINGS co " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
@@ -127,8 +129,9 @@ namespace src.services
             const string gradeSql =
                 "SELECT a.total_marks, sub.marks_obtained, sub.status " +
                 "FROM ASSIGNMENTS a " +
-                "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id " +
-                "WHERE a.offer_id = @offerId";
+                "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
+                "JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id " +
+                "WHERE a.offer_id = @offerId AND mat.weight IS NOT NULL AND mat.weight > 0";
 
             int pending = 0, graded = 0;
             decimal sumPercent = 0m;

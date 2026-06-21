@@ -7,7 +7,7 @@
     "use strict";
 
     var PIN_KEY = "lecturer.courses.pinned";
-    var state = { semester: "all", query: "" };
+    var state = { semester: "all", pinnedOnly: false, query: "" };
 
     function cards() {
         return Array.prototype.slice.call(document.querySelectorAll("#course-grid [data-course-code]"));
@@ -61,8 +61,9 @@
 
         cards().forEach(function (card) {
             var matchesSemester = state.semester === "all" || card.getAttribute("data-semester") === state.semester;
+            var matchesPinned = !state.pinnedOnly || isPinned(card.getAttribute("data-course-code"));
             var matchesQuery = q === "" || (card.getAttribute("data-search") || "").indexOf(q) !== -1;
-            var show = matchesSemester && matchesQuery;
+            var show = matchesSemester && matchesPinned && matchesQuery;
             card.style.display = show ? "" : "none";
             if (show) { visible++; }
         });
@@ -103,8 +104,8 @@
         savePins(pins);
     }
 
-    function activateSemesterButton(clicked) {
-        var buttons = document.querySelectorAll('[data-action="filter-semester"]');
+    function activateFilterButton(clicked) {
+        var buttons = document.querySelectorAll('[data-action="filter-semester"], [data-action="filter-pinned"]');
         Array.prototype.forEach.call(buttons, function (b) {
             var active = b === clicked;
             b.classList.toggle("bg-slate-900", active);
@@ -113,6 +114,8 @@
             b.classList.toggle("border-slate-200", !active);
             b.classList.toggle("bg-white", !active);
             b.classList.toggle("text-slate-600", !active);
+            b.classList.toggle("hover:border-slate-300", !active);
+            b.classList.toggle("hover:text-slate-900", !active);
         });
     }
 
@@ -127,11 +130,22 @@
             function (btn) {
                 btn.addEventListener("click", function () {
                     state.semester = btn.getAttribute("data-semester") || "all";
-                    activateSemesterButton(btn);
+                    state.pinnedOnly = false;
+                    activateFilterButton(btn);
                     applyFilters();
                 });
             }
         );
+
+        var pinnedFilter = document.querySelector('[data-action="filter-pinned"]');
+        if (pinnedFilter) {
+            pinnedFilter.addEventListener("click", function () {
+                state.semester = "all";
+                state.pinnedOnly = true;
+                activateFilterButton(pinnedFilter);
+                applyFilters();
+            });
+        }
 
         // Search
         var search = document.getElementById("course-search");
@@ -152,13 +166,14 @@
                     paintPin(card);
                     sortCards();
                     updatePinnedCount();
+                    applyFilters();
                 });
             }
         });
 
         // Establish the default active filter button visually (all semesters).
         var allBtn = document.querySelector('[data-action="filter-semester"][data-semester="all"]');
-        if (allBtn) { activateSemesterButton(allBtn); }
+        if (allBtn) { activateFilterButton(allBtn); }
 
         sortCards();
         updatePinnedCount();

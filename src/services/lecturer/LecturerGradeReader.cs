@@ -27,6 +27,7 @@ namespace src.services
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
                 "AND (@offerId = 0 OR a.offer_id = @offerId) " +
+                "AND mat.weight IS NOT NULL AND mat.weight > 0 " +
                 "ORDER BY a.due_date, a.assignment_id";
 
             using (var conn = Db.OpenConnection())
@@ -247,8 +248,10 @@ namespace src.services
                     "FROM ENROLLMENTS e " +
                     "JOIN STUDENTS s ON s.student_id = e.student_id " +
                     "JOIN ASSIGNMENTS a ON a.offer_id = e.offer_id " +
+                    "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                     "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id AND sub.student_id = s.student_id " +
-                    "WHERE e.offer_id = @offerId AND e.status = 'ENROLLED'", conn))
+                    "WHERE e.offer_id = @offerId AND e.status = 'ENROLLED' " +
+                    "AND mat.weight IS NOT NULL AND mat.weight > 0", conn))
                 {
                     cmd.Parameters.AddWithValue("@offerId", offerId);
                     using (var reader = cmd.ExecuteReader())

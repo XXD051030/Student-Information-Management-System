@@ -765,6 +765,17 @@
         document.body.style.overflow = '';
     }
 
+    var studentSearch = document.querySelector('[data-filter-target="[data-grade-row]"]');
+    if (studentSearch) {
+        studentSearch.addEventListener('input', function () {
+            var query = studentSearch.value.trim().toLowerCase();
+            document.querySelectorAll('[data-grade-row]').forEach(function (row) {
+                var text = (row.getAttribute('data-filter-text') || row.textContent || '').toLowerCase();
+                row.style.display = !query || text.indexOf(query) !== -1 ? '' : 'none';
+            });
+        });
+    }
+
     document.addEventListener('click', function (event) {
         var saveFeedback = event.target.closest('[data-save-feedback]');
         if (saveFeedback) {
