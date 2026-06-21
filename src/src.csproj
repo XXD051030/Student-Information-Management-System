@@ -106,6 +106,8 @@
     <Content Include="js\lecturer\grades.js" />
     <Content Include="js\lecturer\lecturer-portal.js" />
     <Content Include="js\login\login.js" />
+    <Content Include="js\login\forgot_password.js" />
+    <Content Include="js\login\reset_password.js" />
     <Content Include="js\shared\account.js" />
     <Content Include="js\shared\assistant\assistant.js" />
     <Content Include="js\shared\notifications.js" />
@@ -121,6 +123,8 @@
     <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
+    <Content Include="login\forgot_password.aspx" />
+    <Content Include="login\reset_password.aspx" />
     <Content Include="lecturer\lecturer_at_risk.aspx" />
     <Content Include="lecturer\lecturer_attendance.aspx" />
     <Content Include="lecturer\lecturer_attendance_history.aspx" />
@@ -318,6 +322,7 @@
     </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
     <Compile Include="services\AccountPasswordService.cs" />
+    <Compile Include="services\PasswordResetService.cs" />
     <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\AssignmentService.cs" />
@@ -379,6 +384,20 @@
     </Compile>
     <Compile Include="login\login.aspx.designer.cs">
       <DependentUpon>login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="login\forgot_password.aspx.cs">
+      <DependentUpon>forgot_password.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="login\forgot_password.aspx.designer.cs">
+      <DependentUpon>forgot_password.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="login\reset_password.aspx.cs">
+      <DependentUpon>reset_password.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="login\reset_password.aspx.designer.cs">
+      <DependentUpon>reset_password.aspx</DependentUpon>
     </Compile>
     <Compile Include="login\LoginLayout.master.cs">
       <DependentUpon>LoginLayout.master</DependentUpon>

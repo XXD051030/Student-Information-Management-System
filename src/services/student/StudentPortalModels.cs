@@ -86,6 +86,7 @@ namespace src.services
         public string AuthorRole { get; set; }
         public bool IsPinned { get; set; }
         public bool HasAttachment { get; set; }
+        public string FileUrl { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

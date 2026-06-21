@@ -27,7 +27,7 @@
         </div>
 
         <asp:Panel ID="emptyPanel" runat="server" Visible="false" CssClass="px-6 py-10 text-center text-slate-500" style="font-size:13px">
-            No enrolled students found for this course.
+            No students are enrolled or pending approval for this course.
         </asp:Panel>
 
         <div class="overflow-x-auto">
@@ -46,7 +46,10 @@
                         <ItemTemplate>
                             <tr data-student-row data-filter-text='<%# Html(Eval("StudentNo")) %> <%# Html(Eval("FullName")) %> <%# Html(Eval("Email")) %> <%# Html(Eval("ProgrammeCode")) %> <%# Html(Eval("ProgrammeName")) %> <%# Html(Eval("Phone")) %>'>
                                 <td class="px-6 py-4 text-slate-700"><%# Html(Eval("StudentNo")) %></td>
-                                <td class="px-6 py-4 font-semibold text-slate-900"><%# Html(Eval("FullName")) %></td>
+                                <td class="px-6 py-4 font-semibold text-slate-900">
+                                    <%# Html(Eval("FullName")) %>
+                                    <%# (bool)Eval("IsPending") ? "<span class=\"ml-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700\" style=\"font-size:11px;font-weight:600\">Pending</span>" : "" %>
+                                </td>
                                 <td class="px-6 py-4 text-slate-700"><%# Html(Eval("Email")) %></td>
                                 <td class="px-6 py-4 text-slate-700">
                                     <span title='<%# Html(Eval("ProgrammeName")) %>'><%# Html(Eval("ProgrammeCode")) %></span>

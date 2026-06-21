@@ -75,6 +75,12 @@ namespace src.shared
             return ((bool)isPinned) ? "true" : "false";
         }
 
+        protected string AttachmentUrl(object fileUrl)
+        {
+            var url = fileUrl as string;
+            return string.IsNullOrEmpty(url) ? "" : ResolveUrl(url);
+        }
+
         private static UserContext CurrentUserOrReject()
         {
             HttpContext context = HttpContext.Current;
