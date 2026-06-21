@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Web;
+using System.Web.Services;
 using src.services;
 
 namespace src.shared
@@ -8,6 +9,12 @@ namespace src.shared
     public partial class account : src.security.StudentPage
     {
         private StudentAccountProfile _student;
+
+        [WebMethod(EnableSession = true)]
+        public static object ChangePassword(string currentPassword, string newPassword)
+        {
+            return AccountWebMethods.ChangePassword(currentPassword, newPassword);
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {

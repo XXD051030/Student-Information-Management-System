@@ -32,14 +32,6 @@
                     <span>&#128218; <%= Header.ModuleCount %> modules</span>
                 </div>
             </div>
-            <div class="shrink-0">
-                <button type="button" data-action="toggle-pin" data-code="<%= Server.HtmlEncode(Header.CourseCode) %>"
-                    class="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 py-2.5 text-white backdrop-blur hover:bg-white/20 transition-colors"
-                    style="font-size:13px;font-weight:600" aria-label="Toggle pin">
-                    <i data-lucide="pin" class="h-4 w-4"></i>
-                    Pin course
-                </button>
-            </div>
         </div>
     </section>
 

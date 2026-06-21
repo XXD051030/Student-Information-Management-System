@@ -44,6 +44,7 @@ namespace src.services
         public string SemesterName { get; set; }
         public string Color { get; set; }
         public int EnrolledCount { get; set; }
+        public int PendingCount { get; set; }
         public int PendingGrading { get; set; }
         public decimal? AverageGrade { get; set; }
         public decimal? AttendanceRate { get; set; }
@@ -73,6 +74,7 @@ namespace src.services
         public string ProgrammeName { get; set; }
         public string ProgrammeCode { get; set; }
         public string IconPath { get; set; }
+        public bool IsPending { get; set; }
         public string StudentNo { get { return StudentId; } }
     }
 

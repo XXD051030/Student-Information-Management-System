@@ -82,6 +82,7 @@
     <Content Include="admin\academic_calendar.aspx" />
     <Content Include="admin\academic_performance.aspx" />
     <Content Include="admin\add_drop_requests.aspx" />
+    <Content Include="admin\admin_account.aspx" />
     <Content Include="admin\admin_dashboard.aspx" />
     <Content Include="admin\course_attendance.aspx" />
     <Content Include="admin\course_passfail.aspx" />
@@ -105,6 +106,8 @@
     <Content Include="js\lecturer\grades.js" />
     <Content Include="js\lecturer\lecturer-portal.js" />
     <Content Include="js\login\login.js" />
+    <Content Include="js\login\forgot_password.js" />
+    <Content Include="js\login\reset_password.js" />
     <Content Include="js\shared\account.js" />
     <Content Include="js\shared\assistant\assistant.js" />
     <Content Include="js\shared\notifications.js" />
@@ -113,11 +116,16 @@
     <Content Include="js\student\courses.js" />
     <Content Include="js\student\enrollment.js" />
     <Content Include="js\student\timetable.js" />
+    <Content Include="js\student\payment.js" />
+    <Content Include="js\student\payment-history.js" />
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
+    <Content Include="icon_upload.ashx" />
     <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
+    <Content Include="login\forgot_password.aspx" />
+    <Content Include="login\reset_password.aspx" />
     <Content Include="lecturer\lecturer_at_risk.aspx" />
     <Content Include="lecturer\lecturer_attendance.aspx" />
     <Content Include="lecturer\lecturer_attendance_history.aspx" />
@@ -140,6 +148,8 @@
     <Content Include="student\grades.aspx" />
     <Content Include="student\student_dashboard.aspx" />
     <Content Include="student\timetable.aspx" />
+    <Content Include="student\payment.aspx" />
+    <Content Include="student\payment-history.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -230,6 +240,13 @@
     <Compile Include="admin\add_drop_requests.aspx.designer.cs">
       <DependentUpon>add_drop_requests.aspx</DependentUpon>
     </Compile>
+    <Compile Include="admin\admin_account.aspx.cs">
+      <DependentUpon>admin_account.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="admin\admin_account.aspx.designer.cs">
+      <DependentUpon>admin_account.aspx</DependentUpon>
+    </Compile>
     <Compile Include="admin\admin_dashboard.aspx.cs">
       <DependentUpon>admin_dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -291,6 +308,9 @@
       <DependentUpon>lecturer_materials.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="icon_upload.ashx.cs">
+      <DependentUpon>icon_upload.ashx</DependentUpon>
+    </Compile>
     <Compile Include="lecturer\material_publish.ashx.cs">
       <DependentUpon>material_publish.ashx</DependentUpon>
     </Compile>
@@ -305,6 +325,9 @@
       <DependentUpon>lecturer_take_attendance.aspx</DependentUpon>
     </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
+    <Compile Include="services\AccountPasswordService.cs" />
+    <Compile Include="services\PasswordResetService.cs" />
+    <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />
@@ -329,6 +352,7 @@
     <Compile Include="services\student\StudentAttendanceReader.cs" />
     <Compile Include="services\student\StudentTimetableReader.cs" />
     <Compile Include="services\student\StudentGradeReader.cs" />
+    <Compile Include="services\student\StudentPaymentReader.cs" />
     <Compile Include="services\student\StudentDashboardService.cs" />
     <Compile Include="services\lecturer\LecturerPortalModels.cs" />
     <Compile Include="services\lecturer\LecturerProfileReader.cs" />
@@ -364,6 +388,20 @@
     </Compile>
     <Compile Include="login\login.aspx.designer.cs">
       <DependentUpon>login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="login\forgot_password.aspx.cs">
+      <DependentUpon>forgot_password.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="login\forgot_password.aspx.designer.cs">
+      <DependentUpon>forgot_password.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="login\reset_password.aspx.cs">
+      <DependentUpon>reset_password.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="login\reset_password.aspx.designer.cs">
+      <DependentUpon>reset_password.aspx</DependentUpon>
     </Compile>
     <Compile Include="login\LoginLayout.master.cs">
       <DependentUpon>LoginLayout.master</DependentUpon>
@@ -546,6 +584,20 @@
     </Compile>
     <Compile Include="student\timetable.aspx.designer.cs">
       <DependentUpon>timetable.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\payment.aspx.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\payment.aspx.designer.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\payment-history.aspx.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\payment-history.aspx.designer.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -46,7 +46,7 @@
                 <p style="font-size:12.5px;font-weight:500">Students</p>
             </div>
             <p class="mt-2 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= EnrolledCount %></p>
-            <p class="mt-1 text-slate-400" style="font-size:12px">enrolled</p>
+            <p class="mt-1 text-slate-400" style="font-size:12px">enrolled<% if (PendingCount > 0) { %><span class="ml-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700" style="font-size:11px;font-weight:600"><%= PendingCount %> pending</span><% } %></p>
         </div>
 
         <%-- Class average --%>

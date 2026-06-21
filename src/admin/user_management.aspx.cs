@@ -19,6 +19,8 @@ namespace src.admin
         protected string UserRowsHtml { get; private set; }
         protected string ProgrammeOptionsHtml { get; private set; }
         protected string ProgrammeDepartmentOptionsHtml { get; private set; }
+        protected string ProgrammeOnlyOptionsHtml { get; private set; }
+        protected string DepartmentOnlyOptionsHtml { get; private set; }
         protected string RoleOptionsHtml { get; private set; }
         protected string UserStatusOptionsHtml { get; private set; }
         protected string RoleFilterOptionsHtml { get; private set; }
@@ -38,6 +40,8 @@ namespace src.admin
             ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, "All programmes");
             ProgrammeDepartmentOptionsHtml = AdminPortalService.RenderOptions(
                 lookups.Programmes.Concat(lookups.Departments), null);
+            ProgrammeOnlyOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, null);
+            DepartmentOnlyOptionsHtml = AdminPortalService.RenderOptions(lookups.Departments, null);
             RoleOptionsHtml = AdminPortalService.RenderOptions(lookups.UserRoles, null);
             UserStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.UserStatuses, null);
             RoleFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.UserRoles, "All roles");

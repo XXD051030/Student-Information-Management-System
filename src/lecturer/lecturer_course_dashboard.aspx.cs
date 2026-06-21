@@ -94,6 +94,7 @@ namespace src.lecturer
         // ----- Overview metrics -----
 
         protected int EnrolledCount { get { return _stats.EnrolledCount; } }
+        protected int PendingCount { get { return _stats.PendingCount; } }
         protected int PendingGrading { get { return _stats.PendingGrading; } }
 
         /// <summary>Class average over published grades, e.g. "72.3%", or "—" when none.</summary>
@@ -120,10 +121,16 @@ namespace src.lecturer
 
         // ----- Card labels -----
 
-        /// <summary>"28 students" / "1 student".</summary>
+        /// <summary>"28 students" / "1 student", with optional pending count.</summary>
         protected string EnrolledLabel
         {
-            get { return _stats.EnrolledCount + (_stats.EnrolledCount == 1 ? " student" : " students"); }
+            get
+            {
+                string label = _stats.EnrolledCount + (_stats.EnrolledCount == 1 ? " student" : " students");
+                if (_stats.PendingCount > 0)
+                    label += ", " + _stats.PendingCount + " pending";
+                return label;
+            }
         }
 
         /// <summary>"3 announcements" / "1 announcement".</summary>

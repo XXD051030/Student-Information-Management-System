@@ -78,6 +78,7 @@ namespace src.services
                 "co.academic_year + ' ' + co.semester AS semester_name, " +
                 "ISNULL(p.education_level, '') AS education_level, " +
                 "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'ENROLLED') AS enrolled_count, " +
+                "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'PENDING') AS pending_count, " +
                 "(SELECT COUNT(DISTINCT a.assignment_id) FROM ASSIGNMENTS a " +
                 " JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                 " WHERE a.offer_id = co.offer_id AND mat.weight IS NOT NULL AND mat.weight > 0) AS assessment_count, " +
@@ -112,6 +113,7 @@ namespace src.services
                             SemesterName = Text(reader["semester_name"]),
                             Color = ColorOrFallback(Text(reader["colour"]), code),
                             EnrolledCount = IntValue(reader["enrolled_count"]),
+                            PendingCount = IntValue(reader["pending_count"]),
                             AssessmentCount = IntValue(reader["assessment_count"]),
                             MaterialCount = IntValue(reader["material_count"])
                         };
@@ -182,13 +184,13 @@ namespace src.services
             if (user == null) return rows;
 
             const string sql =
-                "SELECT s.student_id, s.student_name, s.student_email, s.phone, s.icon, " +
+                "SELECT s.student_id, s.student_name, s.student_email, s.phone, s.icon, e.status, " +
                 "ISNULL(p.programme_name, '') AS programme_name, ISNULL(p.programme_code, '') AS programme_code " +
                 "FROM ENROLLMENTS e " +
                 "JOIN STUDENTS s ON s.student_id = e.student_id " +
                 "LEFT JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
-                "WHERE e.offer_id = @offerId AND e.status = 'ENROLLED' " +
-                "ORDER BY s.student_name";
+                "WHERE e.offer_id = @offerId AND e.status IN ('ENROLLED', 'PENDING') " +
+                "ORDER BY e.status, s.student_name";
 
             using (var conn = Db.OpenConnection())
             {
@@ -208,7 +210,8 @@ namespace src.services
                                 Phone = Text(reader["phone"]),
                                 ProgrammeName = Text(reader["programme_name"]),
                                 ProgrammeCode = Text(reader["programme_code"]),
-                                IconPath = Text(reader["icon"])
+                                IconPath = Text(reader["icon"]),
+                                IsPending = string.Equals(Text(reader["status"]), "PENDING", System.StringComparison.OrdinalIgnoreCase)
                             });
                         }
                     }

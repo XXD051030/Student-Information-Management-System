@@ -4,8 +4,10 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using src.db;
+using src.services.email;
 
 namespace src.services.admin
 {
@@ -229,6 +231,10 @@ namespace src.services.admin
             if (string.IsNullOrWhiteSpace(request.FullName)) throw new ArgumentException("Full name is required.");
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email is required.");
 
+            var tempPassword = GenerateTempPassword();
+            string detailLabel;
+            string detailId;
+
             using (var conn = Db.OpenConnection())
             using (var tx = conn.BeginTransaction())
             {
@@ -243,7 +249,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@id", userId);
                     cmd.Parameters.AddWithValue("@username", username);
                     cmd.Parameters.AddWithValue("@email", request.Email.Trim());
-                    cmd.Parameters.AddWithValue("@hash", Sha256Hex(string.IsNullOrWhiteSpace(request.Password) ? "Password@123" : request.Password));
+                    cmd.Parameters.AddWithValue("@hash", Sha256Hex(tempPassword));
                     cmd.Parameters.AddWithValue("@role", role);
                     cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
@@ -266,6 +272,8 @@ namespace src.services.admin
                         cmd.Parameters.AddWithValue("@status", status);
                         cmd.ExecuteNonQuery();
                     }
+                    detailLabel = "Programme";
+                    detailId = programmeId;
                 }
                 else
                 {
@@ -284,9 +292,29 @@ namespace src.services.admin
                         cmd.Parameters.AddWithValue("@status", status);
                         cmd.ExecuteNonQuery();
                     }
+                    detailLabel = "Department";
+                    detailId = departmentId;
                 }
 
                 tx.Commit();
+
+                var personalEmail = string.IsNullOrWhiteSpace(request.PersonalEmail)
+                    ? request.Email.Trim() : request.PersonalEmail.Trim();
+                var fullName = request.FullName.Trim();
+                var email = request.Email.Trim();
+                var notes = request.Notes;
+                var isStudent = role == "STUDENT";
+
+                // Resolving the display name and sending the email both need extra DB/SMTP
+                // round trips that the account creation itself doesn't — push both off the
+                // request thread so the admin UI gets its response as soon as the user exists.
+                Task.Run(() =>
+                {
+                    var detailValue = isStudent ? ProgrammeNameStandalone(detailId) : DepartmentNameStandalone(detailId);
+                    EmailService.SendNewAccount(
+                        personalEmail, fullName, email, tempPassword, detailLabel, detailValue, notes);
+                });
+
                 return userId;
             }
         }
@@ -583,11 +611,12 @@ namespace src.services.admin
         {
             const string sql =
                 "SELECT e.enrollment_id, e.student_id, s.student_name, p.programme_code, ISNULL(s.semester, 0) AS semester_no, " +
-                "c.course_code, c.course_name, e.status, ISNULL(e.semester, '') AS semester_name " +
+                "c.course_code, c.course_name, e.status, ISNULL(e.semester, '') AS semester_name, e.request_type " +
                 "FROM ENROLLMENTS e " +
                 "JOIN STUDENTS s ON s.student_id = e.student_id " +
                 "JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
                 "JOIN COURSES c ON c.course_id = e.course_id " +
+                "WHERE e.request_type IS NOT NULL " +
                 "ORDER BY e.enrollment_id DESC";
             var rows = new List<AdminAddDropRequestRow>();
             using (var conn = Db.OpenConnection())
@@ -596,7 +625,17 @@ namespace src.services.admin
             {
                 while (reader.Read())
                 {
-                    var status = Title(Text(reader["status"]));
+                    var rawStatus = Text(reader["status"]).ToUpperInvariant();
+                    var requestType = Text(reader["request_type"]).ToUpperInvariant();
+
+                    // Approve/reject outcomes land on the same enrollment statuses used
+                    // elsewhere (ENROLLED/DROPPED), so the displayed request status has
+                    // to be resolved relative to what was requested, not read verbatim.
+                    string displayStatus;
+                    if (rawStatus == "PENDING") displayStatus = "Pending";
+                    else if (requestType == "DROP") displayStatus = rawStatus == "DROPPED" ? "Approved" : "Rejected";
+                    else displayStatus = rawStatus == "ENROLLED" ? "Approved" : "Rejected";
+
                     rows.Add(new AdminAddDropRequestRow
                     {
                         RequestId = Int(reader["enrollment_id"]),
@@ -606,8 +645,8 @@ namespace src.services.admin
                         Semester = Int(reader["semester_no"]),
                         CourseCode = Text(reader["course_code"]),
                         CourseName = Text(reader["course_name"]),
-                        Type = status == "Dropped" || status == "Drop" ? "Drop" : "Add",
-                        Status = string.IsNullOrWhiteSpace(status) ? "Pending" : status,
+                        Type = requestType == "DROP" ? "Drop" : "Add",
+                        Status = displayStatus,
                         Reason = Text(reader["semester_name"])
                     });
                 }
@@ -615,20 +654,35 @@ namespace src.services.admin
             return rows;
         }
 
-        public void SetEnrollmentStatus(int enrollmentId, string status)
+        public static bool SetEnrollmentStatus(int enrollmentId, string action)
         {
-            var normalized = (status ?? "").Trim().ToUpperInvariant();
-            if (normalized != "ENROLLED" && normalized != "REJECTED" && normalized != "PENDING" && normalized != "DROPPED")
-            {
-                throw new ArgumentException("Unsupported enrollment status.");
-            }
-
+            // 1. Read current request_type from DB
+            string requestType;
             using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand("UPDATE ENROLLMENTS SET status = @status WHERE enrollment_id = @id", conn))
+            using (var cmd = new SqlCommand("SELECT request_type FROM ENROLLMENTS WHERE enrollment_id = @id", conn))
             {
-                cmd.Parameters.AddWithValue("@status", normalized);
                 cmd.Parameters.AddWithValue("@id", enrollmentId);
-                cmd.ExecuteNonQuery();
+                var result = cmd.ExecuteScalar();
+                requestType = result == null || result == DBNull.Value ? null : result.ToString();
+            }
+            if (string.IsNullOrEmpty(requestType)) return false;
+
+            // 2. Resolve final status
+            string newStatus;
+            if (action == "approve")
+                newStatus = requestType == "DROP" ? "DROPPED" : "ENROLLED";   // approve ADD → ENROLLED, approve DROP → DROPPED
+            else
+                newStatus = requestType == "DROP" ? "ENROLLED" : "REJECTED";  // reject DROP → revert to ENROLLED, reject ADD → REJECTED
+
+            // 3. Update status. request_type is kept (not cleared) so the request
+            // still shows up in GetAddDropRequests() with its resolved outcome.
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(
+                "UPDATE ENROLLMENTS SET status = @status WHERE enrollment_id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@status", newStatus);
+                cmd.Parameters.AddWithValue("@id", enrollmentId);
+                return cmd.ExecuteNonQuery() > 0;
             }
         }
 
@@ -1166,6 +1220,57 @@ namespace src.services.admin
             }
         }
 
+        /// <summary>Opens its own connection; only called from the background email task
+        /// after CreateUser's transaction has already committed and closed.</summary>
+        private static string ProgrammeNameStandalone(string programmeId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("SELECT programme_name FROM PROGRAMMES WHERE programme_id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@id", programmeId);
+                var found = cmd.ExecuteScalar();
+                return found == null || found == DBNull.Value ? programmeId : Convert.ToString(found);
+            }
+        }
+
+        /// <summary>Opens its own connection; only called from the background email task
+        /// after CreateUser's transaction has already committed and closed.</summary>
+        private static string DepartmentNameStandalone(string departmentId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("SELECT department_name FROM DEPARTMENTS WHERE department_id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@id", departmentId);
+                var found = cmd.ExecuteScalar();
+                return found == null || found == DBNull.Value ? departmentId : Convert.ToString(found);
+            }
+        }
+
+        /// <summary>12-char random password meeting AccountPasswordService strength rules
+        /// (upper, lower, digit, symbol) for new-account emails.</summary>
+        private static string GenerateTempPassword()
+        {
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghijkmnopqrstuvwxyz";
+            const string digits = "23456789";
+            const string symbols = "!@#$%&*";
+            const string all = upper + lower + digits + symbols;
+
+            var bytes = new byte[12];
+            using (var rng = RandomNumberGenerator.Create())
+                rng.GetBytes(bytes);
+
+            var chars = new char[12];
+            chars[0] = upper[bytes[0] % upper.Length];
+            chars[1] = lower[bytes[1] % lower.Length];
+            chars[2] = digits[bytes[2] % digits.Length];
+            chars[3] = symbols[bytes[3] % symbols.Length];
+            for (int i = 4; i < chars.Length; i++)
+                chars[i] = all[bytes[i] % all.Length];
+
+            return new string(chars);
+        }
+
         private static string ResolveCourse(SqlConnection conn, SqlTransaction tx, string value)
         {
             using (var cmd = new SqlCommand("SELECT TOP 1 course_id FROM COURSES WHERE course_id = @v OR course_code = @v ORDER BY course_id", conn, tx))
@@ -1264,11 +1369,13 @@ namespace src.services.admin
         public int UserId { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
+        public string PersonalEmail { get; set; }
         public string Phone { get; set; }
         public string Role { get; set; }
         public string ProgrammeOrDepartment { get; set; }
         public string Status { get; set; }
         public string Password { get; set; }
+        public string Notes { get; set; }
     }
 
     public class AdminOption

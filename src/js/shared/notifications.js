@@ -150,6 +150,22 @@
         var detailContent = document.getElementById('detail-content');
         if (detailContent) detailContent.textContent = body ? body.textContent : '';
 
+        var fileUrl = item.getAttribute('data-fileurl') || '';
+        var attachEl = document.getElementById('detail-attachment');
+        if (attachEl) {
+            // attachEl carries the `inline-flex` utility class, which (like
+            // #detail-empty/#detail-card above) beats the `[hidden]` attribute
+            // in Tailwind's CDN stylesheet order — so toggle `display` directly.
+            if (fileUrl) {
+                attachEl.href = fileUrl;
+                attachEl.hidden = false;
+                attachEl.style.display = '';
+            } else {
+                attachEl.hidden = true;
+                attachEl.style.display = 'none';
+            }
+        }
+
         var pin = document.getElementById('detail-pin');
         if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
 

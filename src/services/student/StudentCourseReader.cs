@@ -14,8 +14,13 @@ namespace src.services
         {
             if (string.IsNullOrWhiteSpace(studentId)) return new List<StudentCourseCard>();
 
-            var current = AcademicTermReader.GetCurrentTerm();
-            var currentLabel = TermLabel(current);
+            // A course counts as "current" when it belongs to the term the student is
+            // actively enrolled into. Enrollment registers courses for the upcoming
+            // registration term, so match that as well as the calendar current term -
+            // this keeps just-enrolled courses on the "Current semester" tab now, and
+            // still current once that term begins.
+            var currentLabel = TermLabel(AcademicTermReader.GetCurrentTerm());
+            var registrationLabel = TermLabel(AcademicTermReader.GetRegistrationTerm());
             const string sql =
                 "SELECT e.offer_id, co.course_id, c.course_code, c.course_name, c.credit_hour, c.colour, " +
                 "ISNULL(l.lecturer_name, '') AS lecturer_name, ISNULL(e.semester, co.academic_year + ' ' + co.semester) AS semester_name " +
@@ -48,7 +53,8 @@ namespace src.services
                                 LecturerName = LecturerOrFallback(Text(reader["lecturer_name"])),
                                 CreditHours = IntValue(reader["credit_hour"]),
                                 SemesterName = semesterName,
-                                IsCurrent = IsSameTerm(semesterName, currentLabel),
+                                IsCurrent = IsSameTerm(semesterName, currentLabel)
+                                            || IsSameTerm(semesterName, registrationLabel),
                                 Color = ColorOrFallback(Text(reader["colour"]), code)
                             });
                         }

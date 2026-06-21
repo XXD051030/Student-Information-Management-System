@@ -42,8 +42,6 @@ namespace src.controls
             get { return _unreadNotificationCount > 0 ? "" : " hidden"; }
         }
 
-        // App-resolved URL of the profile image, or "" when none is set (the
-        // markup then falls back to the initials avatar).
         protected string IconUrl
         {
             get

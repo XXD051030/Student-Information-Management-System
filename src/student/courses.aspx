@@ -8,16 +8,8 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500">BSc Computer Science</p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">My Courses</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Browse all courses across your programme. Pin the ones you&#8217;d like quick access to from your dashboard.
+                Browse all courses across your programme.
             </p>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                <div class="text-slate-500" style="font-size:11px;font-weight:500">Pinned</div>
-                <div class="text-slate-900" style="font-size:16px;font-weight:700">
-                    <span id="pinned-count">0</span><span class="text-slate-400"> / <%= EnrolledCount %></span>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -52,10 +44,6 @@
                         <div class="flex h-10 w-10 items-center justify-center rounded-xl" style='background-color:<%# AccentColor(Eval("Color") as string) %>15;color:<%# AccentColor(Eval("Color") as string) %>'>
                             <i data-lucide="book-open" class="h-4 w-4"></i>
                         </div>
-                        <button type="button" data-action="toggle-pin" aria-label="Toggle pin"
-                            class="rounded-lg p-2 transition-all text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-                            <i data-lucide="pin" data-pinned-icon class="h-4 w-4"></i>
-                        </button>
                     </div>
                     <div class="mt-4 flex items-center gap-2">
                         <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
