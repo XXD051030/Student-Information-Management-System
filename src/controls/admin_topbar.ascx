@@ -37,9 +37,11 @@
             <% if (!string.IsNullOrEmpty(IconUrl)) { %>
                 <img src="<%= IconUrl %>"
                      alt="Profile picture"
-                     class="h-8 w-8 rounded-full object-cover" />
+                     class="h-8 w-8 rounded-full object-cover"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                <span class="h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="display:none;font-size:12px;font-weight:700">A</span>
             <% } else { %>
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:12px;font-weight:700"><%= Initials %></span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:12px;font-weight:700">A</span>
             <% } %>
 
             <div class="text-left leading-tight">

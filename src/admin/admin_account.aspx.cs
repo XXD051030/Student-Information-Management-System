@@ -1,18 +1,33 @@
 using System;
+using System.Data.SqlClient;
 using System.Web.Services;
+using src.db;
 using src.services;
 
 namespace src.admin
 {
     public partial class admin_account : src.security.AdminPage
     {
+        private string _iconPath;
+
         [WebMethod(EnableSession = true)]
         public static object ChangePassword(string currentPassword, string newPassword)
         {
             return AccountWebMethods.ChangePassword(currentPassword, newPassword);
         }
 
-        protected void Page_Load(object sender, EventArgs e) { }
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (Session["user_id"] == null) return;
+            var userId = Convert.ToInt32(Session["user_id"]);
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("SELECT icon FROM ADMINS WHERE user_id = @uid", conn))
+            {
+                cmd.Parameters.AddWithValue("@uid", userId);
+                var val = cmd.ExecuteScalar();
+                _iconPath = val == null || val == DBNull.Value ? "" : val.ToString();
+            }
+        }
 
         protected string DisplayName
         {
@@ -35,6 +50,15 @@ namespace src.admin
                 string initials = parts[0].Substring(0, 1);
                 if (parts.Length > 1) initials += parts[1].Substring(0, 1);
                 return initials.ToUpperInvariant();
+            }
+        }
+
+        protected string IconUrl
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_iconPath)) return "";
+                return ResolveUrl("~/" + _iconPath.TrimStart('/'));
             }
         }
     }

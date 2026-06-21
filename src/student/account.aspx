@@ -18,15 +18,21 @@
             </div>
             <div class="px-6 py-6">
                 <div class="flex items-center gap-5">
-                    <div class="relative">
+                    <div class="relative inline-block">
                         <% if (!string.IsNullOrEmpty(IconUrl)) { %>
-                            <img src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" class="h-20 w-20 rounded-full object-cover" />
+                            <img id="profile-icon-img" src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" class="h-20 w-20 rounded-full object-cover"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            <div id="profile-icon-initials" class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="display:none;font-size:26px;font-weight:700">S</div>
                         <% } else { %>
-                            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:26px;font-weight:700"><%= Initials %></div>
+                            <div id="profile-icon-initials" class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:26px;font-weight:700">S</div>
                         <% } %>
-                        <span class="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
-                            <i data-lucide="check" class="h-3 w-3 text-white"></i>
-                        </span>
+                        <button type="button" id="change-icon-btn"
+                                data-upload-url="<%= ResolveUrl("~/icon_upload.ashx") %>"
+                                class="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-700 text-white hover:bg-slate-900 transition-colors"
+                                title="Change profile photo">
+                            <i data-lucide="camera" class="h-3.5 w-3.5"></i>
+                        </button>
+                        <input type="file" id="icon-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="hidden" />
                     </div>
                     <div class="min-w-0">
                         <p class="text-slate-900 truncate" style="font-size:18px;font-weight:700;letter-spacing:-0.01em"><%= FullName %></p>
