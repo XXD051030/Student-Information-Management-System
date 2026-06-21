@@ -14,6 +14,8 @@ namespace src.services
         {
             if (user == null) return new List<StudentClassSession>();
 
+            var current = AcademicTermReader.GetCurrentTerm();
+
             var sql =
                 "SELECT t.timetable_id, t.offer_id, t.day_of_week, t.start_time, t.end_time, t.room, " +
                 "c.course_code, c.course_name, c.colour, ISNULL(l.lecturer_name, '') AS lecturer_name " +
@@ -22,6 +24,7 @@ namespace src.services
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "LEFT JOIN LECTURERS l ON l.lecturer_id = co.lecturer_id " +
                 "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
+                "AND co.semester = @semester AND co.academic_year = @academicYear " +
                 "ORDER BY t.day_of_week, t.start_time";
 
             var sessions = new List<StudentClassSession>();
@@ -29,6 +32,8 @@ namespace src.services
             using (var cmd = new SqlCommand(sql, conn))
             {
                 ServiceAccess.AddUserContextParameters(cmd, user);
+                cmd.Parameters.AddWithValue("@semester", current == null ? "" : current.Name);
+                cmd.Parameters.AddWithValue("@academicYear", current == null ? "" : current.AcademicYear);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -62,7 +67,9 @@ namespace src.services
 
             var current = AcademicTermReader.GetCurrentTerm();
             var sessions = GetClassSessions(user);
-            var courseCards = StudentCourseReader.GetCourses(user, account.StudentId);
+            var courseCards = StudentCourseReader.GetCourses(user, account.StudentId)
+                .Where(c => c.IsCurrent)
+                .ToList();
             var courses = sessions
                 .GroupBy(s => s.OfferingId)
                 .Select(g => new StudentTimetableCourse

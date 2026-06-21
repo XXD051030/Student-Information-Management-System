@@ -82,6 +82,7 @@
     <Content Include="admin\academic_calendar.aspx" />
     <Content Include="admin\academic_performance.aspx" />
     <Content Include="admin\add_drop_requests.aspx" />
+    <Content Include="admin\admin_account.aspx" />
     <Content Include="admin\admin_dashboard.aspx" />
     <Content Include="admin\course_attendance.aspx" />
     <Content Include="admin\course_passfail.aspx" />
@@ -113,6 +114,8 @@
     <Content Include="js\student\courses.js" />
     <Content Include="js\student\enrollment.js" />
     <Content Include="js\student\timetable.js" />
+    <Content Include="js\student\payment.js" />
+    <Content Include="js\student\payment-history.js" />
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
     <Content Include="lecturer\material_publish.ashx" />
@@ -140,6 +143,8 @@
     <Content Include="student\grades.aspx" />
     <Content Include="student\student_dashboard.aspx" />
     <Content Include="student\timetable.aspx" />
+    <Content Include="student\payment.aspx" />
+    <Content Include="student\payment-history.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -230,6 +235,13 @@
     <Compile Include="admin\add_drop_requests.aspx.designer.cs">
       <DependentUpon>add_drop_requests.aspx</DependentUpon>
     </Compile>
+    <Compile Include="admin\admin_account.aspx.cs">
+      <DependentUpon>admin_account.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="admin\admin_account.aspx.designer.cs">
+      <DependentUpon>admin_account.aspx</DependentUpon>
+    </Compile>
     <Compile Include="admin\admin_dashboard.aspx.cs">
       <DependentUpon>admin_dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -305,6 +317,8 @@
       <DependentUpon>lecturer_take_attendance.aspx</DependentUpon>
     </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
+    <Compile Include="services\AccountPasswordService.cs" />
+    <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />
@@ -329,6 +343,7 @@
     <Compile Include="services\student\StudentAttendanceReader.cs" />
     <Compile Include="services\student\StudentTimetableReader.cs" />
     <Compile Include="services\student\StudentGradeReader.cs" />
+    <Compile Include="services\student\StudentPaymentReader.cs" />
     <Compile Include="services\student\StudentDashboardService.cs" />
     <Compile Include="services\lecturer\LecturerPortalModels.cs" />
     <Compile Include="services\lecturer\LecturerProfileReader.cs" />
@@ -546,6 +561,20 @@
     </Compile>
     <Compile Include="student\timetable.aspx.designer.cs">
       <DependentUpon>timetable.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\payment.aspx.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\payment.aspx.designer.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\payment-history.aspx.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\payment-history.aspx.designer.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -117,7 +117,7 @@
                 <h2 class="text-slate-900 inline-flex items-center gap-2" style="font-size:15px;font-weight:700">
                     <i data-lucide="lock" class="h-4 w-4 text-slate-500"></i> Change password
                 </h2>
-                <p class="text-slate-500" style="font-size:12.5px">Use at least 8 characters with a mix of letters, numbers, and symbols.</p>
+                <p class="text-slate-500" style="font-size:12.5px">Use at least 8 characters with uppercase and lowercase letters, a number, and a symbol.</p>
             </div>
 
             <div id="password-form" class="px-6 py-6" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">

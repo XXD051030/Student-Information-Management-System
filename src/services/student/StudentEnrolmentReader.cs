@@ -21,13 +21,31 @@ namespace src.services
             if (account == null) return null;
 
             var term = AcademicTermReader.GetRegistrationTerm();
+            var alreadyRegisteredCount = term == null ? 0 : GetRegisteredCount(account.StudentId, term);
             return new StudentEnrollmentPage
             {
                 Term = term,
-                Window = AcademicTermReader.BuildRegistrationWindow(term),
+                Window = AcademicTermReader.BuildRegistrationWindow(term, alreadyRegisteredCount > 0),
                 SemesterNo = account.CurrentSemesterNo,
-                Offerings = term == null ? new List<StudentOfferingOption>() : GetOfferingOptions(user, account.StudentId, term)
+                Offerings = term == null ? new List<StudentOfferingOption>() : GetOfferingOptions(user, account.StudentId, term),
+                AlreadyRegisteredCount = alreadyRegisteredCount
             };
+        }
+
+        /// <summary>How many courses the student is already registered for in the given term.</summary>
+        private static int GetRegisteredCount(string studentId, StudentRegistrationTerm term)
+        {
+            const string sql =
+                "SELECT COUNT(*) FROM ENROLLMENTS " +
+                "WHERE student_id = @studentId AND semester = @semester " +
+                "AND status IN ('ENROLLED', 'PENDING')";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                cmd.Parameters.AddWithValue("@semester", term.AcademicYear + " " + term.Name);
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
         }
 
         private static List<StudentOfferingOption> GetOfferingOptions(UserContext user, string studentId, StudentRegistrationTerm term)
@@ -42,6 +60,15 @@ namespace src.services
                 "LEFT JOIN LECTURERS l ON l.lecturer_id = co.lecturer_id " +
                 "LEFT JOIN TIMETABLES t ON t.offer_id = co.offer_id " +
                 "WHERE co.academic_year = @academicYear AND co.semester = @semester AND co.status = 'ACTIVE' " +
+                // Only courses belonging to the student's own programme.
+                "AND c.programme_id = (SELECT s.programme_id FROM STUDENTS s WHERE s.student_id = @studentId) " +
+                // Hide courses the student is ENROLLED or has PENDING requests for in other semesters.
+                // Courses enrolled in the current registration term still appear so the student can
+                // see them and request to drop them during the Add/Drop period.
+                "AND NOT EXISTS (SELECT 1 FROM ENROLLMENTS e4 JOIN COURSES c4 ON c4.course_id = e4.course_id " +
+                "WHERE e4.student_id = @studentId AND c4.course_name = c.course_name " +
+                "AND e4.semester <> @academicYear + ' ' + @semester " +
+                "AND e4.status IN ('ENROLLED', 'PENDING')) " +
                 "ORDER BY c.course_code, t.day_of_week, t.start_time";
 
             var options = new List<StudentOfferingOption>();
@@ -110,6 +137,11 @@ namespace src.services
             var account = StudentProfileReader.GetAccount(user);
             if (account == null) return 0;
 
+            // Block enrollment when today is outside every session's registration window.
+            var term = AcademicTermReader.GetRegistrationTerm();
+            var hasEnrollment = term != null && GetRegisteredCount(account.StudentId, term) > 0;
+            if (!AcademicTermReader.IsRegistrationOpen(hasEnrollment)) return 0;
+
             var inserted = 0;
             using (var conn = Db.OpenConnection())
             {
@@ -132,6 +164,65 @@ namespace src.services
                 }
             }
             return inserted;
+        }
+
+        public static int RequestAdd(UserContext user, int offeringId)
+        {
+            if (!IsStudent(user)) return 0;
+
+            var account = StudentProfileReader.GetAccount(user);
+            if (account == null) return 0;
+
+            var term = AcademicTermReader.GetRegistrationTerm();
+            var hasEnrollment = term != null && GetRegisteredCount(account.StudentId, term) > 0;
+            if (!AcademicTermReader.IsAddDropOpen(hasEnrollment)) return 0;
+
+            using (var conn = Db.OpenConnection())
+            {
+                const string sql =
+                    "INSERT INTO ENROLLMENTS (student_id, offer_id, course_id, semester, status, request_type) " +
+                    "SELECT @studentId, co.offer_id, co.course_id, co.academic_year + ' ' + co.semester, 'PENDING', 'ADD' " +
+                    "FROM COURSE_OFFERINGS co " +
+                    "WHERE co.offer_id = @offerId AND co.status = 'ACTIVE' " +
+                    "AND NOT EXISTS (SELECT 1 FROM ENROLLMENTS e WHERE e.student_id = @studentId " +
+                    "AND e.offer_id = @offerId AND e.status IN ('ENROLLED', 'PENDING')); " +
+                    "SELECT @@ROWCOUNT";
+
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@studentId", account.StudentId);
+                    cmd.Parameters.AddWithValue("@offerId", offeringId);
+                    var result = cmd.ExecuteScalar();
+                    return result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
+                }
+            }
+        }
+
+        public static bool RequestDrop(UserContext user, int offeringId)
+        {
+            if (!IsStudent(user)) return false;
+
+            var account = StudentProfileReader.GetAccount(user);
+            if (account == null) return false;
+
+            var term = AcademicTermReader.GetRegistrationTerm();
+            var hasEnrollment = term != null && GetRegisteredCount(account.StudentId, term) > 0;
+            if (!AcademicTermReader.IsAddDropOpen(hasEnrollment)) return false;
+
+            using (var conn = Db.OpenConnection())
+            {
+                const string sql =
+                    "UPDATE ENROLLMENTS SET status = 'PENDING', request_type = 'DROP' " +
+                    "WHERE student_id = @studentId AND offer_id = @offerId AND status = 'ENROLLED'; " +
+                    "SELECT @@ROWCOUNT";
+
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@studentId", account.StudentId);
+                    cmd.Parameters.AddWithValue("@offerId", offeringId);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                }
+            }
         }
     }
 }

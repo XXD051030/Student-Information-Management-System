@@ -46,6 +46,10 @@ namespace src.services
 
         public static int Enrol(UserContext user, int[] offeringIds) => StudentEnrolmentReader.Enrol(user, offeringIds);
 
+        public static int RequestAdd(UserContext user, int offeringId) => StudentEnrolmentReader.RequestAdd(user, offeringId);
+
+        public static bool RequestDrop(UserContext user, int offeringId) => StudentEnrolmentReader.RequestDrop(user, offeringId);
+
         public static StudentAttendancePage GetAttendancePage(UserContext user)
         {
             var account = StudentProfileReader.GetAccount(user);
@@ -57,6 +61,12 @@ namespace src.services
         public static StudentGradePage GetGradePage(UserContext user) => StudentGradeReader.GetGradePage(user);
 
         public static StudentDashboardData GetDashboard(UserContext user, ISet<int> readIds) => StudentDashboardService.GetDashboard(user, readIds);
+
+        public static string RecordPayment(UserContext user, decimal amount, string description, string termLabel, string method)
+            => StudentPaymentReader.RecordPayment(user, amount, description, termLabel, method);
+
+        public static StudentPaymentHistoryPage GetPaymentHistory(UserContext user)
+            => StudentPaymentReader.GetHistoryPage(user);
 
     }
 }

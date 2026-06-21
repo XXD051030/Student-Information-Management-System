@@ -583,11 +583,12 @@ namespace src.services.admin
         {
             const string sql =
                 "SELECT e.enrollment_id, e.student_id, s.student_name, p.programme_code, ISNULL(s.semester, 0) AS semester_no, " +
-                "c.course_code, c.course_name, e.status, ISNULL(e.semester, '') AS semester_name " +
+                "c.course_code, c.course_name, e.status, ISNULL(e.semester, '') AS semester_name, e.request_type " +
                 "FROM ENROLLMENTS e " +
                 "JOIN STUDENTS s ON s.student_id = e.student_id " +
                 "JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
                 "JOIN COURSES c ON c.course_id = e.course_id " +
+                "WHERE e.request_type IS NOT NULL " +
                 "ORDER BY e.enrollment_id DESC";
             var rows = new List<AdminAddDropRequestRow>();
             using (var conn = Db.OpenConnection())
@@ -596,7 +597,17 @@ namespace src.services.admin
             {
                 while (reader.Read())
                 {
-                    var status = Title(Text(reader["status"]));
+                    var rawStatus = Text(reader["status"]).ToUpperInvariant();
+                    var requestType = Text(reader["request_type"]).ToUpperInvariant();
+
+                    // Approve/reject outcomes land on the same enrollment statuses used
+                    // elsewhere (ENROLLED/DROPPED), so the displayed request status has
+                    // to be resolved relative to what was requested, not read verbatim.
+                    string displayStatus;
+                    if (rawStatus == "PENDING") displayStatus = "Pending";
+                    else if (requestType == "DROP") displayStatus = rawStatus == "DROPPED" ? "Approved" : "Rejected";
+                    else displayStatus = rawStatus == "ENROLLED" ? "Approved" : "Rejected";
+
                     rows.Add(new AdminAddDropRequestRow
                     {
                         RequestId = Int(reader["enrollment_id"]),
@@ -606,8 +617,8 @@ namespace src.services.admin
                         Semester = Int(reader["semester_no"]),
                         CourseCode = Text(reader["course_code"]),
                         CourseName = Text(reader["course_name"]),
-                        Type = status == "Dropped" || status == "Drop" ? "Drop" : "Add",
-                        Status = string.IsNullOrWhiteSpace(status) ? "Pending" : status,
+                        Type = requestType == "DROP" ? "Drop" : "Add",
+                        Status = displayStatus,
                         Reason = Text(reader["semester_name"])
                     });
                 }
@@ -615,20 +626,35 @@ namespace src.services.admin
             return rows;
         }
 
-        public void SetEnrollmentStatus(int enrollmentId, string status)
+        public static bool SetEnrollmentStatus(int enrollmentId, string action)
         {
-            var normalized = (status ?? "").Trim().ToUpperInvariant();
-            if (normalized != "ENROLLED" && normalized != "REJECTED" && normalized != "PENDING" && normalized != "DROPPED")
-            {
-                throw new ArgumentException("Unsupported enrollment status.");
-            }
-
+            // 1. Read current request_type from DB
+            string requestType;
             using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand("UPDATE ENROLLMENTS SET status = @status WHERE enrollment_id = @id", conn))
+            using (var cmd = new SqlCommand("SELECT request_type FROM ENROLLMENTS WHERE enrollment_id = @id", conn))
             {
-                cmd.Parameters.AddWithValue("@status", normalized);
                 cmd.Parameters.AddWithValue("@id", enrollmentId);
-                cmd.ExecuteNonQuery();
+                var result = cmd.ExecuteScalar();
+                requestType = result == null || result == DBNull.Value ? null : result.ToString();
+            }
+            if (string.IsNullOrEmpty(requestType)) return false;
+
+            // 2. Resolve final status
+            string newStatus;
+            if (action == "approve")
+                newStatus = requestType == "DROP" ? "DROPPED" : "ENROLLED";   // approve ADD → ENROLLED, approve DROP → DROPPED
+            else
+                newStatus = requestType == "DROP" ? "ENROLLED" : "REJECTED";  // reject DROP → revert to ENROLLED, reject ADD → REJECTED
+
+            // 3. Update status. request_type is kept (not cleared) so the request
+            // still shows up in GetAddDropRequests() with its resolved outcome.
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(
+                "UPDATE ENROLLMENTS SET status = @status WHERE enrollment_id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@status", newStatus);
+                cmd.Parameters.AddWithValue("@id", enrollmentId);
+                return cmd.ExecuteNonQuery() > 0;
             }
         }
 

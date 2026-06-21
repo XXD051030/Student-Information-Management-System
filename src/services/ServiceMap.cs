@@ -16,6 +16,12 @@ namespace src.services
             return Convert.ToInt32(value);
         }
 
+        public static int? NullableInt(object value)
+        {
+            if (value == null || value == DBNull.Value) return null;
+            return Convert.ToInt32(value);
+        }
+
         public static decimal? DecimalValue(object value)
         {
             if (value == null || value == DBNull.Value) return null;

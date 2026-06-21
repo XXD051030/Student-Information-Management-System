@@ -70,7 +70,11 @@
         </ul>
     </nav>
 
-    <div class="border-t border-slate-100 p-3">
+    <div class="border-t border-slate-100 p-3 space-y-0.5">
+        <a href="<%= ResolveUrl("~/admin/admin_account.aspx") %>" data-nav-link="admin_account.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+            <i data-lucide="user-cog" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+            Account
+        </a>
         <a href="<%= ResolveUrl("~/login/login.aspx") %>" data-action="logout" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-[#e0162b] transition-colors" style="font-size:14px;font-weight:500">
             <i data-lucide="log-out" class="h-4 w-4 text-slate-400"></i>
             Sign out

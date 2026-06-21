@@ -46,6 +46,27 @@
                 </a>
             </li>
             <li>
+                <details id="payment-nav">
+                    <summary class="group flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer list-none text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all" style="font-size:14px;font-weight:500">
+                        <i data-lucide="credit-card" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                        <span class="flex-1">Payment</span>
+                        <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400"></i>
+                    </summary>
+                    <ul class="mt-0.5 ml-4 space-y-0.5 border-l border-slate-100 pl-3">
+                        <li>
+                            <a href="/student/payment.aspx" data-nav-link="payment.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:13px;font-weight:500">
+                                <span class="flex-1">Payment</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/student/payment-history.aspx" data-nav-link="payment-history.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:13px;font-weight:500">
+                                <span class="flex-1">Payment History</span>
+                            </a>
+                        </li>
+                    </ul>
+                </details>
+            </li>
+            <li>
                 <a href="/student/notifications.aspx" data-nav-link="notifications.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
                     <i data-lucide="bell" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
                     <span class="flex-1">Notifications</span>
@@ -80,6 +101,7 @@
         </ul>
     </nav>
 
+    <script>(function(){var el=document.getElementById('payment-nav');var onPayment=location.pathname.toLowerCase().indexOf('payment')!==-1;if(onPayment||localStorage.getItem('paymentNavOpen')==='true')el.open=true;el.addEventListener('toggle',function(){localStorage.setItem('paymentNavOpen',el.open?'true':'false');});})()</script>
     <div class="border-t border-slate-100 p-3">
         <a href="/login/login.aspx" data-action="logout" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-[#e0162b] transition-colors" style="font-size:14px;font-weight:500">
             <i data-lucide="log-out" class="h-4 w-4 text-slate-400"></i>
