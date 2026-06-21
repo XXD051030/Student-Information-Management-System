@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Web;
+using System.Web.UI.WebControls;
 using src.services;
 
 namespace student_information_management_system
@@ -21,7 +21,102 @@ namespace student_information_management_system
                 return;
             }
 
-            rows = LecturerPortalService.GetAcademicPerformance(user);
+            if (IsPostBack) return;
+
+            var allRows = LecturerPortalService.GetAcademicPerformance(user);
+            InitializeFilters(allRows);
+            BindPage(allRows);
+        }
+
+        protected void FilterChanged(object sender, EventArgs e)
+        {
+            var user = UserContextFactory.FromSession(Session);
+            var allRows = LecturerPortalService.GetAcademicPerformance(user);
+
+            if (sender == academicYearFilter)
+            {
+                PopulateSemesterFilter(allRows, null);
+                PopulateCourseFilter(allRows, null);
+            }
+            else if (sender == semesterFilter)
+            {
+                PopulateCourseFilter(allRows, null);
+            }
+
+            BindPage(allRows);
+        }
+
+        private void InitializeFilters(List<LecturerAcademicPerformanceRow> allRows)
+        {
+            academicYearFilter.Items.Clear();
+            foreach (var year in allRows.Select(r => r.AcademicYear).Where(HasValue).Concat(new[] { "2026", "2027" }).Distinct().OrderBy(v => v))
+            {
+                academicYearFilter.Items.Add(new ListItem(AcademicYearLabel(year), year));
+            }
+
+            var defaultYear = academicYearFilter.Items.FindByValue("2026");
+            if (defaultYear != null) academicYearFilter.SelectedValue = defaultYear.Value;
+            else if (academicYearFilter.Items.Count > 0) academicYearFilter.SelectedIndex = 0;
+
+            PopulateSemesterFilter(allRows, "Semester 1");
+            PopulateCourseFilter(allRows, null);
+        }
+
+        private void PopulateSemesterFilter(List<LecturerAcademicPerformanceRow> allRows, string preferredValue)
+        {
+            var selectedYear = academicYearFilter.SelectedValue;
+            var semesters = allRows
+                .Where(r => !HasValue(selectedYear) || r.AcademicYear == selectedYear)
+                .Select(r => r.OfferingSemester)
+                .Where(HasValue)
+                .Concat(new[] { "Semester 1", "Semester 2" })
+                .Distinct()
+                .OrderBy(SemesterOrder)
+                .ToList();
+
+            semesterFilter.Items.Clear();
+            foreach (var semester in semesters)
+                semesterFilter.Items.Add(new ListItem(SemesterLabel(semester), semester));
+
+            var preferred = semesterFilter.Items.FindByValue(preferredValue ?? "");
+            if (preferred != null) semesterFilter.SelectedValue = preferred.Value;
+            else if (semesterFilter.Items.Count > 0) semesterFilter.SelectedIndex = 0;
+        }
+
+        private void PopulateCourseFilter(List<LecturerAcademicPerformanceRow> allRows, string preferredValue)
+        {
+            var selectedYear = academicYearFilter.SelectedValue;
+            var selectedSemester = semesterFilter.SelectedValue;
+            var courses = allRows
+                .Where(r => (!HasValue(selectedYear) || r.AcademicYear == selectedYear)
+                    && (!HasValue(selectedSemester) || r.OfferingSemester == selectedSemester))
+                .Where(r => HasValue(r.CourseCode))
+                .GroupBy(r => r.CourseCode)
+                .Select(g => g.First())
+                .OrderBy(r => r.CourseCode)
+                .ToList();
+
+            courseFilter.Items.Clear();
+            courseFilter.Items.Add(new ListItem("All courses", ""));
+            foreach (var course in courses)
+                courseFilter.Items.Add(new ListItem(course.CourseCode + " - " + course.CourseName, course.CourseCode));
+
+            var preferred = courseFilter.Items.FindByValue(preferredValue ?? "");
+            courseFilter.SelectedValue = preferred != null ? preferred.Value : "";
+        }
+
+        private void BindPage(List<LecturerAcademicPerformanceRow> allRows)
+        {
+            var selectedYear = academicYearFilter.SelectedValue;
+            var selectedSemester = semesterFilter.SelectedValue;
+            var selectedCourse = courseFilter.SelectedValue;
+
+            rows = allRows.Where(r =>
+                    (!HasValue(selectedYear) || r.AcademicYear == selectedYear)
+                    && (!HasValue(selectedSemester) || r.OfferingSemester == selectedSemester)
+                    && (!HasValue(selectedCourse) || r.CourseCode == selectedCourse))
+                .ToList();
+
             studentRepeater.DataSource = rows;
             studentRepeater.DataBind();
             riskRepeater.DataSource = rows.Where(r => r.IsAtRisk).ToList();
@@ -41,9 +136,6 @@ namespace student_information_management_system
                     AverageAttendance = NullableAverage(g.Select(r => r.AttendanceRate))
                 }).ToList();
             attendanceRepeater.DataBind();
-
-            CourseOptionsHtml = BuildOptions(rows.Select(r => new KeyValuePair<string, string>(r.CourseCode, r.CourseCode + " - " + r.CourseName)), "All courses");
-            ProgrammeOptionsHtml = BuildOptions(rows.Select(r => new KeyValuePair<string, string>(r.ProgrammeCode, r.ProgrammeCode)), "All programmes");
         }
 
         protected int StudentCount { get { return rows.Select(r => r.StudentId).Distinct().Count(); } }
@@ -53,8 +145,6 @@ namespace student_information_management_system
         protected decimal AverageMarks { get { return NullableAverage(rows.Select(r => r.AverageMarks)) ?? 0m; } }
         protected decimal PassRate { get { return Rate(rows.Count(r => r.Status == "Pass"), rows.Count(r => r.Status != "Pending")); } }
         protected decimal FailRate { get { return Rate(rows.Count(r => r.Status == "Fail"), rows.Count(r => r.Status != "Pending")); } }
-        protected string CourseOptionsHtml { get; private set; }
-        protected string ProgrammeOptionsHtml { get; private set; }
 
         protected decimal GradeBandPercent(decimal minimum, decimal maximum)
         {
@@ -84,6 +174,26 @@ namespace student_information_management_system
                 : "bg-amber-50 text-amber-700 border-amber-100";
         }
 
+        private static string AcademicYearLabel(string value)
+        {
+            int year;
+            return int.TryParse(value, out year) ? year + "/" + (year + 1) : value;
+        }
+
+        private static string SemesterLabel(string value)
+        {
+            return (value ?? "").Replace("Semester ", "Sem ");
+        }
+
+        private static int SemesterOrder(string value)
+        {
+            int number;
+            var digits = new string((value ?? "").Where(char.IsDigit).ToArray());
+            return int.TryParse(digits, out number) ? number : Int32.MaxValue;
+        }
+
+        private static bool HasValue(string value) { return !String.IsNullOrWhiteSpace(value); }
+
         private static string NumberOrDash(object value, string format, string suffix)
         {
             if (value == null || value == DBNull.Value) return "-";
@@ -99,18 +209,6 @@ namespace student_information_management_system
         private static decimal Rate(int count, int total)
         {
             return total == 0 ? 0m : Math.Round((decimal)count * 100m / total, 1);
-        }
-
-        private static string BuildOptions(IEnumerable<KeyValuePair<string, string>> options, string placeholder)
-        {
-            var html = new StringBuilder();
-            html.Append("<option value=\"\">").Append(HttpUtility.HtmlEncode(placeholder)).Append("</option>");
-            foreach (var option in options.Where(o => !string.IsNullOrWhiteSpace(o.Key)).GroupBy(o => o.Key).Select(g => g.First()).OrderBy(o => o.Value))
-            {
-                html.Append("<option value=\"").Append(HttpUtility.HtmlAttributeEncode(option.Key)).Append("\">")
-                    .Append(HttpUtility.HtmlEncode(option.Value)).Append("</option>");
-            }
-            return html.ToString();
         }
     }
 }
