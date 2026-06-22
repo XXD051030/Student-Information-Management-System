@@ -41,7 +41,7 @@ namespace src.services
             const string sql =
                 "SELECT COUNT(*) FROM ENROLLMENTS e JOIN COURSE_OFFERINGS co ON co.offer_id=e.offer_id " +
                 "WHERE e.student_id = @studentId AND co.session_id=@sessionId " +
-                "AND status IN ('ENROLLED', 'PENDING')";
+                "AND e.status IN ('ENROLLED', 'PENDING')";
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             {
