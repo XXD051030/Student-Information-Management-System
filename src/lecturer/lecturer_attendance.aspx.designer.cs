@@ -13,6 +13,11 @@ namespace src.lecturer
 
     public partial class lecturer_attendance
     {
+        protected global::System.Web.UI.WebControls.DropDownList academicYearFilter;
+
+        protected global::System.Web.UI.WebControls.DropDownList semesterFilter;
+
+        protected global::System.Web.UI.WebControls.DropDownList courseFilter;
 
         /// <summary>
         /// coursesRepeater control.

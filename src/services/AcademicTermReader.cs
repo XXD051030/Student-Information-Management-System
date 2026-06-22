@@ -164,5 +164,30 @@ namespace src.services
             }
             return lookup;
         }
+
+        public static List<AcademicSessionOption> GetSessionOptions()
+        {
+            var options = new List<AcademicSessionOption>();
+            const string sql =
+                "SELECT academic_year, semester, MIN(start_date) AS start_date, MAX(end_date) AS end_date " +
+                "FROM ACADEMIC_SESSIONS GROUP BY academic_year, semester " +
+                "ORDER BY MIN(start_date), academic_year, semester";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    options.Add(new AcademicSessionOption
+                    {
+                        AcademicYear = Text(reader["academic_year"]),
+                        Semester = Text(reader["semester"]),
+                        StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
+                        EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4)
+                    });
+                }
+            }
+            return options;
+        }
     }
 }

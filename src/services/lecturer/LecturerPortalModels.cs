@@ -207,6 +207,7 @@ namespace src.services
 
     public class LecturerAcademicPerformanceRow
     {
+        public int OfferingId { get; set; }
         public string StudentId { get; set; }
         public string FullName { get; set; }
         public string ProgrammeCode { get; set; }

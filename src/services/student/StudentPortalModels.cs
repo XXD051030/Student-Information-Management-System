@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace src.services
 {
+    public class AcademicSessionOption
+    {
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+
     public class StudentAccountProfile
     {
         public string StudentId { get; set; }

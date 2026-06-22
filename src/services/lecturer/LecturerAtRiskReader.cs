@@ -118,6 +118,7 @@ namespace src.services
                     var marks = AcademicAverage(conn, pair.OfferId, pair.StudentId);
                     result.Add(new LecturerAcademicPerformanceRow
                     {
+                        OfferingId = pair.OfferId,
                         StudentId = pair.StudentId,
                         FullName = pair.FullName,
                         ProgrammeCode = pair.ProgrammeCode,
