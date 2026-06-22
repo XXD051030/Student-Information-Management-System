@@ -42,13 +42,11 @@
                                 data-author="<%# Server.HtmlEncode((string)Eval("AuthorName")) %>"
                                 data-time="<%# ListTime((DateTime)Eval("CreatedAt")) %>"
                                 data-fulltime="<%# FullTime((DateTime)Eval("CreatedAt")) %>"
-                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>"
                                 data-fileurl="<%# AttachmentUrl(Eval("FileUrl")) %>">
                                 <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
                                         <span class="notif-badge rounded border px-1.5 py-0.5" style="font-size:9.5px;font-weight:700;letter-spacing:0.04em"><%# Category(Eval("AuthorRole")) %></span>
-                                        <i data-lucide="pin" class="notif-pin h-3 w-3 text-amber-500"></i>
                                         <span class="ml-auto text-slate-400 truncate" style="font-size:10.5px"><%# ListTime((DateTime)Eval("CreatedAt")) %></span>
                                     </div>
                                     <p class="mt-1 line-clamp-2 text-slate-900" style="font-size:13px;font-weight:600;line-height:1.4"><%# Server.HtmlEncode((string)Eval("Title")) %></p>
@@ -69,14 +67,6 @@
         <%-- Detail panel: populated by notifications.js from the selected list item --%>
         <div class="rounded-lg border border-slate-200 bg-white">
             <article class="flex h-full flex-col">
-                <header class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-                    <div class="ml-auto flex items-center gap-1">
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Pin">
-                            <i data-lucide="pin" id="detail-pin" class="h-4 w-4 text-amber-500"></i>
-                        </button>
-                    </div>
-                </header>
-
                 <div id="detail-empty" class="flex flex-1 items-center justify-center px-7 py-16 text-slate-400" style="display:none;font-size:13px">
                     Select a notification to read it.
                 </div>

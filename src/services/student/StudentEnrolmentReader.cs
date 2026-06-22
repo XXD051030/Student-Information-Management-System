@@ -51,6 +51,40 @@ namespace src.services
             }
         }
 
+        /// <summary>Course codes the student has passed (a GRADES row with a letter grade other than 'F').</summary>
+        private static HashSet<string> GetPassedCourseIds(SqlConnection conn, string studentId)
+        {
+            const string sql =
+                "SELECT DISTINCT co.course_id FROM GRADES g " +
+                "JOIN COURSE_OFFERINGS co ON co.offer_id = g.offer_id " +
+                "WHERE g.student_id = @studentId AND g.letter_grade IS NOT NULL AND g.letter_grade <> 'F'";
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@studentId", studentId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read()) set.Add(Text(reader["course_id"]));
+                }
+            }
+            return set;
+        }
+
+        private static bool IsPrerequisiteMet(string prerequisites, HashSet<string> passedCourseIds)
+        {
+            if (string.IsNullOrWhiteSpace(prerequisites)) return true;
+            var required = prerequisites.Trim();
+            if (string.Equals(required, "None", StringComparison.OrdinalIgnoreCase)) return true;
+            return passedCourseIds.Contains(required);
+        }
+
+        /// <summary>SQL fragment (uses @studentId) verifying a course's prerequisite, if any, has been passed.</summary>
+        private const string PrerequisiteMetSql =
+            "(c.prerequisites IS NULL OR c.prerequisites = '' OR c.prerequisites = 'None' " +
+            "OR EXISTS (SELECT 1 FROM GRADES g JOIN COURSE_OFFERINGS gco ON gco.offer_id = g.offer_id " +
+            "WHERE g.student_id = @studentId AND gco.course_id = c.prerequisites " +
+            "AND g.letter_grade IS NOT NULL AND g.letter_grade <> 'F'))";
+
         private static List<StudentOfferingOption> GetOfferingOptions(UserContext user, string studentId, StudentRegistrationTerm term)
         {
             const string sql =
@@ -78,48 +112,52 @@ namespace src.services
             var byOffer = new Dictionary<int, StudentOfferingOption>();
             var schedules = new Dictionary<int, List<string>>();
             using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(sql, conn))
             {
-                cmd.Parameters.AddWithValue("@studentId", studentId);
-                cmd.Parameters.AddWithValue("@academicYear", term.AcademicYear);
-                cmd.Parameters.AddWithValue("@semester", term.Name);
-                using (var reader = cmd.ExecuteReader())
+                var passedCourseIds = GetPassedCourseIds(conn, studentId);
+                using (var cmd = new SqlCommand(sql, conn))
                 {
-                    while (reader.Read())
+                    cmd.Parameters.AddWithValue("@studentId", studentId);
+                    cmd.Parameters.AddWithValue("@academicYear", term.AcademicYear);
+                    cmd.Parameters.AddWithValue("@semester", term.Name);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        var offerId = IntValue(reader["offer_id"]);
-                        StudentOfferingOption option;
-                        if (!byOffer.TryGetValue(offerId, out option))
+                        while (reader.Read())
                         {
-                            var code = Text(reader["course_code"]);
-                            option = new StudentOfferingOption
+                            var offerId = IntValue(reader["offer_id"]);
+                            StudentOfferingOption option;
+                            if (!byOffer.TryGetValue(offerId, out option))
                             {
-                                OfferingId = offerId,
-                                CourseId = Text(reader["course_id"]),
-                                CourseCode = code,
-                                CourseName = Text(reader["course_name"]),
-                                Description = "Course registration for " + Text(reader["course_name"]) + ".",
-                                LecturerName = LecturerOrFallback(Text(reader["lecturer_name"])),
-                                CreditHours = IntValue(reader["credit_hour"]),
-                                Prerequisites = Text(reader["prerequisites"]),
-                                EnrolledCount = IntValue(reader["enrolled_count"]),
-                                Capacity = DefaultCapacity,
-                                MyStatus = Text(reader["my_status"]),
-                                FeePerCredit = DefaultFeePerCredit,
-                                Color = ColorOrFallback(Text(reader["colour"]), code),
-                                Schedule = "TBA"
-                            };
-                            byOffer[offerId] = option;
-                            schedules[offerId] = new List<string>();
-                            options.Add(option);
-                        }
+                                var code = Text(reader["course_code"]);
+                                option = new StudentOfferingOption
+                                {
+                                    OfferingId = offerId,
+                                    CourseId = Text(reader["course_id"]),
+                                    CourseCode = code,
+                                    CourseName = Text(reader["course_name"]),
+                                    Description = "Course registration for " + Text(reader["course_name"]) + ".",
+                                    LecturerName = LecturerOrFallback(Text(reader["lecturer_name"])),
+                                    CreditHours = IntValue(reader["credit_hour"]),
+                                    Prerequisites = Text(reader["prerequisites"]),
+                                    PrerequisiteMet = IsPrerequisiteMet(Text(reader["prerequisites"]), passedCourseIds),
+                                    EnrolledCount = IntValue(reader["enrolled_count"]),
+                                    Capacity = DefaultCapacity,
+                                    MyStatus = Text(reader["my_status"]),
+                                    FeePerCredit = DefaultFeePerCredit,
+                                    Color = ColorOrFallback(Text(reader["colour"]), code),
+                                    Schedule = "TBA"
+                                };
+                                byOffer[offerId] = option;
+                                schedules[offerId] = new List<string>();
+                                options.Add(option);
+                            }
 
-                        var day = Text(reader["day_of_week"]);
-                        if (!string.IsNullOrWhiteSpace(day))
-                        {
-                            var start = TimeValue(reader["start_time"]);
-                            var end = TimeValue(reader["end_time"]);
-                            schedules[offerId].Add(ShortDay(day) + " " + FormatTime(start) + "-" + FormatTime(end) + " " + Text(reader["room"]));
+                            var day = Text(reader["day_of_week"]);
+                            if (!string.IsNullOrWhiteSpace(day))
+                            {
+                                var start = TimeValue(reader["start_time"]);
+                                var end = TimeValue(reader["end_time"]);
+                                schedules[offerId].Add(ShortDay(day) + " " + FormatTime(start) + "-" + FormatTime(end) + " " + Text(reader["room"]));
+                            }
                         }
                     }
                 }
@@ -156,9 +194,10 @@ namespace src.services
                     const string sql =
                         "INSERT INTO ENROLLMENTS (student_id, offer_id, course_id, semester, status) " +
                         "SELECT @studentId, co.offer_id, co.course_id, co.academic_year + ' ' + co.semester, 'ENROLLED' " +
-                        "FROM COURSE_OFFERINGS co " +
+                        "FROM COURSE_OFFERINGS co JOIN COURSES c ON c.course_id = co.course_id " +
                         "WHERE co.offer_id = @offerId AND co.status = 'ACTIVE' " +
-                        "AND NOT EXISTS (SELECT 1 FROM ENROLLMENTS e WHERE e.student_id = @studentId AND e.offer_id = co.offer_id); " +
+                        "AND NOT EXISTS (SELECT 1 FROM ENROLLMENTS e WHERE e.student_id = @studentId AND e.offer_id = co.offer_id) " +
+                        "AND " + PrerequisiteMetSql + "; " +
                         "SELECT @@ROWCOUNT";
 
                     using (var cmd = new SqlCommand(sql, conn))
@@ -202,10 +241,11 @@ namespace src.services
                 const string sql =
                     "INSERT INTO ENROLLMENTS (student_id, offer_id, course_id, semester, status, request_type) " +
                     "SELECT @studentId, co.offer_id, co.course_id, co.academic_year + ' ' + co.semester, 'PENDING', 'ADD' " +
-                    "FROM COURSE_OFFERINGS co " +
+                    "FROM COURSE_OFFERINGS co JOIN COURSES c ON c.course_id = co.course_id " +
                     "WHERE co.offer_id = @offerId AND co.status = 'ACTIVE' " +
                     "AND NOT EXISTS (SELECT 1 FROM ENROLLMENTS e WHERE e.student_id = @studentId " +
-                    "AND e.offer_id = @offerId AND e.status IN ('ENROLLED', 'PENDING')); " +
+                    "AND e.offer_id = @offerId AND e.status IN ('ENROLLED', 'PENDING')) " +
+                    "AND " + PrerequisiteMetSql + "; " +
                     "SELECT @@ROWCOUNT";
 
                 using (var cmd = new SqlCommand(sql, conn))

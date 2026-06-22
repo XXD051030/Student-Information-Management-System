@@ -70,11 +70,6 @@ namespace src.shared
             return dt.ToString("d MMM yyyy - HH:mm");
         }
 
-        protected string PinnedFlag(object isPinned)
-        {
-            return ((bool)isPinned) ? "true" : "false";
-        }
-
         protected string AttachmentUrl(object fileUrl)
         {
             var url = fileUrl as string;

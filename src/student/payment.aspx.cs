@@ -24,7 +24,7 @@ namespace src.student
                 user,
                 amount,
                 string.IsNullOrEmpty(hfDescription.Value) ? "Tuition payment" : hfDescription.Value,
-                "Y2 · Trimester 2 (Sep 2026)",
+                "Y2 · Semester 2 (Sep 2026)",
                 string.IsNullOrEmpty(hfMethod.Value) ? "card" : hfMethod.Value);
 
             // ...then enrol the student in the carried courses.

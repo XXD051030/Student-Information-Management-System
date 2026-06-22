@@ -13,8 +13,6 @@ namespace src.student
         private StudentRegistrationTerm _regSemester;
         private StudentRegistrationWindow _window;
         private List<StudentOfferingOption> _offerings;
-        private int _semesterNo;
-        private int _semesterCount;
         private int _alreadyRegisteredCount;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -40,8 +38,6 @@ namespace src.student
             _regSemester = page.Term;
             _window = page.Window;
             _offerings = page.Offerings ?? new List<StudentOfferingOption>();
-            _semesterNo = page.SemesterNo;
-            _semesterCount = page.SemesterCount;
             _alreadyRegisteredCount = page.AlreadyRegisteredCount;
 
             // Once enrollment is closed (Phase 3) there is nothing left to register,
@@ -74,25 +70,6 @@ namespace src.student
             {
                 if (_regSemester == null) return "the upcoming semester";
                 return _regSemester.Name + " (" + _regSemester.StartDate.ToString("MMM yyyy") + ")";
-            }
-        }
-
-        /// <summary>
-        /// "Y2 &middot; Trimester 1" for the registration term. The registration
-        /// term is one semester after the student's current semester number; three
-        /// trimesters make a year of study. Falls back to empty when unknown.
-        /// </summary>
-        protected string YearAndTrimesterLabel
-        {
-            get
-            {
-                if (_semesterCount > 0 && _semesterNo >= _semesterCount)
-                    return "Graduated";
-                // _semesterNo = 0 means "not yet started" — registering for semester 1.
-                int regNo = _semesterNo + 1;
-                int year = ((regNo - 1) / 3) + 1;
-                int trimester = ((regNo - 1) % 3) + 1;
-                return "Y" + year + " · Trimester " + trimester;
             }
         }
 
@@ -184,12 +161,13 @@ namespace src.student
             return cap > 0 && en >= cap;
         }
 
-        protected bool RowOpen(object myStatus, object enrolled, object capacity)
+        protected bool RowOpen(object myStatus, object enrolled, object capacity, object prerequisiteMet)
         {
             return ActivePhase == 1
                 && RegistrationOpen
                 && string.IsNullOrEmpty(myStatus as string)
-                && !RowFull(myStatus, enrolled, capacity);
+                && !RowFull(myStatus, enrolled, capacity)
+                && Convert.ToBoolean(prerequisiteMet);
         }
 
         protected bool RowDroppable(object myStatus)
@@ -202,11 +180,26 @@ namespace src.student
         /// course: never requested, or a past request was rejected or dropped — all
         /// of these are free to re-request during the same Add/Drop window.
         /// </summary>
-        protected bool RowAddable(object myStatus, object enrolled, object capacity)
+        protected bool RowAddable(object myStatus, object enrolled, object capacity, object prerequisiteMet)
         {
             var s = myStatus as string;
             bool eligible = string.IsNullOrEmpty(s) || s == "REJECTED" || s == "DROPPED";
-            return IsAddDropPhase && eligible && !RowFull(myStatus, enrolled, capacity);
+            return IsAddDropPhase && eligible && !RowFull(myStatus, enrolled, capacity) && Convert.ToBoolean(prerequisiteMet);
+        }
+
+        /// <summary>
+        /// True when the row would otherwise show the enroll checkbox / Request Add button,
+        /// but the student hasn't passed the course's prerequisite yet.
+        /// </summary>
+        protected bool RowLockedByPrerequisite(object myStatus, object enrolled, object capacity, object prerequisiteMet)
+        {
+            if (Convert.ToBoolean(prerequisiteMet)) return false;
+            if (RowFull(myStatus, enrolled, capacity)) return false;
+
+            var s = myStatus as string;
+            if (ActivePhase == 1 && RegistrationOpen && string.IsNullOrEmpty(s)) return true;
+            if (IsAddDropPhase && (string.IsNullOrEmpty(s) || s == "REJECTED" || s == "DROPPED")) return true;
+            return false;
         }
 
         protected bool RowPending(object myStatus)

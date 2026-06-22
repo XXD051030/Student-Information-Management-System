@@ -169,6 +169,7 @@ namespace src.services
         public string Schedule { get; set; }
         public int CreditHours { get; set; }
         public string Prerequisites { get; set; }
+        public bool PrerequisiteMet { get; set; }
         public int EnrolledCount { get; set; }
         public int Capacity { get; set; }
         public string MyStatus { get; set; }

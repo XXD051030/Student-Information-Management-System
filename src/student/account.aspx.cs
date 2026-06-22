@@ -97,7 +97,7 @@ namespace src.shared
                 int n = Math.Max(1, _student.CurrentSemesterNo);
                 int year = (n + 2) / 3;
                 int semester = ((n - 1) % 3) + 1;
-                return "Year " + year + " &middot; Trimester " + semester;
+                return "Year " + year + " &middot; Semester " + semester;
             }
         }
 

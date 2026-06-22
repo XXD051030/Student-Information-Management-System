@@ -8,7 +8,7 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500"><%= Server.HtmlEncode(AcademicYearLabel) %></p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Course Enrollment</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Register for courses for <span class="text-slate-900 font-semibold"><%= Server.HtmlEncode(YearAndTrimesterLabel) %> &middot; <%= Server.HtmlEncode(TermLabel) %></span>.
+                Register for courses for <span class="text-slate-900 font-semibold"><%= Server.HtmlEncode(TermLabel) %></span>.
             </p>
         </div>
     </div>
@@ -158,13 +158,19 @@
                                     <i data-lucide="alert-circle" class="h-4 w-4"></i> Full
                                 </button>
                             </asp:Panel>
+                            <%-- Any phase: prerequisite not yet passed --%>
+                            <asp:Panel runat="server" Visible='<%# RowLockedByPrerequisite(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity"), Eval("PrerequisiteMet")) %>'>
+                                <button disabled title='<%# "Requires " + Server.HtmlEncode((Eval("Prerequisites") as string) ?? "") %>' class="inline-flex items-center gap-1.5 rounded-xl px-3.5 h-10 bg-slate-100 text-slate-400 cursor-not-allowed" style="font-size:13px;font-weight:600">
+                                    <i data-lucide="lock" class="h-4 w-4"></i> Prerequisite Required
+                                </button>
+                            </asp:Panel>
                             <%-- Phase 1: checkbox to add to basket --%>
-                            <asp:Panel runat="server" Visible='<%# RowOpen(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity")) %>'>
+                            <asp:Panel runat="server" Visible='<%# RowOpen(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity"), Eval("PrerequisiteMet")) %>'>
                                 <input type="checkbox" data-action="toggle-enroll" data-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>' data-offering='<%# Eval("OfferingId") %>'
                                        class="h-5 w-5 rounded border-slate-300 text-[#e0162b] accent-[#e0162b] cursor-pointer" />
                             </asp:Panel>
                             <%-- Phase 2: Request Add button (available, not full) --%>
-                            <asp:Panel runat="server" Visible='<%# RowAddable(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity")) %>'>
+                            <asp:Panel runat="server" Visible='<%# RowAddable(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity"), Eval("PrerequisiteMet")) %>'>
                                 <button type="button" data-action="request-add"
                                         data-offering='<%# Eval("OfferingId") %>'
                                         data-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>'
