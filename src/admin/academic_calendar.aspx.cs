@@ -50,6 +50,8 @@ namespace src.admin
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(item.StartDate.ToString("dd MMM yyyy")).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(item.EndDate.ToString("dd MMM yyyy")).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(item.Semester)).Append("</td>");
+                html.Append("<td class=\"px-6 py-3 text-slate-700 text-right\" style=\"font-size:12.5px\">").Append(item.MinCredits.HasValue ? item.MinCredits.Value.ToString() : "—").Append("</td>");
+                html.Append("<td class=\"px-6 py-3 text-slate-700 text-right\" style=\"font-size:12.5px\">").Append(item.MaxCredits.HasValue ? item.MaxCredits.Value.ToString() : "—").Append("</td>");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ").Append(StatusBadge(item.Status)).Append("\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(item.Status)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\"><div class=\"flex items-center justify-end gap-1\">");
                 if (!string.Equals(item.Status, "Completed", StringComparison.OrdinalIgnoreCase))
@@ -58,7 +60,7 @@ namespace src.admin
                 }
                 html.Append("<button type=\"button\" data-calendar-delete data-session-id=\"").Append(Attr(item.SessionId)).Append("\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-[#e0162b] hover:bg-[#e0162b]/5\"><i data-lucide=\"trash-2\" class=\"h-3.5 w-3.5\"></i></button></div></td></tr>");
             }
-            html.Append("<tr data-table-empty style=\"display:none\"><td colspan=\"7\" class=\"px-6 py-12 text-center text-slate-400\" style=\"font-size:13px\">No events match your filters.</td></tr>");
+            html.Append("<tr data-table-empty style=\"display:none\"><td colspan=\"9\" class=\"px-6 py-12 text-center text-slate-400\" style=\"font-size:13px\">No events match your filters.</td></tr>");
             return html.ToString();
         }
 

@@ -77,25 +77,6 @@ namespace src.student
             }
         }
 
-        /// <summary>
-        /// "Y2 &middot; Trimester 1" for the registration term. The registration
-        /// term is one semester after the student's current semester number; three
-        /// trimesters make a year of study. Falls back to empty when unknown.
-        /// </summary>
-        protected string YearAndTrimesterLabel
-        {
-            get
-            {
-                if (_semesterCount > 0 && _semesterNo >= _semesterCount)
-                    return "Graduated";
-                // _semesterNo = 0 means "not yet started" — registering for semester 1.
-                int regNo = _semesterNo + 1;
-                int year = ((regNo - 1) / 3) + 1;
-                int trimester = ((regNo - 1) % 3) + 1;
-                return "Y" + year + " · Trimester " + trimester;
-            }
-        }
-
         // --- Registration window ---------------------------------------------
 
         protected bool RegistrationOpen { get { return _window != null && _window.IsOpen; } }
@@ -104,15 +85,15 @@ namespace src.student
 
         protected bool IsAddDropPhase { get { return ActivePhase == 2; } }
 
-        /// <summary>"1 May - 15 Jun 2026" registration date range, or "" if unset.</summary>
+        /// <summary>"1 May - 15 Jun 2026" full portal-open date range (registration start through add/drop end), or "" if unset.</summary>
         protected string RegistrationDateRange
         {
             get
             {
-                if (_window == null || !_window.RegistrationStart.HasValue || !_window.RegistrationEnd.HasValue)
+                if (_window == null || !_window.RegistrationStart.HasValue || !_window.AddDropEnd.HasValue)
                     return "";
                 return _window.RegistrationStart.Value.ToString("d MMM") + " - "
-                     + _window.RegistrationEnd.Value.ToString("d MMM yyyy");
+                     + _window.AddDropEnd.Value.ToString("d MMM yyyy");
             }
         }
 

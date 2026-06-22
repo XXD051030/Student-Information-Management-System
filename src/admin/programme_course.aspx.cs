@@ -20,6 +20,7 @@ namespace src.admin
         protected string CourseStatusOptionsHtml { get; private set; }
         protected string SemesterOptionsHtml { get; private set; }
         protected string LecturerOptionsHtml { get; private set; }
+        protected string CourseOptionsHtml { get; private set; }
         protected string ProgrammeStatusFilterOptionsHtml { get; private set; }
         protected string CourseStatusFilterOptionsHtml { get; private set; }
 
@@ -36,8 +37,22 @@ namespace src.admin
             CourseStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, null);
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, null);
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select lecturer...");
+            CourseOptionsHtml = BuildCourseOptions();
             ProgrammeStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, "All statuses");
             CourseStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, "All statuses");
+        }
+
+        private string BuildCourseOptions()
+        {
+            var html = new StringBuilder();
+            html.Append("<option value=\"\">Select course...</option>");
+            foreach (var c in service.GetCourseCatalog())
+            {
+                html.Append("<option value=\"").Append(Attr(c.Code)).Append("\" data-credit=\"").Append(c.CreditHours)
+                    .Append("\" data-programme=\"").Append(Attr(c.Programme)).Append("\">")
+                    .Append(Html(c.Code)).Append(" - ").Append(Html(c.Name)).Append("</option>");
+            }
+            return html.ToString();
         }
 
         private string BuildDepartmentRows()

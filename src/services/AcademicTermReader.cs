@@ -107,6 +107,8 @@ namespace src.services
                     using (var reader = cmd.ExecuteReader())
                     {
                         if (!reader.Read()) return null;
+                        var startDate = DateValue(reader["start_date"]) ?? DateTime.Today;
+                        var endDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4);
                         return new StudentRegistrationTerm
                         {
                             SessionId = Text(reader["session_id"]),
@@ -114,11 +116,11 @@ namespace src.services
                             IntakeId = HasColumn(reader, "intake_id") ? Text(reader["intake_id"]) : "",
                             IntakeName = HasColumn(reader, "intake_name") ? Text(reader["intake_name"]) : "",
                             Name = Text(reader["semester"]),
-                            StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
-                            EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4),
-                            RegistrationStart = (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-WindowDaysBeforeStart),
-                            RegistrationEnd = (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-1),
-                            AddDropEnd = (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(WindowDaysAfterStart),
+                            StartDate = startDate,
+                            EndDate = endDate,
+                            RegistrationStart = startDate.AddDays(-WindowDaysBeforeStart),
+                            RegistrationEnd = startDate.AddDays(-1),
+                            AddDropEnd = startDate.AddDays(WindowDaysAfterStart),
                             MinCredits = hasCreditBounds
                                 ? NullableInt(reader["min_credits"]) ?? DefaultMinCredits
                                 : DefaultMinCredits,

@@ -210,9 +210,8 @@
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme</span><div class="mt-1.5"><select data-field="programme" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= ProgrammeOptionsHtml %></select></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Intake Semester</span><div class="mt-1.5"><select data-field="semester" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= SemesterOptionsHtml %></select></div></label>
-                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Course Code</span><div class="mt-1.5"><input data-field="code" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
-                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Title</span><div class="mt-1.5"><input data-field="name" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
-                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Credit</span><div class="mt-1.5"><input data-field="credit" type="number" value="3" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
+                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Course</span><div class="mt-1.5"><select data-field="course" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= CourseOptionsHtml %></select></div></label>
+                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Credit</span><div class="mt-1.5"><input data-field="credit" type="number" value="3" readonly class="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 outline-none text-slate-500" style="font-size:13px" /></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Lecturer</span><div class="mt-1.5"><select data-field="lecturer" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= LecturerOptionsHtml %></select></div></label>
             </div>
         </div>
@@ -274,6 +273,29 @@
                 if (window.toast) window.toast.success(message);
                 setTimeout(function () { location.reload(); }, 450);
             }
+            function filterCourseOptions(modal, keepValue) {
+                var programmeSel = modal.querySelector('[data-field="programme"]');
+                var courseSel = modal.querySelector('[data-field="course"]');
+                if (!programmeSel || !courseSel) return;
+                var programme = programmeSel.value;
+                var previous = keepValue || courseSel.value;
+                Array.prototype.forEach.call(courseSel.options, function (option) {
+                    var optProgramme = option.getAttribute("data-programme");
+                    option.hidden = !!(programme && optProgramme && optProgramme !== programme);
+                });
+                var stillValid = Array.prototype.some.call(courseSel.options, function (option) {
+                    return option.value === previous && !option.hidden;
+                });
+                courseSel.value = stillValid ? previous : "";
+                applyCourseCredit(modal);
+            }
+            function applyCourseCredit(modal) {
+                var courseSel = modal.querySelector('[data-field="course"]');
+                var creditField = modal.querySelector('[data-field="credit"]');
+                if (!courseSel || !creditField) return;
+                var selected = courseSel.options[courseSel.selectedIndex];
+                creditField.value = (selected && selected.getAttribute("data-credit")) || "";
+            }
             document.addEventListener("click", function (e) {
                 var editDepartment = e.target.closest("[data-admin-edit-department]");
                 if (editDepartment) {
@@ -317,10 +339,10 @@
                     setField(am, "offerId", row && row.dataset.offerId);
                     setField(am, "programme", row && row.dataset.programme);
                     setField(am, "semester", row && row.dataset.sessionId);
-                    setField(am, "code", row && row.dataset.courseCode);
-                    setField(am, "name", row && row.dataset.title);
-                    setField(am, "credit", row && row.dataset.credit);
                     setField(am, "lecturer", row && row.dataset.lecturer);
+                    filterCourseOptions(am, row && row.dataset.courseCode);
+                    setField(am, "course", row && row.dataset.courseCode);
+                    applyCourseCredit(am);
                     return;
                 }
 
@@ -356,10 +378,11 @@
                 if (newAssignment) {
                     var freshAssignment = document.getElementById("assign-modal");
                     setField(freshAssignment, "offerId", "");
-                    setField(freshAssignment, "code", "");
-                    setField(freshAssignment, "name", "");
-                    setField(freshAssignment, "credit", "3");
+                    setField(freshAssignment, "programme", "");
+                    setField(freshAssignment, "course", "");
+                    setField(freshAssignment, "credit", "");
                     setField(freshAssignment, "lecturer", "");
+                    filterCourseOptions(freshAssignment, "");
                 }
 
                 var programme = e.target.closest("[data-admin-save-programme]");
@@ -419,7 +442,7 @@
             post("SaveCourseAssignment", {
               request: {
                 offerId: parseInt(field(am, "offerId"), 10) || 0,
-                courseCode: field(am, "code"),
+                courseCode: field(am, "course"),
                 lecturer: field(am, "lecturer"),
                 sessionId: field(am, "semester"),
                 status: "Active"
@@ -472,6 +495,12 @@
               .catch(function () { if (window.toast) window.toast.error("Could not delete assignment"); });
           }
         }, true);
+        document.addEventListener("change", function (e) {
+          var am = document.getElementById("assign-modal");
+          if (!am || !am.contains(e.target)) return;
+          if (e.target.matches('[data-field="programme"]')) filterCourseOptions(am);
+          else if (e.target.matches('[data-field="course"]')) applyCourseCredit(am);
+        });
       })();
     </script>
 </asp:Content>

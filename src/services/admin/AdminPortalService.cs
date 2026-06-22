@@ -52,7 +52,7 @@ namespace src.services.admin
             EnsureOptions(data.CourseStatuses, "Active", "Inactive");
             EnsureOptions(data.EducationLevels, "Undergraduate", "Postgraduate", "Foundation");
             EnsureOptions(data.EventTypes, "Registration opens", "Registration closes",
-                "Classes begin", "Add/drop closes", "Semester ends");
+                "Classes begin", "Semester ends");
             EnsureOptions(data.EventStatuses, "Upcoming", "Scheduled", "Completed");
             EnsureOptions(data.AcademicStatuses, "Good Standing", "Probation", "At Risk", "Pending");
             return data;
@@ -793,7 +793,7 @@ namespace src.services.admin
             AcademicIntakeSchema.Ensure();
             const string sql =
                 "SELECT s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, s.status, " +
-                "s.intake_id, i.intake_name, i.intake_month " +
+                "s.intake_id, i.intake_name, i.intake_month, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id ORDER BY s.start_date";
             var rows = new List<AdminCalendarEventRow>();
             using (var conn = Db.OpenConnection())
@@ -810,20 +810,20 @@ namespace src.services.admin
                     var intakeId = Text(reader["intake_id"]);
                     var intakeName = Text(reader["intake_name"]);
                     var intakeMonth = Convert.ToDateTime(reader["intake_month"]);
+                    var minCredits = reader["min_credits"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["min_credits"]);
+                    var maxCredits = reader["max_credits"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["max_credits"]);
                     var sem = intakeName + " - " + semester;
                     var registrationStart = start.AddDays(-7);
                     var registrationEnd = start.AddDays(-1);
                     var addDropEnd = start.AddDays(7);
                     AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
-                        "Registration opens", registrationStart, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                        "Registration opens", registrationStart, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end, minCredits, maxCredits);
                     AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
-                        "Registration closes", registrationEnd, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                        "Registration closes", addDropEnd, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end, minCredits, maxCredits);
                     AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
-                        "Classes begin", start, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                        "Classes begin", start, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end, minCredits, maxCredits);
                     AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
-                        "Add/drop closes", addDropEnd, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
-                    AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
-                        "Semester ends", end, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                        "Semester ends", end, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end, minCredits, maxCredits);
                 }
             }
             return rows;
@@ -873,6 +873,11 @@ namespace src.services.admin
             if (string.IsNullOrWhiteSpace(sessionId)) sessionId = BuildSessionId(intakeId, semester);
             var status = NormalizeAcademicSessionStatus(request.Status);
 
+            if (!int.TryParse(request.MinCredits, out var minCredits)) throw new ArgumentException("Minimum credits is required.");
+            if (!int.TryParse(request.MaxCredits, out var maxCredits)) throw new ArgumentException("Maximum credits is required.");
+            if (minCredits < 0 || maxCredits < 0) throw new ArgumentException("Credits cannot be negative.");
+            if (maxCredits < minCredits) throw new ArgumentException("Maximum credits cannot be less than minimum credits.");
+
             using (var conn = Db.OpenConnection())
             {
                 using (var intakeCmd = new SqlCommand(
@@ -887,8 +892,8 @@ namespace src.services.admin
                 }
                 var exists = Exists(conn, "SELECT 1 FROM ACADEMIC_SESSIONS WHERE session_id = @id", cmd => cmd.Parameters.AddWithValue("@id", sessionId));
                 var sql = exists
-                    ? "UPDATE ACADEMIC_SESSIONS SET intake_id=@intake, academic_year=@year, semester=@semester, start_date=@start, end_date=@end, status=@status WHERE session_id=@id"
-                    : "INSERT INTO ACADEMIC_SESSIONS (session_id,intake_id,academic_year,semester,start_date,end_date,status) VALUES (@id,@intake,@year,@semester,@start,@end,@status)";
+                    ? "UPDATE ACADEMIC_SESSIONS SET intake_id=@intake, academic_year=@year, semester=@semester, start_date=@start, end_date=@end, status=@status, min_credits=@min, max_credits=@max WHERE session_id=@id"
+                    : "INSERT INTO ACADEMIC_SESSIONS (session_id,intake_id,academic_year,semester,start_date,end_date,status,min_credits,max_credits) VALUES (@id,@intake,@year,@semester,@start,@end,@status,@min,@max)";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@id", sessionId);
@@ -898,6 +903,8 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@start", startDate.Date);
                     cmd.Parameters.AddWithValue("@end", endDate.Date);
                     cmd.Parameters.AddWithValue("@status", status);
+                    cmd.Parameters.AddWithValue("@min", minCredits);
+                    cmd.Parameters.AddWithValue("@max", maxCredits);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -906,7 +913,7 @@ namespace src.services.admin
         private static void AddMilestone(List<AdminCalendarEventRow> rows, string sessionId,
             string intakeId, string intakeName, string academicYear, string semester,
             string semesterLabel, string type, DateTime date, DateTime intakeMonth, DateTime registrationStart,
-            DateTime registrationEnd, DateTime addDropEnd, DateTime start, DateTime end)
+            DateTime registrationEnd, DateTime addDropEnd, DateTime start, DateTime end, int? minCredits, int? maxCredits)
         {
             rows.Add(new AdminCalendarEventRow
             {
@@ -927,6 +934,8 @@ namespace src.services.admin
                 RegistrationStart = registrationStart,
                 RegistrationEnd = registrationEnd,
                 AddDropEnd = addDropEnd,
+                MinCredits = minCredits,
+                MaxCredits = maxCredits,
                 Status = date < DateTime.Today ? "Completed" : date == DateTime.Today ? "Active" : "Scheduled"
             });
         }
@@ -1804,6 +1813,8 @@ namespace src.services.admin
         public string StartDate { get; set; }
         public string EndDate { get; set; }
         public string Status { get; set; }
+        public string MinCredits { get; set; }
+        public string MaxCredits { get; set; }
     }
 
     public class AdminAddDropRequestRow
@@ -1839,6 +1850,8 @@ namespace src.services.admin
         public DateTime RegistrationStart { get; set; }
         public DateTime RegistrationEnd { get; set; }
         public DateTime AddDropEnd { get; set; }
+        public int? MinCredits { get; set; }
+        public int? MaxCredits { get; set; }
         public string Status { get; set; }
     }
 
