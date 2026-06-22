@@ -251,7 +251,7 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=17"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=18"></script>
     <script src="<%= ResolveUrl("~/js/lecturer/course-dashboard.js") %>?v=2"></script>
     <script>
         document.addEventListener("click", function (event) {

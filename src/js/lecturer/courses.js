@@ -130,13 +130,35 @@
         return values;
     }
 
+    function sessionValues(field, year) {
+        var values = [];
+        (window.lecturerAcademicSessions || []).forEach(function (term) {
+            if (year && term.year !== year) return;
+            var value = term[field] || "";
+            if (value && values.indexOf(value) === -1) values.push(value);
+        });
+        return values;
+    }
+
+    function academicYearLabel(value) {
+        return value;
+    }
+
+    function semesterLabel(value) {
+        return /^\d+$/.test(value) ? "Semester " + value : value;
+    }
+
     function populateYearFilter() {
         var select = document.getElementById("academic-year-filter");
         if (!select) return;
+        var years = sessionValues("year");
         distinctCardValues("data-academic-year").forEach(function (year) {
+            if (years.indexOf(year) === -1) years.push(year);
+        });
+        years.forEach(function (year) {
             var option = document.createElement("option");
             option.value = year;
-            option.textContent = year;
+            option.textContent = academicYearLabel(year);
             select.appendChild(option);
         });
     }
@@ -151,10 +173,14 @@
         select.appendChild(first);
         select.disabled = year === "all";
         if (select.disabled) return;
+        var semesters = sessionValues("semester", year);
         distinctCardValues("data-semester", year).forEach(function (semester) {
+            if (semesters.indexOf(semester) === -1) semesters.push(semester);
+        });
+        semesters.forEach(function (semester) {
             var option = document.createElement("option");
             option.value = semester;
-            option.textContent = semester;
+            option.textContent = semesterLabel(semester);
             select.appendChild(option);
         });
     }

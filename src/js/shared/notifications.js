@@ -16,6 +16,18 @@
     var emptyEl = document.getElementById('detail-empty');
     var cardEl = document.getElementById('detail-card');
     var current = null;
+    var yearFilter = document.querySelector('[data-notification-year-filter]');
+    var semesterFilter = document.querySelector('[data-notification-semester-filter]');
+    var courseFilter = document.querySelector('[data-notification-course-filter]');
+    var search = document.getElementById('notif-search');
+    var courseOptions = courseFilter ? Array.prototype.slice.call(courseFilter.options, 1).map(function (option) {
+        return {
+            value: option.value,
+            label: option.textContent,
+            year: option.getAttribute('data-year') || '',
+            semester: option.getAttribute('data-semester') || ''
+        };
+    }) : [];
 
     function badgeText(n) {
         return n > 9 ? '9+' : String(n);
@@ -180,6 +192,42 @@
         if (el) el.textContent = val || '';
     }
 
+    function applyFilters() {
+        var year = yearFilter ? yearFilter.value : 'all';
+        var semester = semesterFilter ? semesterFilter.value : 'all';
+        var course = courseFilter ? courseFilter.value : 'all';
+        var q = search ? search.value.toLowerCase().trim() : '';
+
+        items.forEach(function (item) {
+            var hay = (item.getAttribute('data-title') + ' ' + item.getAttribute('data-course') + ' ' + item.getAttribute('data-author')).toLowerCase();
+            var visible =
+                (year === 'all' || item.getAttribute('data-year') === year) &&
+                (semester === 'all' || item.getAttribute('data-semester') === semester) &&
+                (course === 'all' || item.getAttribute('data-offering') === course) &&
+                (!q || hay.indexOf(q) !== -1);
+            item.parentElement.hidden = !visible;
+        });
+    }
+
+    function refreshCourseOptions() {
+        if (!courseFilter) return;
+        var selected = courseFilter.value;
+        var year = yearFilter ? yearFilter.value : 'all';
+        var semester = semesterFilter ? semesterFilter.value : 'all';
+        courseFilter.innerHTML = '<option value="all">All courses</option>';
+        courseOptions.forEach(function (course) {
+            if (year !== 'all' && course.year !== year) return;
+            if (semester !== 'all' && course.semester !== semester) return;
+            var option = document.createElement('option');
+            option.value = course.value;
+            option.textContent = course.label;
+            courseFilter.appendChild(option);
+        });
+        if (Array.prototype.some.call(courseFilter.options, function (option) { return option.value === selected; })) {
+            courseFilter.value = selected;
+        }
+    }
+
     items.forEach(function (item) {
         styleItem(item);
         item.addEventListener('click', function () { select(item); });
@@ -209,14 +257,19 @@
         if (current) setRead(current, false);
     });
 
-    var search = document.getElementById('notif-search');
     if (search) search.addEventListener('input', function () {
-        var q = search.value.toLowerCase();
-        items.forEach(function (item) {
-            var hay = (item.getAttribute('data-title') + ' ' + item.getAttribute('data-course') + ' ' + item.getAttribute('data-author')).toLowerCase();
-            item.parentElement.hidden = q !== '' && hay.indexOf(q) === -1;
+        applyFilters();
+    });
+    [yearFilter, semesterFilter].forEach(function (filter) {
+        if (!filter) return;
+        filter.addEventListener('change', function () {
+            refreshCourseOptions();
+            applyFilters();
         });
     });
+    if (courseFilter) courseFilter.addEventListener('change', applyFilters);
+    refreshCourseOptions();
+    applyFilters();
 
     recount();
 

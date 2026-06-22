@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Services;
 using System.Web.SessionState;
+using System.Web.UI.WebControls;
 using src.services;
 
 namespace src.lecturer
@@ -11,6 +12,9 @@ namespace src.lecturer
     public class LecturerNotificationItem
     {
         public int AnnouncementId { get; set; }
+        public int OfferingId { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string CourseLabel { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
@@ -37,6 +41,7 @@ namespace src.lecturer
             }
 
             ImportSessionReadIds(user);
+            BindFilters(user);
             Notifications = GetNotifications(user, profile.FullName, NotificationReadService.GetReadIds(user));
             notificationsRepeater.DataSource = Notifications;
             notificationsRepeater.DataBind();
@@ -57,12 +62,50 @@ namespace src.lecturer
 
         protected string FullTime(DateTime dt) { return dt.ToString("d MMM yyyy - HH:mm"); }
 
+        private void BindFilters(UserContext user)
+        {
+            var courses = LecturerPortalService.GetCourses(user);
+            var sessions = AcademicTermReader.GetSessionOptions();
+
+            yearFilter.Items.Clear();
+            yearFilter.Items.Add(new ListItem("All years", "all"));
+            foreach (var year in sessions.Select(s => s.AcademicYear)
+                .Concat(courses.Select(c => c.AcademicYear)).Where(HasValue).Distinct())
+                yearFilter.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
+
+            semesterFilter.Items.Clear();
+            semesterFilter.Items.Add(new ListItem("All semesters", "all"));
+            foreach (var semester in sessions.Select(s => s.Semester)
+                .Concat(courses.Select(c => c.Semester)).Where(HasValue).Distinct())
+                semesterFilter.Items.Add(new ListItem(StudentPortalFormat.SemesterLabel(semester), semester));
+
+            courseFilter.Items.Clear();
+            courseFilter.Items.Add(new ListItem("All courses", "all"));
+            foreach (var course in courses)
+            {
+                var option = new ListItem(
+                    course.CourseCode + " - " + course.CourseName,
+                    course.OfferingId.ToString());
+                option.Attributes["data-year"] = course.AcademicYear;
+                option.Attributes["data-semester"] = course.Semester;
+                courseFilter.Items.Add(option);
+            }
+        }
+
+        private static bool HasValue(string value)
+        {
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
         private static List<LecturerNotificationItem> GetNotifications(UserContext user, string authorName, ISet<int> readIds)
         {
             return LecturerPortalService.GetAnnouncements(user, null)
                 .Select(a => new LecturerNotificationItem
                 {
                     AnnouncementId = a.AnnouncementId,
+                    OfferingId = a.OfferingId,
+                    AcademicYear = a.AcademicYear,
+                    Semester = a.Semester,
                     CourseLabel = a.TargetCourses,
                     Title = a.Title,
                     Content = a.Content,

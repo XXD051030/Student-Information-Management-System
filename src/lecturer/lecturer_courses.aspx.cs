@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Web.Script.Serialization;
 using System.Web.UI;
 using src.services;
 
@@ -10,6 +11,7 @@ namespace src.lecturer
     public partial class lecturer_courses : src.security.LecturerPage
     {
         private List<LecturerCourseCard> _courses;
+        protected string AcademicSessionsJson { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -25,6 +27,12 @@ namespace src.lecturer
 
             var user = UserContextFactory.FromSession(Session);
             _courses = LecturerPortalService.GetCourses(user);
+            AcademicSessionsJson = new JavaScriptSerializer().Serialize(
+                AcademicTermReader.GetSessionOptions().Select(term => new
+                {
+                    year = term.AcademicYear,
+                    semester = term.Semester
+                }));
 
             coursesRepeater.DataSource = _courses;
             coursesRepeater.DataBind();

@@ -16,6 +16,32 @@
         </div>
     </div>
 
+    <section class="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+        <div class="grid gap-4 md:grid-cols-3">
+            <label class="block">
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">ACADEMIC YEAR</span>
+                <asp:DropDownList ID="academicYearFilter" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="AcademicYearFilter_Changed"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700"
+                    style="font-size:13px" />
+            </label>
+            <label class="block">
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">SEMESTER</span>
+                <asp:DropDownList ID="semesterFilter" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="SemesterFilter_Changed"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700"
+                    style="font-size:13px" />
+            </label>
+            <label class="block">
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">COURSE</span>
+                <asp:DropDownList ID="courseFilter" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="CourseFilter_Changed"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700"
+                    style="font-size:13px" />
+            </label>
+        </div>
+    </section>
+
     <%-- Summary header --%>
     <section class="mt-6 rounded-lg border border-slate-200 bg-white">
         <div class="grid gap-0 sm:grid-cols-2 lg:grid-cols-4">
@@ -93,7 +119,7 @@
             </asp:Repeater>
             <% if (CoursesThisSemesterCount == 0) { %>
                 <p class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-slate-500" style="font-size:13px">
-                    No courses assigned for the current semester.
+                    No courses match the selected filters.
                 </p>
             <% } %>
         </div>

@@ -20,6 +20,19 @@ namespace src.services
             return term == null ? "" : term.AcademicYear + " " + term.Name;
         }
 
+        public static string AcademicYearLabel(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "" : value.Trim();
+        }
+
+        public static string SemesterLabel(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "";
+            var trimmed = value.Trim();
+            int semester;
+            return int.TryParse(trimmed, out semester) ? "Semester " + semester : trimmed;
+        }
+
         public static bool IsSameTerm(string left, string right)
         {
             return !string.IsNullOrWhiteSpace(left)

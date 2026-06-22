@@ -171,12 +171,12 @@ namespace student_information_management_system
 
         protected void YearFilterSelect_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Response.Redirect(FilterUrl(_offeringFilter, yearFilterSelect.SelectedValue, _semesterFilter));
+            Response.Redirect(FilterUrl(null, yearFilterSelect.SelectedValue, _semesterFilter));
         }
 
         protected void SemesterFilterSelect_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Response.Redirect(FilterUrl(_offeringFilter, _yearFilter, semesterFilterSelect.SelectedValue));
+            Response.Redirect(FilterUrl(null, _yearFilter, semesterFilterSelect.SelectedValue));
         }
 
         protected void TabButton_Command(object sender, CommandEventArgs e)
@@ -230,6 +230,7 @@ namespace student_information_management_system
         {
             var user = UserContextFactory.FromSession(Session);
             var courses = LecturerPortalService.GetCourses(user);
+            var sessions = AcademicTermReader.GetSessionOptions();
             var courseOptions = courses.Select(c => new
             {
                 c.OfferingId,
@@ -241,7 +242,15 @@ namespace student_information_management_system
             courseSelect.DataValueField = "OfferingId";
             courseSelect.DataBind();
             courseSelect.Items.Insert(0, new ListItem("All assigned courses", "0"));
-            courseFilterSelect.DataSource = courseOptions;
+            var filteredCourseOptions = courses
+                .Where(c => _yearFilter == "all" || string.Equals(c.AcademicYear, _yearFilter, StringComparison.OrdinalIgnoreCase))
+                .Where(c => _semesterFilter == "all" || string.Equals(c.Semester, _semesterFilter, StringComparison.OrdinalIgnoreCase))
+                .Select(c => new
+                {
+                    c.OfferingId,
+                    Label = c.CourseCode + " - " + c.CourseName
+                }).ToList();
+            courseFilterSelect.DataSource = filteredCourseOptions;
             courseFilterSelect.DataTextField = "Label";
             courseFilterSelect.DataValueField = "OfferingId";
             courseFilterSelect.DataBind();
@@ -249,13 +258,19 @@ namespace student_information_management_system
 
             yearFilterSelect.Items.Clear();
             yearFilterSelect.Items.Add(new ListItem("All years", "all"));
-            foreach (string year in courses.Select(c => c.AcademicYear).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
-                yearFilterSelect.Items.Add(new ListItem(year, year));
+            foreach (string year in sessions.Select(s => s.AcademicYear)
+                .Concat(courses.Select(c => c.AcademicYear))
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+                yearFilterSelect.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
 
             semesterFilterSelect.Items.Clear();
             semesterFilterSelect.Items.Add(new ListItem("All semesters", "all"));
-            foreach (string semester in courses.Select(c => c.Semester).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
-                semesterFilterSelect.Items.Add(new ListItem(semester, semester));
+            foreach (string semester in sessions
+                .Where(s => _yearFilter == "all" || s.AcademicYear == _yearFilter)
+                .Select(s => s.Semester)
+                .Concat(courses.Where(c => _yearFilter == "all" || c.AcademicYear == _yearFilter).Select(c => c.Semester))
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+                semesterFilterSelect.Items.Add(new ListItem(StudentPortalFormat.SemesterLabel(semester), semester));
 
             if (_offeringFilter.HasValue)
             {

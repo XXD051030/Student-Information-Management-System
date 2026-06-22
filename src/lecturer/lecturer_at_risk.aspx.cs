@@ -24,7 +24,8 @@ namespace student_information_management_system
             if (IsPostBack) return;
 
             var allRows = LecturerPortalService.GetAcademicPerformance(user);
-            InitializeFilters(allRows);
+            var courses = LecturerPortalService.GetCourses(user);
+            InitializeFilters(courses);
             BindPage(allRows);
         }
 
@@ -32,77 +33,77 @@ namespace student_information_management_system
         {
             var user = UserContextFactory.FromSession(Session);
             var allRows = LecturerPortalService.GetAcademicPerformance(user);
+            var courses = LecturerPortalService.GetCourses(user);
 
             if (sender == academicYearFilter)
             {
-                PopulateSemesterFilter(allRows, null);
-                PopulateCourseFilter(allRows, null);
+                PopulateSemesterFilter(courses, "all");
+                PopulateCourseFilter(courses, "all");
             }
             else if (sender == semesterFilter)
             {
-                PopulateCourseFilter(allRows, null);
+                PopulateCourseFilter(courses, "all");
             }
 
             BindPage(allRows);
         }
 
-        private void InitializeFilters(List<LecturerAcademicPerformanceRow> allRows)
+        private void InitializeFilters(List<LecturerCourseCard> courses)
         {
+            var sessions = AcademicTermReader.GetSessionOptions();
             academicYearFilter.Items.Clear();
-            foreach (var year in allRows.Select(r => r.AcademicYear).Where(HasValue).Concat(new[] { "2026", "2027" }).Distinct().OrderBy(v => v))
-            {
-                academicYearFilter.Items.Add(new ListItem(AcademicYearLabel(year), year));
-            }
+            academicYearFilter.Items.Add(new ListItem("All academic years", "all"));
+            foreach (var year in sessions.Select(s => s.AcademicYear)
+                .Concat(courses.Select(r => r.AcademicYear)).Where(HasValue).Distinct().OrderBy(v => v))
+                academicYearFilter.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
 
-            var defaultYear = academicYearFilter.Items.FindByValue("2026");
-            if (defaultYear != null) academicYearFilter.SelectedValue = defaultYear.Value;
-            else if (academicYearFilter.Items.Count > 0) academicYearFilter.SelectedIndex = 0;
-
-            PopulateSemesterFilter(allRows, "Semester 1");
-            PopulateCourseFilter(allRows, null);
+            PopulateSemesterFilter(courses, "all");
+            PopulateCourseFilter(courses, "all");
         }
 
-        private void PopulateSemesterFilter(List<LecturerAcademicPerformanceRow> allRows, string preferredValue)
+        private void PopulateSemesterFilter(List<LecturerCourseCard> courses, string preferredValue)
         {
             var selectedYear = academicYearFilter.SelectedValue;
-            var semesters = allRows
-                .Where(r => !HasValue(selectedYear) || r.AcademicYear == selectedYear)
-                .Select(r => r.OfferingSemester)
+            var semesters = AcademicTermReader.GetSessionOptions()
+                .Where(r => selectedYear == "all" || r.AcademicYear == selectedYear)
+                .Select(r => r.Semester)
+                .Concat(courses
+                .Where(r => selectedYear == "all" || r.AcademicYear == selectedYear)
+                .Select(r => r.Semester))
                 .Where(HasValue)
-                .Concat(new[] { "Semester 1", "Semester 2" })
                 .Distinct()
                 .OrderBy(SemesterOrder)
                 .ToList();
 
             semesterFilter.Items.Clear();
+            semesterFilter.Items.Add(new ListItem("All semesters", "all"));
             foreach (var semester in semesters)
-                semesterFilter.Items.Add(new ListItem(SemesterLabel(semester), semester));
+                semesterFilter.Items.Add(new ListItem(StudentPortalFormat.SemesterLabel(semester), semester));
 
             var preferred = semesterFilter.Items.FindByValue(preferredValue ?? "");
             if (preferred != null) semesterFilter.SelectedValue = preferred.Value;
-            else if (semesterFilter.Items.Count > 0) semesterFilter.SelectedIndex = 0;
+            else semesterFilter.SelectedValue = "all";
         }
 
-        private void PopulateCourseFilter(List<LecturerAcademicPerformanceRow> allRows, string preferredValue)
+        private void PopulateCourseFilter(List<LecturerCourseCard> courses, string preferredValue)
         {
             var selectedYear = academicYearFilter.SelectedValue;
             var selectedSemester = semesterFilter.SelectedValue;
-            var courses = allRows
-                .Where(r => (!HasValue(selectedYear) || r.AcademicYear == selectedYear)
-                    && (!HasValue(selectedSemester) || r.OfferingSemester == selectedSemester))
-                .Where(r => HasValue(r.CourseCode))
-                .GroupBy(r => r.CourseCode)
-                .Select(g => g.First())
+            var availableCourses = courses
+                .Where(r => (selectedYear == "all" || r.AcademicYear == selectedYear)
+                    && (selectedSemester == "all" || r.Semester == selectedSemester))
                 .OrderBy(r => r.CourseCode)
                 .ToList();
 
             courseFilter.Items.Clear();
-            courseFilter.Items.Add(new ListItem("All courses", ""));
-            foreach (var course in courses)
-                courseFilter.Items.Add(new ListItem(course.CourseCode + " - " + course.CourseName, course.CourseCode));
+            courseFilter.Items.Add(new ListItem("All courses", "all"));
+            foreach (var course in availableCourses)
+                courseFilter.Items.Add(new ListItem(
+                    course.CourseCode + " - " + course.CourseName,
+                    course.OfferingId.ToString(CultureInfo.InvariantCulture)));
 
             var preferred = courseFilter.Items.FindByValue(preferredValue ?? "");
-            courseFilter.SelectedValue = preferred != null ? preferred.Value : "";
+            courseFilter.SelectedValue = preferred != null ? preferred.Value : "all";
         }
 
         private void BindPage(List<LecturerAcademicPerformanceRow> allRows)
@@ -110,11 +111,13 @@ namespace student_information_management_system
             var selectedYear = academicYearFilter.SelectedValue;
             var selectedSemester = semesterFilter.SelectedValue;
             var selectedCourse = courseFilter.SelectedValue;
+            int selectedOfferingId;
+            int.TryParse(selectedCourse, out selectedOfferingId);
 
             rows = allRows.Where(r =>
-                    (!HasValue(selectedYear) || r.AcademicYear == selectedYear)
-                    && (!HasValue(selectedSemester) || r.OfferingSemester == selectedSemester)
-                    && (!HasValue(selectedCourse) || r.CourseCode == selectedCourse))
+                    (selectedYear == "all" || r.AcademicYear == selectedYear)
+                    && (selectedSemester == "all" || r.OfferingSemester == selectedSemester)
+                    && (selectedOfferingId == 0 || r.OfferingId == selectedOfferingId))
                 .ToList();
 
             studentRepeater.DataSource = rows;
@@ -172,17 +175,6 @@ namespace student_information_management_system
             return value != null && value.ToString() == "High"
                 ? "bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20"
                 : "bg-amber-50 text-amber-700 border-amber-100";
-        }
-
-        private static string AcademicYearLabel(string value)
-        {
-            int year;
-            return int.TryParse(value, out year) ? year + "/" + (year + 1) : value;
-        }
-
-        private static string SemesterLabel(string value)
-        {
-            return (value ?? "").Replace("Semester ", "Sem ");
         }
 
         private static int SemesterOrder(string value)

@@ -30,6 +30,15 @@
             .toLowerCase();
     }
 
+    function academicYearLabel(value) {
+        var year = Number(value);
+        return String(year) === String(value) ? String(year - 1) + "/" + value : value;
+    }
+
+    function semesterLabel(value) {
+        return /^\d+$/.test(String(value)) ? "Semester " + value : value;
+    }
+
     function saveMaterialView() {
         var search = document.querySelector("[data-filter-target='[data-material]']");
         var courseSelect = document.querySelector("[data-material-course-filter]");
@@ -191,7 +200,7 @@
             semesters.forEach(function (semester) {
                 var option = document.createElement("option");
                 option.value = semester;
-                option.textContent = semester;
+                option.textContent = semesterLabel(semester);
                 semesterSelect.appendChild(option);
             });
         }

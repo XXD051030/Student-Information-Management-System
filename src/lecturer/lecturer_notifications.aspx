@@ -18,6 +18,11 @@
     <section class="mt-6 grid gap-4 lg:h-[820px] lg:grid-cols-[minmax(320px,400px)_1fr]">
         <div class="flex min-h-[620px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white lg:min-h-0">
             <div class="border-b border-slate-100 p-3">
+                <div class="mb-2 grid grid-cols-2 gap-2">
+                    <asp:DropDownList ID="yearFilter" runat="server" data-notification-year-filter="true" CssClass="h-9 min-w-0 rounded-md border border-slate-200 bg-white px-2 text-slate-700" style="font-size:12px" />
+                    <asp:DropDownList ID="semesterFilter" runat="server" data-notification-semester-filter="true" CssClass="h-9 min-w-0 rounded-md border border-slate-200 bg-white px-2 text-slate-700" style="font-size:12px" />
+                </div>
+                <asp:DropDownList ID="courseFilter" runat="server" data-notification-course-filter="true" CssClass="mb-2 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-slate-700" style="font-size:12px" />
                 <div class="relative">
                     <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
                     <input id="notif-search" placeholder="Search notifications&hellip;" class="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px" />
@@ -30,6 +35,9 @@
                         <li>
                             <button type="button" class="notif-item flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50"
                                 data-id="<%# Eval("AnnouncementId") %>"
+                                data-offering="<%# Eval("OfferingId") %>"
+                                data-year="<%# Server.HtmlEncode((string)Eval("AcademicYear")) %>"
+                                data-semester="<%# Server.HtmlEncode((string)Eval("Semester")) %>"
                                 data-read="<%# ReadFlag(Eval("IsRead")) %>"
                                 data-category="ANNOUNCEMENT"
                                 data-course="<%# Server.HtmlEncode((string)Eval("CourseLabel")) %>"
@@ -91,5 +99,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=4"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=5"></script>
 </asp:Content>

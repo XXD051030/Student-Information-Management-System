@@ -94,5 +94,6 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=5"></script>
+    <script>window.lecturerAcademicSessions = <%= AcademicSessionsJson %>;</script>
+    <script src="<%= ResolveUrl("~/js/lecturer/courses.js") %>?v=6"></script>
 </asp:Content>

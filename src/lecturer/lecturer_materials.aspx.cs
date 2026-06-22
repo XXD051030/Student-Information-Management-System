@@ -64,6 +64,7 @@ namespace student_information_management_system
             if (!IsPostBack)
             {
                 var courses = LecturerPortalService.GetCourses(user);
+                var sessions = AcademicTermReader.GetSessionOptions();
                 courseSelect.Items.Clear();
                 courseSelect.Items.Add(new ListItem("Choose semester first", ""));
                 courseFilterSelect.Items.Clear();
@@ -77,23 +78,28 @@ namespace student_information_management_system
                     courseFilterSelect.Items.Add(new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture)));
                 }
 
-                var years = courses.Select(course => course.AcademicYear).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
-                var semesters = courses.Select(course => course.Semester).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                var filterYears = sessions.Select(term => term.AcademicYear)
+                    .Concat(courses.Select(course => course.AcademicYear))
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                var uploadYears = courses.Select(course => course.AcademicYear)
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                var semesters = sessions.Select(term => term.Semester)
+                    .Concat(courses.Select(course => course.Semester))
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
 
                 yearFilterSelect.Items.Clear();
                 yearFilterSelect.Items.Add(new ListItem("All years", "all"));
                 uploadYearSelect.Items.Clear();
                 uploadYearSelect.Items.Add(new ListItem("Choose academic year", ""));
-                foreach (string year in years)
-                {
-                    yearFilterSelect.Items.Add(new ListItem(year, year));
-                    uploadYearSelect.Items.Add(new ListItem(year, year));
-                }
+                foreach (string year in filterYears)
+                    yearFilterSelect.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
+                foreach (string year in uploadYears)
+                    uploadYearSelect.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
 
                 semesterFilterSelect.Items.Clear();
                 semesterFilterSelect.Items.Add(new ListItem("All semesters", "all"));
                 foreach (string semester in semesters)
-                    semesterFilterSelect.Items.Add(new ListItem(semester, semester));
+                    semesterFilterSelect.Items.Add(new ListItem(StudentPortalFormat.SemesterLabel(semester), semester));
 
                 uploadSemesterSelect.Items.Clear();
                 uploadSemesterSelect.Items.Add(new ListItem("Choose academic year first", ""));
