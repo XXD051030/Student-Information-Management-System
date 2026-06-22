@@ -140,20 +140,6 @@
             </div>
             <div class="divide-y divide-slate-100">
 
-                <%-- Email notifications toggle --%>
-                <div class="flex items-start gap-4 px-6 py-4">
-                    <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
-                        <i data-lucide="bell" class="h-4 w-4"></i>
-                    </span>
-                    <div class="flex-1">
-                        <p class="text-slate-900" style="font-size:13.5px;font-weight:600">Email notifications</p>
-                        <p class="text-slate-500" style="font-size:12px">Submission alerts, grade reminders, and announcements.</p>
-                    </div>
-                    <button type="button" id="email-notif-toggle" data-on="true" class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors bg-[#e0162b]" aria-pressed="true">
-                        <span id="email-notif-knob" class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform translate-x-[18px]"></span>
-                    </button>
-                </div>
-
                 <%-- Display language --%>
                 <div class="flex items-start gap-4 px-6 py-4">
                     <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">

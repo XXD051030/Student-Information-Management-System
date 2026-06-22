@@ -182,23 +182,4 @@
             });
         });
     }
-
-    // Email notifications toggle
-    var notifBtn = document.getElementById('email-notif-toggle');
-    var notifKnob = document.getElementById('email-notif-knob');
-    if (notifBtn && notifKnob) {
-        notifBtn.addEventListener('click', function () {
-            var on = notifBtn.getAttribute('data-on') === 'true';
-            var next = !on;
-            notifBtn.setAttribute('data-on', String(next));
-            notifBtn.setAttribute('aria-pressed', String(next));
-            if (next) {
-                notifBtn.className = 'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors bg-[#e0162b]';
-                notifKnob.className = 'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform translate-x-[18px]';
-            } else {
-                notifBtn.className = 'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors bg-slate-200';
-                notifKnob.className = 'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform translate-x-0.5';
-            }
-        });
-    }
 })();
