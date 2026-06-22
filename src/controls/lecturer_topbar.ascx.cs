@@ -20,6 +20,13 @@ namespace src.controls
                 if (!readIds.Contains(announcement.AnnouncementId))
                     _unreadNotificationCount++;
             }
+
+            var adminReadIds = AdminNotificationService.GetReadIds(user);
+            foreach (var notification in AdminNotificationService.GetForUser(user, adminReadIds))
+            {
+                if (!notification.IsRead)
+                    _unreadNotificationCount++;
+            }
         }
 
         protected string FullName

@@ -132,9 +132,10 @@
         recount();
 
         var id = parseInt(item.getAttribute('data-id'), 10);
+        var type = item.getAttribute('data-type') || 'ANNOUNCEMENT';
         var endpoint = endpointBase + (read ? '/MarkRead' : '/MarkUnread');
 
-        postJson(endpoint, { announcementId: id }).then(function (result) {
+        postJson(endpoint, { notificationType: type, notificationId: id }).then(function (result) {
             applyServerCount(result);
         }).catch(function () {
             applyReadState(item, currentRead);
@@ -275,10 +276,12 @@
 
     var params = new URLSearchParams(window.location.search);
     var targetId = params.get('id');
+    var targetType = params.get('type');
     var initialItem = null;
     if (targetId) {
         for (var i = 0; i < items.length; i++) {
-            if (items[i].getAttribute('data-id') === targetId) {
+            var itemType = items[i].getAttribute('data-type') || 'ANNOUNCEMENT';
+            if (items[i].getAttribute('data-id') === targetId && (!targetType || itemType === targetType)) {
                 initialItem = items[i];
                 break;
             }

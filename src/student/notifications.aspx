@@ -34,7 +34,8 @@
                     <ItemTemplate>
                         <li>
                             <button type="button" class="notif-item flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50"
-                                data-id="<%# Eval("AnnouncementId") %>"
+                                data-id="<%# Eval("NotificationId") %>"
+                                data-type="<%# Eval("NotificationType") %>"
                                 data-read="<%# ReadFlag(Eval("IsRead")) %>"
                                 data-category="<%# Category(Eval("AuthorRole")) %>"
                                 data-course="<%# Server.HtmlEncode(CourseLabel((StudentPortalNotification)Container.DataItem)) %>"
@@ -124,5 +125,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=5"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=6"></script>
 </asp:Content>

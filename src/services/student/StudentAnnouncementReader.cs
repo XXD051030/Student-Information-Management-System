@@ -42,6 +42,8 @@ namespace src.services
                         var fileUrl = Text(reader["file_url"]);
                         list.Add(new StudentCourseAnnouncement
                         {
+                            NotificationId = IntValue(reader["announcement_id"]),
+                            NotificationType = "ANNOUNCEMENT",
                             AnnouncementId = IntValue(reader["announcement_id"]),
                             OfferId = IntValue(reader["offer_id"]),
                             CourseCode = Text(reader["course_code"]),
@@ -78,8 +80,10 @@ namespace src.services
         public static List<StudentPortalNotification> GetNotifications(UserContext user, ISet<int> readIds)
         {
             var announcements = GetAnnouncements(user, null);
-            return announcements.Select(a => new StudentPortalNotification
+            var notifications = announcements.Select(a => new StudentPortalNotification
             {
+                NotificationId = a.NotificationId,
+                NotificationType = a.NotificationType,
                 AnnouncementId = a.AnnouncementId,
                 OfferId = a.OfferId,
                 CourseCode = a.CourseCode,
@@ -94,6 +98,16 @@ namespace src.services
                 CreatedAt = a.CreatedAt,
                 IsRead = readIds != null && readIds.Contains(a.AnnouncementId)
             }).ToList();
+
+            var adminReadIds = AdminNotificationService.GetReadIds(user);
+            notifications.AddRange(AdminNotificationService.GetForUser(user, adminReadIds)
+                .Select(AdminNotificationService.ToStudentNotification)
+                .Where(n => n != null));
+
+            return notifications
+                .OrderByDescending(n => n.CreatedAt)
+                .ThenByDescending(n => n.NotificationId)
+                .ToList();
         }
     }
 }

@@ -18,16 +18,11 @@
             <i data-lucide="help-circle" class="h-5 w-5"></i>
         </a>
 
-        <%-- Notifications: styled to match the student topbar but not wired
-             (no admin unread-count source), so it is a plain non-navigating
-             button with no count badge for now. --%>
-        <button type="button"
-                data-toast="No admin notifications are available"
-                data-toast-type="info"
+        <a href="<%= ResolveUrl("~/admin/admin_notifications.aspx") %>"
                 class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                 aria-label="Notifications">
             <i data-lucide="bell" class="h-4 w-4"></i>
-        </button>
+        </a>
 
         <%-- Profile pill: opens the admin account page. --%>
         <a href="<%= ResolveUrl("~/admin/admin_account.aspx") %>" class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 transition-colors hover:bg-slate-50">

@@ -86,6 +86,8 @@ namespace src.services
 
     public class StudentCourseAnnouncement
     {
+        public int NotificationId { get; set; }
+        public string NotificationType { get; set; }
         public int AnnouncementId { get; set; }
         public int OfferId { get; set; }
         public string CourseCode { get; set; }

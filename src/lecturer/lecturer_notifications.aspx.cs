@@ -11,6 +11,8 @@ namespace src.lecturer
 {
     public class LecturerNotificationItem
     {
+        public int NotificationId { get; set; }
+        public string NotificationType { get; set; }
         public int AnnouncementId { get; set; }
         public int OfferingId { get; set; }
         public string AcademicYear { get; set; }
@@ -19,6 +21,7 @@ namespace src.lecturer
         public string Title { get; set; }
         public string Content { get; set; }
         public string AuthorName { get; set; }
+        public string Category { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsPinned { get; set; }
         public bool IsRead { get; set; }
@@ -99,9 +102,11 @@ namespace src.lecturer
 
         private static List<LecturerNotificationItem> GetNotifications(UserContext user, string authorName, ISet<int> readIds)
         {
-            return LecturerPortalService.GetAnnouncements(user, null)
+            var notifications = LecturerPortalService.GetAnnouncements(user, null)
                 .Select(a => new LecturerNotificationItem
                 {
+                    NotificationId = a.AnnouncementId,
+                    NotificationType = "ANNOUNCEMENT",
                     AnnouncementId = a.AnnouncementId,
                     OfferingId = a.OfferingId,
                     AcademicYear = a.AcademicYear,
@@ -110,10 +115,36 @@ namespace src.lecturer
                     Title = a.Title,
                     Content = a.Content,
                     AuthorName = string.IsNullOrWhiteSpace(authorName) ? "Lecturer" : authorName,
+                    Category = "ANNOUNCEMENT",
                     CreatedAt = a.CreatedAt,
                     IsPinned = a.IsPinned,
                     IsRead = readIds != null && readIds.Contains(a.AnnouncementId)
                 })
+                .ToList();
+
+            var adminReadIds = AdminNotificationService.GetReadIds(user);
+            notifications.AddRange(AdminNotificationService.GetForUser(user, adminReadIds)
+                .Select(n => new LecturerNotificationItem
+                {
+                    NotificationId = n.NotificationId,
+                    NotificationType = AdminNotificationService.NotificationType,
+                    AnnouncementId = n.NotificationId,
+                    OfferingId = 0,
+                    AcademicYear = "",
+                    Semester = "",
+                    CourseLabel = "Registrar",
+                    Title = n.Title,
+                    Content = n.Message,
+                    AuthorName = "Administrator",
+                    Category = "SYSTEM",
+                    CreatedAt = n.CreatedAt,
+                    IsPinned = false,
+                    IsRead = n.IsRead
+                }));
+
+            return notifications
+                .OrderByDescending(n => n.CreatedAt)
+                .ThenByDescending(n => n.NotificationId)
                 .ToList();
         }
 
@@ -148,24 +179,39 @@ namespace src.lecturer
             var readIds = NotificationReadService.GetReadIds(user);
             int unread = LecturerPortalService.GetAnnouncements(user, null)
                 .Count(a => !readIds.Contains(a.AnnouncementId));
+            var adminReadIds = AdminNotificationService.GetReadIds(user);
+            unread += AdminNotificationService.GetForUser(user, adminReadIds).Count(n => !n.IsRead);
             return new { ok = true, unreadCount = unread, badgeText = unread > 9 ? "9+" : unread.ToString() };
         }
 
+        private static void SetReadState(UserContext user, string notificationType, int notificationId, bool read)
+        {
+            if (string.Equals(notificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+            {
+                if (read) AdminNotificationService.MarkRead(user, notificationId);
+                else AdminNotificationService.MarkUnread(user, notificationId);
+                return;
+            }
+
+            if (read) NotificationReadService.MarkRead(user, notificationId);
+            else NotificationReadService.MarkUnread(user, notificationId);
+        }
+
         [WebMethod(EnableSession = true)]
-        public static object MarkRead(int announcementId)
+        public static object MarkRead(string notificationType, int notificationId)
         {
             var user = CurrentLecturerOrReject();
             if (user == null) return new { ok = false };
-            NotificationReadService.MarkRead(user, announcementId);
+            SetReadState(user, notificationType, notificationId, true);
             return CountResponse(user);
         }
 
         [WebMethod(EnableSession = true)]
-        public static object MarkUnread(int announcementId)
+        public static object MarkUnread(string notificationType, int notificationId)
         {
             var user = CurrentLecturerOrReject();
             if (user == null) return new { ok = false };
-            NotificationReadService.MarkUnread(user, announcementId);
+            SetReadState(user, notificationType, notificationId, false);
             return CountResponse(user);
         }
 
@@ -177,6 +223,9 @@ namespace src.lecturer
             NotificationReadService.MarkAllRead(
                 user,
                 LecturerPortalService.GetAnnouncements(user, null).Select(a => a.AnnouncementId));
+            AdminNotificationService.MarkAllRead(
+                user,
+                AdminNotificationService.GetForUser(user, AdminNotificationService.GetReadIds(user)).Select(n => n.NotificationId));
             return CountResponse(user);
         }
     }

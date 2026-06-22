@@ -57,6 +57,12 @@
                     <span class="flex-1">Reports</span>
                 </a>
             </li>
+            <li>
+                <a href="<%= ResolveUrl("~/admin/admin_notifications.aspx") %>" data-nav-link="admin_notifications.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="bell" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Notifications</span>
+                </a>
+            </li>
         </ul>
 
         <p class="mt-7 px-3 pb-2 text-slate-400" style="font-size:11px;font-weight:600;letter-spacing:0.08em">SUPPORT</p>

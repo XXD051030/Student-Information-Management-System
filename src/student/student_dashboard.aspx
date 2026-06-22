@@ -203,7 +203,7 @@
                 <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>
                 <ItemTemplate>
                     <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                        <a href="/student/notifications.aspx?id=<%# Eval("AnnouncementId") %>" class="block rounded-lg p-2 -mx-2 hover:bg-slate-50 transition-colors cursor-pointer">
+                        <a href="/student/notifications.aspx?id=<%# Eval("NotificationId") %>&amp;type=<%# Eval("NotificationType") %>" class="block rounded-lg p-2 -mx-2 hover:bg-slate-50 transition-colors cursor-pointer">
                             <div class="flex items-center gap-2">
                                 <span class="text-slate-400" style="font-size:11.5px"><%# Server.HtmlEncode(FormatRelativeTime((DateTime)Eval("CreatedAt"))) %></span>
                             </div>

@@ -34,12 +34,13 @@
                     <ItemTemplate>
                         <li>
                             <button type="button" class="notif-item flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50"
-                                data-id="<%# Eval("AnnouncementId") %>"
+                                data-id="<%# Eval("NotificationId") %>"
+                                data-type="<%# Eval("NotificationType") %>"
                                 data-offering="<%# Eval("OfferingId") %>"
                                 data-year="<%# Server.HtmlEncode((string)Eval("AcademicYear")) %>"
                                 data-semester="<%# Server.HtmlEncode((string)Eval("Semester")) %>"
                                 data-read="<%# ReadFlag(Eval("IsRead")) %>"
-                                data-category="ANNOUNCEMENT"
+                                data-category="<%# Server.HtmlEncode((string)Eval("Category")) %>"
                                 data-course="<%# Server.HtmlEncode((string)Eval("CourseLabel")) %>"
                                 data-title="<%# Server.HtmlEncode((string)Eval("Title")) %>"
                                 data-author="<%# Server.HtmlEncode((string)Eval("AuthorName")) %>"
@@ -49,7 +50,7 @@
                                 <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
-                                        <span class="notif-badge rounded border px-1.5 py-0.5" style="font-size:9.5px;font-weight:700;letter-spacing:0.04em">ANNOUNCEMENT</span>
+                                        <span class="notif-badge rounded border px-1.5 py-0.5" style="font-size:9.5px;font-weight:700;letter-spacing:0.04em"><%# Server.HtmlEncode((string)Eval("Category")) %></span>
                                         <i data-lucide="pin" class="notif-pin h-3 w-3 text-amber-500"></i>
                                         <span class="ml-auto truncate text-slate-400" style="font-size:10.5px"><%# ListTime((DateTime)Eval("CreatedAt")) %></span>
                                     </div>
@@ -99,5 +100,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=5"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=6"></script>
 </asp:Content>

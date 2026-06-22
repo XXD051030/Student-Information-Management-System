@@ -87,6 +87,7 @@
     <Content Include="admin\add_drop_requests.aspx" />
     <Content Include="admin\admin_account.aspx" />
     <Content Include="admin\admin_dashboard.aspx" />
+    <Content Include="admin\admin_notifications.aspx" />
     <Content Include="admin\course_attendance.aspx" />
     <Content Include="admin\course_passfail.aspx" />
     <Content Include="admin\programme_course.aspx" />
@@ -264,6 +265,13 @@
     <Compile Include="admin\admin_dashboard.aspx.designer.cs">
       <DependentUpon>admin_dashboard.aspx</DependentUpon>
     </Compile>
+    <Compile Include="admin\admin_notifications.aspx.cs">
+      <DependentUpon>admin_notifications.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="admin\admin_notifications.aspx.designer.cs">
+      <DependentUpon>admin_notifications.aspx</DependentUpon>
+    </Compile>
     <Compile Include="admin\course_attendance.aspx.cs">
       <DependentUpon>course_attendance.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -351,6 +359,7 @@
     <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\admin\StudentBulkImportService.cs" />
+    <Compile Include="services\AdminNotificationService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AttendancePdfService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />

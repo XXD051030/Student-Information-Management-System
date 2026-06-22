@@ -53,6 +53,8 @@ namespace src.shared
         protected string CourseLabel(StudentPortalNotification n)
         {
             if (n == null) return "";
+            if (string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                return "Registrar";
             return n.CourseCode + " - " + n.CourseName;
         }
 
@@ -123,23 +125,36 @@ namespace src.shared
             };
         }
 
+        private static void SetReadState(UserContext user, string notificationType, int notificationId, bool read)
+        {
+            if (string.Equals(notificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+            {
+                if (read) AdminNotificationService.MarkRead(user, notificationId);
+                else AdminNotificationService.MarkUnread(user, notificationId);
+                return;
+            }
+
+            if (read) NotificationReadService.MarkRead(user, notificationId);
+            else NotificationReadService.MarkUnread(user, notificationId);
+        }
+
         [WebMethod(EnableSession = true)]
-        public static object MarkRead(int announcementId)
+        public static object MarkRead(string notificationType, int notificationId)
         {
             var user = CurrentUserOrReject();
             if (user == null) return new { ok = false };
 
-            NotificationReadService.MarkRead(user, announcementId);
+            SetReadState(user, notificationType, notificationId, true);
             return CountResponse(user);
         }
 
         [WebMethod(EnableSession = true)]
-        public static object MarkUnread(int announcementId)
+        public static object MarkUnread(string notificationType, int notificationId)
         {
             var user = CurrentUserOrReject();
             if (user == null) return new { ok = false };
 
-            NotificationReadService.MarkUnread(user, announcementId);
+            SetReadState(user, notificationType, notificationId, false);
             return CountResponse(user);
         }
 
@@ -150,9 +165,17 @@ namespace src.shared
             if (user == null) return new { ok = false };
 
             var readIds = NotificationReadService.GetReadIds(user);
+            var notifications = StudentPortalService.GetNotifications(user, readIds);
             NotificationReadService.MarkAllRead(
                 user,
-                StudentPortalService.GetNotifications(user, readIds).Select(n => n.AnnouncementId));
+                notifications
+                    .Where(n => !string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Select(n => n.NotificationId));
+            AdminNotificationService.MarkAllRead(
+                user,
+                notifications
+                    .Where(n => string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Select(n => n.NotificationId));
             return CountResponse(user);
         }
     }

@@ -21,6 +21,13 @@ namespace src.controls
                 if (!readIds.Contains(announcement.AnnouncementId))
                     _unreadNotificationCount++;
             }
+
+            var adminReadIds = src.services.AdminNotificationService.GetReadIds(user);
+            foreach (var notification in src.services.AdminNotificationService.GetForUser(user, adminReadIds))
+            {
+                if (!notification.IsRead)
+                    _unreadNotificationCount++;
+            }
         }
 
         protected string NotificationBadgeText
