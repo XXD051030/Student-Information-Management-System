@@ -131,7 +131,7 @@ namespace src.services.admin
                 const string exactSql =
                     "SELECT TOP 1 i.intake_id,i.intake_name " +
                     "FROM ACADEMIC_SESSIONS s JOIN INTAKES i ON i.intake_id=s.intake_id " +
-                    "WHERE @date BETWEEN s.registration_start AND s.registration_end " +
+                    "WHERE @date BETWEEN DATEADD(day,-7,s.start_date) AND DATEADD(day,7,s.start_date) " +
                     "ORDER BY s.start_date";
                 using (var cmd = new SqlCommand(exactSql, conn))
                 {
