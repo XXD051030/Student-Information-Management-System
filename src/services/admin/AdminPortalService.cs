@@ -306,6 +306,9 @@ namespace src.services.admin
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email is required.");
 
             var tempPassword = GenerateTempPassword();
+            var intake = role == "STUDENT" ? new StudentBulkImportService().MatchIntake(DateTime.Today) : null;
+            if (role == "STUDENT" && intake == null)
+                throw new ArgumentException("No academic intake is configured for student registration.");
             string detailLabel;
             string detailId;
 
@@ -335,8 +338,7 @@ namespace src.services.admin
                     var programmeId = ResolveProgramme(conn, tx, request.ProgrammeOrDepartment);
                     using (var cmd = new SqlCommand(
                         "INSERT INTO STUDENTS (student_id, user_id, programme_id, student_name, student_email, phone, semester, current_standing, session, intake_id, status) " +
-                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', '', " +
-                        "(SELECT TOP 1 intake_id FROM INTAKES WHERE status='ACTIVE' ORDER BY intake_month DESC), @status)", conn, tx))
+                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', '', @intake, @status)", conn, tx))
                     {
                         cmd.Parameters.AddWithValue("@sid", studentId);
                         cmd.Parameters.AddWithValue("@uid", userId);
@@ -344,6 +346,7 @@ namespace src.services.admin
                         cmd.Parameters.AddWithValue("@name", request.FullName.Trim());
                         cmd.Parameters.AddWithValue("@email", request.Email.Trim());
                         cmd.Parameters.AddWithValue("@phone", (object)(request.Phone ?? "") ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@intake", intake.Id);
                         cmd.Parameters.AddWithValue("@status", status);
                         cmd.ExecuteNonQuery();
                     }

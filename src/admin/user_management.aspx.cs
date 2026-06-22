@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Services;
 using src.services.admin;
+using src.services.email;
 
 namespace src.admin
 {
@@ -26,6 +28,13 @@ namespace src.admin
         protected string RoleFilterOptionsHtml { get; private set; }
         protected string UserStatusFilterOptionsHtml { get; private set; }
         protected AdminUserRow FirstUser { get; private set; }
+        protected StudentBulkPreview BulkPreview { get; private set; }
+        protected string BulkImportMessage { get; private set; }
+        protected bool ShowBulkImportModal { get; private set; }
+        protected string BulkIntakeMessage { get { return BulkPreview == null ? "" : BulkPreview.IntakeMatchMessage; } }
+        protected string BulkRegistrationDate { get { return BulkPreview == null ? "" : BulkPreview.RegistrationDate.ToString("dd MMM yyyy"); } }
+        protected int BulkValidCount { get { return BulkPreview == null ? 0 : BulkPreview.ValidCount; } }
+        protected int BulkErrorCount { get { return BulkPreview == null ? 0 : BulkPreview.ErrorCount; } }
         protected string FirstUserName { get { return Html(FirstUser.FullName); } }
         protected string FirstUserEmail { get { return Html(FirstUser.Email); } }
         protected string FirstUserPhone { get { return Html(FirstUser.Phone); } }
@@ -33,8 +42,22 @@ namespace src.admin
         protected string FirstUserRole { get { return Html(FirstUser.Role); } }
         protected string FirstUserProgramme { get { return Html(FirstUser.Programme); } }
 
+        protected override void OnInit(EventArgs e)
+        {
+            base.OnInit(e);
+            BulkPreview = Session["StudentBulkPreview"] as StudentBulkPreview;
+            PopulateIntakeOptions();
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
+            Page.Form.Enctype = "multipart/form-data";
+            BulkPreview = Session["StudentBulkPreview"] as StudentBulkPreview;
+            ShowBulkImportModal = BulkPreview != null;
+            ConfirmStudentImport.Enabled = BulkPreview != null && BulkPreview.ErrorCount == 0 &&
+                                           !string.IsNullOrWhiteSpace(BulkPreview.IntakeId);
+            if (!IsPostBack && int.TryParse(Request.QueryString["imported"], out var imported) && imported > 0)
+                BulkImportMessage = imported + " student accounts were imported successfully.";
             var users = service.GetUsers();
             var lookups = service.GetLookups();
             ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, "All programmes");
@@ -52,6 +75,90 @@ namespace src.admin
             LecturerUsers = users.Count(u => u.Role == "Lecturer");
             ActiveUsers = users.Count(u => u.Status == "Active");
             UserRowsHtml = BuildUserRows(users);
+        }
+
+        protected void UploadStudentFile_Click(object sender, EventArgs e)
+        {
+            ShowBulkImportModal = true;
+            try
+            {
+                if (!StudentImportFile.HasFile) throw new ArgumentException("Choose an Excel .xlsx file.");
+                if (!StudentImportFile.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                    throw new ArgumentException("Only .xlsx Excel files are supported.");
+                if (StudentImportFile.PostedFile.ContentLength > 5 * 1024 * 1024)
+                    throw new ArgumentException("The workbook must be smaller than 5 MB.");
+
+                BulkPreview = new StudentBulkImportService().Prepare(
+                    StudentImportFile.PostedFile.InputStream, DateTime.Now);
+                Session["StudentBulkPreview"] = BulkPreview;
+                PopulateIntakeOptions();
+                ConfirmStudentImport.Enabled = BulkPreview.ErrorCount == 0 &&
+                                               !string.IsNullOrWhiteSpace(BulkPreview.IntakeId);
+            }
+            catch (Exception ex)
+            {
+                BulkPreview = null;
+                Session.Remove("StudentBulkPreview");
+                BulkImportMessage = ex.Message;
+            }
+        }
+
+        private void PopulateIntakeOptions()
+        {
+            if (BulkPreview == null || IntakeOverride == null) return;
+            var selected = IntakeOverride.SelectedValue;
+            IntakeOverride.Items.Clear();
+            foreach (var intake in BulkPreview.IntakeOptions)
+                IntakeOverride.Items.Add(new System.Web.UI.WebControls.ListItem(
+                    intake.Name + " (" + intake.Id + ")", intake.Id));
+            var preferred = string.IsNullOrWhiteSpace(selected) ? BulkPreview.IntakeId : selected;
+            if (IntakeOverride.Items.FindByValue(preferred) != null)
+                IntakeOverride.SelectedValue = preferred;
+        }
+
+        protected void ConfirmStudentImport_Click(object sender, EventArgs e)
+        {
+            ShowBulkImportModal = true;
+            BulkPreview = Session["StudentBulkPreview"] as StudentBulkPreview;
+            try
+            {
+                if (BulkPreview == null) throw new ArgumentException("Upload and validate the workbook first.");
+                var result = new StudentBulkImportService().Import(BulkPreview.Rows, IntakeOverride.SelectedValue);
+                foreach (var account in result.Created)
+                {
+                    var copy = account;
+                    Task.Run(() => EmailService.SendNewAccount(
+                        copy.PersonalEmail, copy.FullName, copy.InstitutionalEmail,
+                        copy.TemporaryPassword, "Programme", copy.ProgrammeId,
+                        "Imported in intake " + result.IntakeId + "."));
+                }
+                Session.Remove("StudentBulkPreview");
+                Response.Redirect("user_management.aspx?imported=" + result.Created.Count, false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+            catch (Exception ex)
+            {
+                BulkImportMessage = ex.Message;
+            }
+        }
+
+        protected string RenderBulkPreviewRows()
+        {
+            if (BulkPreview == null) return "";
+            var html = new StringBuilder();
+            foreach (var row in BulkPreview.Rows)
+            {
+                html.Append("<tr class=\"border-b border-slate-100\">")
+                    .Append("<td class=\"px-3 py-2 text-slate-400\">").Append(row.RowNumber).Append("</td>")
+                    .Append("<td class=\"px-3 py-2 font-medium text-slate-800\">").Append(Html(row.FullName)).Append("</td>")
+                    .Append("<td class=\"px-3 py-2 text-slate-600\">").Append(Html(row.InstitutionalEmail)).Append("</td>")
+                    .Append("<td class=\"px-3 py-2 text-slate-600\">").Append(Html(row.ProgrammeCode)).Append("</td>")
+                    .Append("<td class=\"px-3 py-2\"><span class=\"inline-flex rounded-full px-2 py-0.5 ")
+                    .Append(row.IsValid ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")
+                    .Append("\">").Append(row.IsValid ? "Ready" : Html(string.Join(" ", row.Errors)))
+                    .Append("</span></td></tr>");
+            }
+            return html.ToString();
         }
 
         protected string Number(int value)
