@@ -17,21 +17,31 @@ namespace src.services
 
         public static byte[] Create(StudentAccountProfile account, StudentAttendancePage attendance, DateTime generatedAt)
         {
+            return Create(account, attendance, generatedAt, null);
+        }
+
+        public static byte[] Create(
+            StudentAccountProfile account,
+            StudentAttendancePage attendance,
+            DateTime generatedAt,
+            AttendancePdfFilters filters)
+        {
             var courses = attendance.Courses ?? new List<StudentAttendanceCourse>();
             var pages = new List<PdfPage>();
             var page = NewPage(pages, false);
             DrawStudentDetails(page, account, generatedAt);
+            DrawAppliedFilters(page, filters);
 
             var present = courses.Sum(c => c.PresentCount);
             var late = courses.Sum(c => c.LateCount);
             var absent = courses.Sum(c => c.AbsentCount);
             var total = courses.Sum(c => c.TotalCount);
-            DrawSummary(page, 628f, courses.Count, present, late, absent, total);
+            DrawSummary(page, 586f, courses.Count, present, late, absent, total);
 
-            var y = 568f;
+            var y = 526f;
             if (courses.Count == 0)
             {
-                Text(page, Left, y, "F2", 11f, "No attendance records are available for this semester.");
+                Text(page, Left, y, "F2", 11f, "No attendance records match the selected filters.");
             }
             else
             {
@@ -115,6 +125,17 @@ namespace src.services
             Text(page, x, y - 16f, "F2", 10f, Shorten(value, x < 100f ? 39 : 40));
         }
 
+        private static void DrawAppliedFilters(PdfPage page, AttendancePdfFilters filters)
+        {
+            filters = filters ?? new AttendancePdfFilters();
+            Text(page, Left, 653f, "F2", 8f, "APPLIED FILTERS");
+            Text(page, Left, 638f, "F1", 8f,
+                "Semester: " + Default(filters.Semester, "All semesters") +
+                "   |   Course: " + Default(filters.Course, "All courses") +
+                "   |   Status: " + Default(filters.Status, "All statuses"));
+            Text(page, Left, 623f, "F1", 8f, "Date duration: " + DateDuration(filters.DateFrom, filters.DateTo));
+        }
+
         private static void DrawSummary(PdfPage page, float y, int courseCount, int present, int late, int absent, int total)
         {
             var rate = total == 0 ? "N/A" : ((decimal)present / total * 100m).ToString("0.#", Invariant) + "%";
@@ -193,6 +214,18 @@ namespace src.services
         private static string Rate(int present, int total)
         {
             return total == 0 ? "N/A" : ((decimal)present / total * 100m).ToString("0.#", Invariant) + "%";
+        }
+
+        private static string DateDuration(DateTime? dateFrom, DateTime? dateTo)
+        {
+            if (dateFrom.HasValue && dateTo.HasValue)
+            {
+                return dateFrom.Value.ToString("dd MMM yyyy", Invariant) + " to " +
+                    dateTo.Value.ToString("dd MMM yyyy", Invariant);
+            }
+            if (dateFrom.HasValue) return "From " + dateFrom.Value.ToString("dd MMM yyyy", Invariant) + " onward";
+            if (dateTo.HasValue) return "Up to " + dateTo.Value.ToString("dd MMM yyyy", Invariant);
+            return "All dates";
         }
 
         private static string TimeRange(TimeSpan? start, TimeSpan? end)
@@ -316,5 +349,14 @@ namespace src.services
         {
             public readonly StringBuilder Content = new StringBuilder();
         }
+    }
+
+    public class AttendancePdfFilters
+    {
+        public string Semester { get; set; }
+        public string Course { get; set; }
+        public string Status { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
     }
 }
