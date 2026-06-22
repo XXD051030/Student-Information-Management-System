@@ -7,7 +7,6 @@
 
     const data = window.lecturerTimetableData || {};
     const events = Array.isArray(data.events) ? data.events : [];
-    const takeAttendanceUrl = data.takeAttendanceUrl || '';
 
     // Pre-count classes per weekday (0=Sun..6=Sat) so each day header can show
     // its class count, matching the mockup.
@@ -29,12 +28,6 @@
     function formatTimeRange(event) {
         const options = { hour: 'numeric', minute: '2-digit', hour12: true };
         return `${event.start.toLocaleTimeString([], options)} - ${event.end.toLocaleTimeString([], options)}`;
-    }
-
-    function ymd(date) {
-        return date.getFullYear() + '-' +
-            String(date.getMonth() + 1).padStart(2, '0') + '-' +
-            String(date.getDate()).padStart(2, '0');
     }
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -65,7 +58,7 @@
         eventDidMount: function (info) {
             const color = info.event.extendedProps.color || '#e0162b';
             info.el.style.boxShadow = `inset 3px 0 0 ${color}`;
-            info.el.style.cursor = 'pointer';
+            info.el.style.cursor = 'default';
         },
         eventContent: function (arg) {
             const props = arg.event.extendedProps;
@@ -84,15 +77,6 @@
                                 <div class="tt-time">${escapeHtml(timeText)}</div>
                             </div>`
             };
-        },
-        eventClick: function (info) {
-            info.jsEvent.preventDefault();
-            if (!takeAttendanceUrl) return;
-            const offeringId = info.event.extendedProps.offeringId;
-            const date = ymd(info.event.start);
-            window.location.href = takeAttendanceUrl +
-                '?offering=' + encodeURIComponent(offeringId) +
-                '&date=' + encodeURIComponent(date);
         }
     });
 

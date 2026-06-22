@@ -3,6 +3,17 @@
 //   data-credits   – integer credit hours
 //   data-fee       – fee for this course (credits * rate)
 // and contains a checkbox [data-action="toggle-enroll"][data-offering="<id>"].
+
+function post(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (json) {
+        return json.d || json;
+    });
+}
+
 (function () {
     "use strict";
 
@@ -26,6 +37,23 @@
         if (el) el.textContent = value;
     }
 
+    // Per-semester credit bounds, rendered onto #enroll-credits from the DB.
+    function limits() {
+        var el = document.getElementById("enroll-credits");
+        var min = el ? parseInt(el.getAttribute("data-min-credits"), 10) : NaN;
+        var max = el ? parseInt(el.getAttribute("data-max-credits"), 10) : NaN;
+        return {
+            min: isNaN(min) ? 0 : min,
+            max: isNaN(max) ? Infinity : max
+        };
+    }
+
+    function selectedCredits() {
+        return selectedRows().reduce(function (sum, row) {
+            return sum + (parseInt(row.getAttribute("data-credits"), 10) || 0);
+        }, 0);
+    }
+
     function recompute() {
         var selected = selectedRows();
         var count = selected.length;
@@ -45,7 +73,8 @@
 
         var submit = document.getElementById("enroll-submit");
         if (submit) {
-            var enabled = count > 0;
+            var lim = limits();
+            var enabled = count > 0 && credits >= lim.min && credits <= lim.max;
             submit.disabled = !enabled;
             submit.classList.toggle("bg-slate-100", !enabled);
             submit.classList.toggle("text-slate-400", !enabled);
@@ -63,28 +92,35 @@
     }
 
     function proceed() {
-        var ids = selectedOfferingIds();
-        if (ids.length === 0) return;
+        var selected = selectedRows();
+        if (selected.length === 0) return;
 
-        var submit = document.getElementById("enroll-submit");
-        if (submit) submit.disabled = true;
+        var payload = selected.map(function (row) {
+            var cb = checkbox(row);
+            return {
+                offerId: parseInt(cb.getAttribute("data-offering"), 10),
+                code: row.getAttribute("data-code") || "",
+                name: row.getAttribute("data-name") || "",
+                credits: parseInt(row.getAttribute("data-credits"), 10) || 0,
+                fee: parseFloat(row.getAttribute("data-fee")) || 0
+            };
+        }).filter(function (r) { return !isNaN(r.offerId); });
 
-        fetch("/student/enrollment.aspx/Enrol", {
-            method: "POST",
-            headers: { "Content-Type": "application/json; charset=utf-8" },
-            body: JSON.stringify({ offeringIds: ids })
-        }).then(function (res) {
-            if (!res.ok) throw new Error("enrol failed");
-            // Reload so newly enrolled courses render as Registered.
-            window.location.reload();
-        }).catch(function () {
-            if (submit) submit.disabled = false;
-            alert("Enrollment could not be completed. Please try again.");
-        });
+        try {
+            sessionStorage.setItem("sims:enrolled", JSON.stringify(payload));
+        } catch (e) { /* ignore storage errors */ }
+
+        window.location = "payment.aspx";
     }
 
     document.addEventListener("change", function (e) {
         if (e.target && e.target.matches('[data-action="toggle-enroll"]')) {
+            // Block selections that would push the student over the credit cap.
+            if (e.target.checked && selectedCredits() > limits().max) {
+                e.target.checked = false;
+                alert("You can register for at most " + limits().max + " credits this semester.");
+                return;
+            }
             recompute();
         }
     });
@@ -95,6 +131,48 @@
             e.preventDefault();
             proceed();
         }
+    });
+
+    // Phase 2: Request Add
+    document.addEventListener("click", function (e) {
+        var btn = e.target.closest ? e.target.closest('[data-action="request-add"]') : null;
+        if (!btn) return;
+        btn.disabled = true;
+        post("enrollment.aspx/RequestAdd", { offeringId: parseInt(btn.dataset.offering, 10) })
+            .then(function (res) {
+                if (res && res.ok) {
+                    location.reload();
+                } else {
+                    alert("Could not submit add request. Please try again.");
+                    btn.disabled = false;
+                }
+            })
+            .catch(function () {
+                alert("Network error. Please try again.");
+                btn.disabled = false;
+            });
+    });
+
+    // Phase 2: Request Drop
+    document.addEventListener("click", function (e) {
+        var btn = e.target.closest ? e.target.closest('[data-action="request-drop"]') : null;
+        if (!btn) return;
+        var code = btn.dataset.code || "this course";
+        if (!confirm("Request to drop " + code + "? This will be sent to admin for review.")) return;
+        btn.disabled = true;
+        post("enrollment.aspx/RequestDrop", { offeringId: parseInt(btn.dataset.offering, 10) })
+            .then(function (res) {
+                if (res && res.ok) {
+                    location.reload();
+                } else {
+                    alert("Could not submit drop request. Please try again.");
+                    btn.disabled = false;
+                }
+            })
+            .catch(function () {
+                alert("Network error. Please try again.");
+                btn.disabled = false;
+            });
     });
 
     recompute();

@@ -15,7 +15,7 @@ namespace src.controls
             if (Session["user_id"] == null) return;
 
             var user = UserContextFactory.FromSession(Session);
-            var readIds = Session["student_notification_read_ids"] as ISet<int> ?? new HashSet<int>();
+            var readIds = NotificationReadService.GetReadIds(user);
             _unreadNotificationCount = StudentPortalService.GetNotifications(user, readIds).Count(n => !n.IsRead);
         }
 

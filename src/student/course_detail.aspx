@@ -32,14 +32,6 @@
                     <span>&#128218; <%= Header.ModuleCount %> modules</span>
                 </div>
             </div>
-            <div class="shrink-0">
-                <button type="button" data-action="toggle-pin" data-code="<%= Server.HtmlEncode(Header.CourseCode) %>"
-                    class="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 py-2.5 text-white backdrop-blur hover:bg-white/20 transition-colors"
-                    style="font-size:13px;font-weight:600" aria-label="Toggle pin">
-                    <i data-lucide="pin" class="h-4 w-4"></i>
-                    Pin course
-                </button>
-            </div>
         </div>
     </section>
 
@@ -121,7 +113,8 @@
                                     <ul class="bg-slate-50/50 px-6 pb-4 module-items hidden" data-week='<%# Eval("Week") %>'>
                                         <asp:Repeater runat="server" DataSource='<%# Eval("Items") %>'>
                                             <ItemTemplate>
-                                                <li class="ml-12 flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white transition-colors">
+                                                <li class="ml-12">
+                                                <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white transition-colors">
                                                     <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                                                         <i data-lucide='<%# FileIcon(Eval("FileType").ToString()) %>' class="h-4 w-4"></i>
                                                     </span>
@@ -129,9 +122,8 @@
                                                         <p class="text-slate-900 truncate" style="font-size:13px;font-weight:500"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
                                                         <p class="text-slate-400" style="font-size:11px"><%# FileSize(Eval("FileSizeBytes")) %></p>
                                                     </div>
-                                                    <button type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors" aria-label="Download">
-                                                        <i data-lucide="download" class="h-4 w-4"></i>
-                                                    </button>
+                                                    <span class="rounded-lg p-1.5 text-slate-400"><i data-lucide="eye" class="h-4 w-4"></i></span>
+                                                </a>
                                                 </li>
                                             </ItemTemplate>
                                         </asp:Repeater>
@@ -224,7 +216,10 @@
             <div class="grid gap-3">
                 <asp:Repeater ID="assignmentsRepeater" runat="server" OnItemCommand="assignmentsRepeater_ItemCommand">
                     <ItemTemplate>
-                        <div class="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-left sm:flex-row sm:items-center">
+                        <div data-action="open-assignment-material"
+                            data-preview-url='<%# MaterialPreviewUrl(Eval("MaterialId")) %>'
+                            role="link" tabindex="0"
+                            class="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:border-slate-300 hover:shadow-sm sm:flex-row sm:items-center">
                             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style="background-color:var(--course-accent-soft);color:var(--course-accent)">
                                 <i data-lucide="clipboard-list" class="h-5 w-5"></i>
                             </span>
@@ -239,16 +234,37 @@
                                     <span><%# Server.HtmlEncode(DueLabel(Eval("SubmissionStatus").ToString(), (System.DateTime)Eval("DueDate"))) %></span>
                                 </p>
                                 <%# (bool)Eval("HasSubmission") ? "<a class=\"mt-2 inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020]\" style=\"font-size:12px;font-weight:600\" href=\"" + ResolveUrl(Eval("SubmissionFileUrl").ToString()) + "\" target=\"_blank\" rel=\"noopener\"><i data-lucide=\"paperclip\" class=\"h-3.5 w-3.5\"></i>Submitted file</a>" : "" %>
-                                <%# !string.IsNullOrWhiteSpace(System.Convert.ToString(Eval("Feedback"))) ? "<p class=\"mt-2 rounded-lg bg-slate-50 px-3 py-2 text-slate-600\" style=\"font-size:12px\"><span class=\"font-semibold text-slate-700\">Feedback:</span> " + Server.HtmlEncode(Eval("Feedback").ToString()) + "</p>" : "" %>
+                                <asp:Panel runat="server" Visible='<%# HasLecturerFeedback(Container.DataItem) %>' CssClass="mt-3">
+                                    <details class="group/feedback rounded-lg border border-blue-100 bg-blue-50/60">
+                                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-blue-800 hover:bg-blue-50">
+                                            <span class="inline-flex items-center gap-2" style="font-size:12.5px;font-weight:700">
+                                                <i data-lucide="message-square-text" class="h-4 w-4"></i>
+                                                View lecturer feedback
+                                            </span>
+                                            <i data-lucide="chevron-down" class="h-4 w-4 transition-transform group-open/feedback:rotate-180"></i>
+                                        </summary>
+                                        <div class="border-t border-blue-100 px-3 py-3">
+                                            <p class="whitespace-pre-wrap break-words text-slate-700" style="font-size:12.5px;line-height:1.65"><%#: Eval("Feedback") %></p>
+                                            <asp:HyperLink runat="server"
+                                                Visible='<%# !string.IsNullOrWhiteSpace(System.Convert.ToString(Eval("AnnotatedFileUrl"))) %>'
+                                                NavigateUrl='<%# FeedbackFileUrl(Eval("AnnotatedFileUrl")) %>'
+                                                Target="_blank"
+                                                CssClass="mt-3 inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-white px-3 py-2 text-blue-700 hover:bg-blue-50"
+                                                style="font-size:12px;font-weight:700">
+                                                <i data-lucide="file-check-2" class="h-4 w-4"></i>View annotated feedback file
+                                            </asp:HyperLink>
+                                        </div>
+                                    </details>
+                                </asp:Panel>
                             </div>
-                            <div class="flex flex-col gap-2 sm:w-72">
+                            <asp:Panel runat="server" Visible='<%# !IsQuiz(Container.DataItem) %>' CssClass="flex flex-col gap-2 sm:w-72">
                                 <%# Eval("Marks") != null ? "<span class=\"rounded-lg bg-emerald-50 px-3 py-1.5 text-emerald-700\" style=\"font-size:12.5px;font-weight:700\">" + System.Convert.ToDecimal(Eval("Marks")).ToString("0.#") + " / 100</span>" : "" %>
                                 <asp:FileUpload ID="submissionInput" runat="server" CssClass="block w-full rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-slate-700" style="font-size:12px" />
                                 <asp:LinkButton ID="submitAssignmentButton" runat="server" CommandName="SubmitAssignment" CommandArgument='<%# Eval("AssignmentId") %>'
                                     CssClass="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-3 text-white hover:bg-[#a01020]" style="font-size:12.5px;font-weight:600">
                                     <i data-lucide="upload" class="h-4 w-4"></i>Submit
                                 </asp:LinkButton>
-                            </div>
+                            </asp:Panel>
                         </div>
                     </ItemTemplate>
                 </asp:Repeater>
@@ -375,5 +391,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/student/course-detail.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/student/course-detail.js") %>?v=2"></script>
 </asp:Content>

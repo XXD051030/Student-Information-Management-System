@@ -8,17 +8,39 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Attendance &amp; schedule</p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Attendance</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Your teaching schedule for <span class="text-slate-900 font-semibold"><%: SemesterDisplay %></span>. Click a class to take attendance.
+                Your teaching schedule for <span class="text-slate-900 font-semibold"><%: SemesterDisplay %></span>. Use the flexible attendance form for regular, replacement, or additional classes.
             </p>
         </div>
         <div class="flex items-center gap-2">
             <span class="rounded-full bg-slate-100 px-3 py-1 text-slate-700" style="font-size:12px;font-weight:600"><%: SemesterDisplay %></span>
-            <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_20px_-8px_rgba(224,22,43,0.55)]"
-                style="font-size:13px;font-weight:600">
-                <i data-lucide="download" class="h-4 w-4"></i> Download PDF
-            </button>
         </div>
     </div>
+
+    <section class="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+        <div class="grid gap-4 md:grid-cols-3">
+            <label class="block">
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">ACADEMIC YEAR</span>
+                <asp:DropDownList ID="academicYearFilter" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="AcademicYearFilter_Changed"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700"
+                    style="font-size:13px" />
+            </label>
+            <label class="block">
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">SEMESTER</span>
+                <asp:DropDownList ID="semesterFilter" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="SemesterFilter_Changed"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700"
+                    style="font-size:13px" />
+            </label>
+            <label class="block">
+                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">COURSE</span>
+                <asp:DropDownList ID="courseFilter" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="CourseFilter_Changed"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700"
+                    style="font-size:13px" />
+            </label>
+        </div>
+    </section>
 
     <%-- Summary header --%>
     <section class="mt-6 rounded-lg border border-slate-200 bg-white">
@@ -97,18 +119,29 @@
             </asp:Repeater>
             <% if (CoursesThisSemesterCount == 0) { %>
                 <p class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-slate-500" style="font-size:13px">
-                    No courses assigned for the current semester.
+                    No courses match the selected filters.
                 </p>
             <% } %>
         </div>
     </section>
 
     <%-- Weekly schedule (FullCalendar) --%>
-    <section class="mt-6 rounded-lg border border-slate-200 bg-white p-4 lg:p-6">
-        <header class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-4">
+    <section id="weekly-schedule" class="mt-6 scroll-mt-20 rounded-lg border border-slate-200 bg-white p-4 lg:p-6">
+        <header class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Weekly schedule</h2>
-                <p class="text-slate-500" style="font-size:12px">Click a class to record attendance &middot; Mon &ndash; Fri</p>
+                <p class="text-slate-500" style="font-size:12px">Reference timetable &middot; Mon &ndash; Fri</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="btnDownloadLecturerPdf" class="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-slate-700 transition-colors hover:bg-slate-50" style="font-size:13px;font-weight:600">
+                    <i data-lucide="download" class="h-4 w-4"></i> Download timetable
+                </button>
+                <a href="<%= ResolveUrl("~/lecturer/lecturer_attendance_history.aspx") %>" class="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-slate-700 transition-colors hover:bg-slate-50" style="font-size:13px;font-weight:600">
+                    <i data-lucide="history" class="h-4 w-4"></i> Attendance history
+                </a>
+                <a href="<%= TakeAttendanceUrl %>" class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#e0162b] px-4 text-white shadow-[0_8px_20px_-8px_rgba(224,22,43,0.55)] transition-colors hover:bg-[#a01020]" style="font-size:13px;font-weight:600">
+                    <i data-lucide="clipboard-check" class="h-4 w-4"></i> Take attendance
+                </a>
             </div>
         </header>
 
@@ -162,7 +195,7 @@
         }
 
         #lecturerTimetable .fc-timegrid-slot {
-            height: 80px;
+            height: 108px;
         }
 
         #lecturerTimetable .fc-event {
@@ -170,7 +203,7 @@
             padding: 0;
             box-shadow: none;
             overflow: hidden;
-            cursor: pointer;
+            cursor: default;
         }
 
         #lecturerTimetable .tt-event {
@@ -241,5 +274,7 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/attendance.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/attendance.js") %>?v=2"></script>
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/attendance-export.js") %>?v=1"></script>
 </asp:Content>

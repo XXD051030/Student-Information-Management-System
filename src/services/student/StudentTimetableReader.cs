@@ -14,6 +14,22 @@ namespace src.services
         {
             if (user == null) return new List<StudentClassSession>();
 
+            var current = AcademicTermReader.GetCurrentTerm();
+            var termLabel = TermLabel(current);
+            if (user.IsStudent)
+            {
+                var account = StudentProfileReader.GetAccount(user);
+                if (account != null && !string.IsNullOrWhiteSpace(account.CurrentSession))
+                    termLabel = account.CurrentSession;
+            }
+            return GetClassSessions(user, termLabel);
+        }
+
+        private static List<StudentClassSession> GetClassSessions(UserContext user, string termLabel)
+        {
+            if (user == null || string.IsNullOrWhiteSpace(termLabel))
+                return new List<StudentClassSession>();
+
             var sql =
                 "SELECT t.timetable_id, t.offer_id, t.day_of_week, t.start_time, t.end_time, t.room, " +
                 "c.course_code, c.course_name, c.colour, ISNULL(l.lecturer_name, '') AS lecturer_name " +
@@ -22,13 +38,15 @@ namespace src.services
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "LEFT JOIN LECTURERS l ON l.lecturer_id = co.lecturer_id " +
                 "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
-                "ORDER BY t.day_of_week, t.start_time";
+                "AND co.academic_year + ' ' + co.semester = @termLabel " +
+                "ORDER BY CASE t.day_of_week WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 WHEN 'Sunday' THEN 7 ELSE 8 END, t.start_time";
 
             var sessions = new List<StudentClassSession>();
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             {
                 ServiceAccess.AddUserContextParameters(cmd, user);
+                cmd.Parameters.AddWithValue("@termLabel", termLabel.Trim());
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -61,8 +79,13 @@ namespace src.services
             if (account == null) return null;
 
             var current = AcademicTermReader.GetCurrentTerm();
-            var sessions = GetClassSessions(user);
-            var courseCards = StudentCourseReader.GetCourses(user, account.StudentId);
+            var termLabel = string.IsNullOrWhiteSpace(account.CurrentSession)
+                ? TermLabel(current)
+                : account.CurrentSession;
+            var sessions = GetClassSessions(user, termLabel);
+            var courseCards = StudentCourseReader.GetCourses(user, account.StudentId)
+                .Where(c => IsSameTerm(c.SemesterName, termLabel))
+                .ToList();
             var courses = sessions
                 .GroupBy(s => s.OfferingId)
                 .Select(g => new StudentTimetableCourse

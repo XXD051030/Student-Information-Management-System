@@ -20,7 +20,7 @@ namespace src.services
 
             string sql =
                 "SELECT co.offer_id, c.course_id, c.course_code, c.course_name, c.credit_hour, c.colour, " +
-                "co.academic_year + ' ' + co.semester AS semester_name, " +
+                "co.academic_year, co.semester, co.academic_year + ' ' + co.semester AS semester_name, " +
                 "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'ENROLLED') AS enrolled_count " +
                 "FROM COURSE_OFFERINGS co " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
@@ -43,6 +43,8 @@ namespace src.services
                             CourseId = Text(reader["course_id"]),
                             CourseCode = code,
                             CourseName = Text(reader["course_name"]),
+                            AcademicYear = Text(reader["academic_year"]),
+                            Semester = Text(reader["semester"]),
                             SemesterName = semesterName,
                             CreditHours = IntValue(reader["credit_hour"]),
                             EnrolledCount = IntValue(reader["enrolled_count"]),
@@ -76,7 +78,10 @@ namespace src.services
                 "co.academic_year + ' ' + co.semester AS semester_name, " +
                 "ISNULL(p.education_level, '') AS education_level, " +
                 "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'ENROLLED') AS enrolled_count, " +
-                "(SELECT COUNT(*) FROM ASSIGNMENTS a WHERE a.offer_id = co.offer_id) AS assessment_count, " +
+                "(SELECT COUNT(*) FROM ENROLLMENTS e WHERE e.offer_id = co.offer_id AND e.status = 'PENDING') AS pending_count, " +
+                "(SELECT COUNT(DISTINCT a.assignment_id) FROM ASSIGNMENTS a " +
+                " JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
+                " WHERE a.offer_id = co.offer_id AND mat.weight IS NOT NULL AND mat.weight > 0) AS assessment_count, " +
                 "(SELECT COUNT(*) FROM MATERIALS m JOIN MODULES md ON md.module_id = m.module_id WHERE md.offer_id = co.offer_id) AS material_count " +
                 "FROM COURSE_OFFERINGS co " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
@@ -108,6 +113,7 @@ namespace src.services
                             SemesterName = Text(reader["semester_name"]),
                             Color = ColorOrFallback(Text(reader["colour"]), code),
                             EnrolledCount = IntValue(reader["enrolled_count"]),
+                            PendingCount = IntValue(reader["pending_count"]),
                             AssessmentCount = IntValue(reader["assessment_count"]),
                             MaterialCount = IntValue(reader["material_count"])
                         };
@@ -127,8 +133,9 @@ namespace src.services
             const string gradeSql =
                 "SELECT a.total_marks, sub.marks_obtained, sub.status " +
                 "FROM ASSIGNMENTS a " +
-                "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id " +
-                "WHERE a.offer_id = @offerId";
+                "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
+                "JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id " +
+                "WHERE a.offer_id = @offerId AND mat.weight IS NOT NULL AND mat.weight > 0";
 
             int pending = 0, graded = 0;
             decimal sumPercent = 0m;
@@ -177,13 +184,13 @@ namespace src.services
             if (user == null) return rows;
 
             const string sql =
-                "SELECT s.student_id, s.student_name, s.student_email, s.phone, s.icon, " +
+                "SELECT s.student_id, s.student_name, s.student_email, s.phone, s.icon, e.status, " +
                 "ISNULL(p.programme_name, '') AS programme_name, ISNULL(p.programme_code, '') AS programme_code " +
                 "FROM ENROLLMENTS e " +
                 "JOIN STUDENTS s ON s.student_id = e.student_id " +
                 "LEFT JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
-                "WHERE e.offer_id = @offerId AND e.status = 'ENROLLED' " +
-                "ORDER BY s.student_name";
+                "WHERE e.offer_id = @offerId AND e.status IN ('ENROLLED', 'PENDING') " +
+                "ORDER BY e.status, s.student_name";
 
             using (var conn = Db.OpenConnection())
             {
@@ -203,7 +210,8 @@ namespace src.services
                                 Phone = Text(reader["phone"]),
                                 ProgrammeName = Text(reader["programme_name"]),
                                 ProgrammeCode = Text(reader["programme_code"]),
-                                IconPath = Text(reader["icon"])
+                                IconPath = Text(reader["icon"]),
+                                IsPending = string.Equals(Text(reader["status"]), "PENDING", System.StringComparison.OrdinalIgnoreCase)
                             });
                         }
                     }

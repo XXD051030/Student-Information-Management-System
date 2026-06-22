@@ -1,32 +1,14 @@
-﻿// My Courses page: semester toggle (current/all), search, pin, empty-state.
+// My Courses page: semester toggle (current/all), search, empty-state.
 // Cards are rendered server-side; each <article> carries:
 //   data-current="true|false"  – belongs to the current semester
 //   data-search="..."          – lowercased code/name/lecturer for search
-//   data-course-code="CODE"     – stable key for pinning
 (function () {
     "use strict";
 
-    var PIN_KEY = "courses.pinned";
     var state = { semester: "current", query: "" };
 
     function cards() {
         return Array.prototype.slice.call(document.querySelectorAll("#course-grid [data-course-code]"));
-    }
-
-    function loadPins() {
-        try { return JSON.parse(localStorage.getItem(PIN_KEY)) || []; }
-        catch (e) { return []; }
-    }
-
-    function savePins(pins) {
-        // Storage can throw in private mode or when the quota is exceeded; in that
-        // case the pin is simply not persisted across reloads.
-        try { localStorage.setItem(PIN_KEY, JSON.stringify(pins)); }
-        catch (e) { /* storage unavailable */ }
-    }
-
-    function isPinned(code) {
-        return loadPins().indexOf(code) !== -1;
     }
 
     function applyFilters() {
@@ -43,31 +25,6 @@
 
         var noResults = document.getElementById("no-results");
         if (noResults) { noResults.classList.toggle("hidden", visible !== 0); }
-    }
-
-    function updatePinnedCount() {
-        var el = document.getElementById("pinned-count");
-        if (el) { el.textContent = String(loadPins().length); }
-    }
-
-    function paintPin(card) {
-        var code = card.getAttribute("data-course-code");
-        var btn = card.querySelector('[data-action="toggle-pin"]');
-        if (!btn) { return; }
-        // Inline style rather than a Tailwind arbitrary class: the Play CDN may not
-        // generate styles for a class only ever added dynamically by JS.
-        if (isPinned(code)) {
-            btn.style.color = "#e0162b";
-        } else {
-            btn.style.removeProperty("color");
-        }
-    }
-
-    function togglePin(code) {
-        var pins = loadPins();
-        var i = pins.indexOf(code);
-        if (i === -1) { pins.push(code); } else { pins.splice(i, 1); }
-        savePins(pins);
     }
 
     function activateSemesterButton(clicked) {
@@ -105,24 +62,10 @@
             });
         }
 
-        // Pin buttons
-        cards().forEach(function (card) {
-            paintPin(card);
-            var btn = card.querySelector('[data-action="toggle-pin"]');
-            if (btn) {
-                btn.addEventListener("click", function () {
-                    togglePin(card.getAttribute("data-course-code"));
-                    paintPin(card);
-                    updatePinnedCount();
-                });
-            }
-        });
-
         // Establish the default active filter button visually (current).
         var currentBtn = document.querySelector('[data-action="filter-semester"][data-semester="current"]');
         if (currentBtn) { activateSemesterButton(currentBtn); }
 
-        updatePinnedCount();
         applyFilters();
     }
 

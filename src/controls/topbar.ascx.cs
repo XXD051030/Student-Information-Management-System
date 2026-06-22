@@ -20,7 +20,7 @@ namespace src.controls
             if (_student != null)
             {
                 _unreadNotificationCount = StudentPortalService
-                    .GetNotifications(user, ReadNotificationIds())
+                    .GetNotifications(user, NotificationReadService.GetReadIds(user))
                     .Count(n => !n.IsRead);
             }
         }
@@ -59,10 +59,5 @@ namespace src.controls
             get { return _unreadNotificationCount > 0 ? "" : " hidden"; }
         }
 
-        private ISet<int> ReadNotificationIds()
-        {
-            var ids = Session["student_notification_read_ids"] as ISet<int>;
-            return ids ?? new HashSet<int>();
-        }
     }
 }

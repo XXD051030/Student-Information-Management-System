@@ -29,12 +29,13 @@
                 </div>
             </div>
 
-            <ul id="notif-list" class="max-h-[640px] divide-y divide-slate-100 overflow-y-auto">
+            <ul id="notif-list" data-notification-endpoint="<%= ResolveUrl("~/student/notifications.aspx") %>" class="max-h-[640px] divide-y divide-slate-100 overflow-y-auto">
                 <asp:Repeater ID="notificationsRepeater" runat="server">
                     <ItemTemplate>
                         <li>
                             <button type="button" class="notif-item flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50"
-                                data-id="<%# Eval("AnnouncementId") %>"
+                                data-id="<%# Eval("NotificationId") %>"
+                                data-type="<%# Eval("NotificationType") %>"
                                 data-read="<%# ReadFlag(Eval("IsRead")) %>"
                                 data-category="<%# Category(Eval("AuthorRole")) %>"
                                 data-course="<%# Server.HtmlEncode(CourseLabel((StudentPortalNotification)Container.DataItem)) %>"
@@ -42,7 +43,8 @@
                                 data-author="<%# Server.HtmlEncode((string)Eval("AuthorName")) %>"
                                 data-time="<%# ListTime((DateTime)Eval("CreatedAt")) %>"
                                 data-fulltime="<%# FullTime((DateTime)Eval("CreatedAt")) %>"
-                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>">
+                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>"
+                                data-fileurl="<%# AttachmentUrl(Eval("FileUrl")) %>">
                                 <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
@@ -73,12 +75,6 @@
                         <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Pin">
                             <i data-lucide="pin" id="detail-pin" class="h-4 w-4 text-amber-500"></i>
                         </button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Archive">
-                            <i data-lucide="archive" class="h-4 w-4 text-slate-500"></i>
-                        </button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Delete">
-                            <i data-lucide="trash-2" class="h-4 w-4 text-slate-500"></i>
-                        </button>
                     </div>
                 </header>
 
@@ -107,6 +103,13 @@
                     </div>
 
                     <div id="detail-content" class="mt-5 text-slate-700" style="font-size:14px;line-height:1.7;white-space:pre-line"></div>
+
+                    <a id="detail-attachment" href="#" target="_blank" hidden
+                        class="mt-5 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-slate-700 hover:border-slate-300 hover:text-slate-900 transition-colors"
+                        style="font-size:13px;font-weight:600">
+                        <i data-lucide="paperclip" class="h-4 w-4"></i>
+                        Open attachment
+                    </a>
                 </div>
 
                 <footer class="border-t border-slate-100 bg-slate-50/40 px-5 py-3 flex items-center justify-end gap-2">
@@ -122,5 +125,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=2"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=6"></script>
 </asp:Content>

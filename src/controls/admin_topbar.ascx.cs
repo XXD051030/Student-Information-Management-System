@@ -1,11 +1,26 @@
 using System;
+using System.Data.SqlClient;
 using System.Web.UI;
+using src.db;
 
 namespace src.controls
 {
     public partial class admin_topbar : UserControl
     {
-        protected void Page_Load(object sender, EventArgs e) { }
+        private string _iconPath = "";
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (Session["user_id"] == null) return;
+            var userId = Convert.ToInt32(Session["user_id"]);
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("SELECT icon FROM ADMINS WHERE user_id = @uid", conn))
+            {
+                cmd.Parameters.AddWithValue("@uid", userId);
+                var val = cmd.ExecuteScalar();
+                _iconPath = val == null || val == DBNull.Value ? "" : val.ToString();
+            }
+        }
 
         protected string DisplayName
         {
@@ -17,11 +32,13 @@ namespace src.controls
             get { return "Administrator"; }
         }
 
-        // No admin profile image source in this project, so the markup always
-        // falls back to the initials avatar.
         protected string IconUrl
         {
-            get { return ""; }
+            get
+            {
+                if (string.IsNullOrEmpty(_iconPath)) return "";
+                return ResolveUrl("~/" + _iconPath.TrimStart('/'));
+            }
         }
 
         // First letters of the first two words of the name, e.g. "Admin One" -> "AO".

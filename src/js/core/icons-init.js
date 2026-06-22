@@ -4,10 +4,31 @@
             lucide.createIcons();
         }
         var path = location.pathname.toLowerCase();
+        var page = path.split('/').pop() || '';
+        var params = new URLSearchParams(location.search);
+        var coursePages = [
+            'lecturer_course_dashboard.aspx',
+            'lecturer_course_people.aspx'
+        ];
+        var scopedCoursePages = [
+            'lecturer_materials.aspx',
+            'lecturer_grades.aspx',
+            'lecturer_announcement.aspx'
+        ];
+        var activeTarget = page;
+        var isCourseScopedAnnouncement =
+            page === 'lecturer_announcement.aspx' &&
+            params.get('context') === 'course';
+        if (coursePages.indexOf(page) !== -1 ||
+            (params.has('offering') &&
+                scopedCoursePages.indexOf(page) !== -1 &&
+                (page !== 'lecturer_announcement.aspx' || isCourseScopedAnnouncement))) {
+            activeTarget = 'lecturer_courses.aspx';
+        }
         var links = document.querySelectorAll('[data-nav-link]');
         for (var i = 0; i < links.length; i++) {
             var target = links[i].getAttribute('data-nav-link').toLowerCase();
-            if (path.endsWith(target)) {
+            if (target === activeTarget) {
                 links[i].setAttribute('data-active', 'true');
             }
         }

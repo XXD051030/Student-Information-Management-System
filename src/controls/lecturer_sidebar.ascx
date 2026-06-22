@@ -33,9 +33,15 @@
                 </a>
             </li>
             <li>
+                <a href="<%= ResolveUrl("~/lecturer/lecturer_timetable.aspx") %>" data-nav-link="lecturer_timetable.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="calendar-clock" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Timetable</span>
+                </a>
+            </li>
+            <li>
                 <a href="<%= ResolveUrl("~/lecturer/lecturer_at_risk.aspx") %>" data-nav-link="lecturer_at_risk.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
-                    <i data-lucide="alert-triangle" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
-                    <span class="flex-1">At-risk</span>
+                    <i data-lucide="trending-up" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Academic Performance</span>
                 </a>
             </li>
             <li>
@@ -45,9 +51,16 @@
                 </a>
             </li>
             <li>
+                <a href="<%= ResolveUrl("~/lecturer/lecturer_notifications.aspx") %>" data-nav-link="lecturer_notifications.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
+                    <i data-lucide="bell" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
+                    <span class="flex-1">Notifications</span>
+                    <span data-notification-count-badge class="rounded-md bg-slate-100 px-1.5 text-slate-600<%= NotificationBadgeVisibilityClass %>" style="font-size:11px;font-weight:600"><%= NotificationBadgeText %></span>
+                </a>
+            </li>
+            <li>
                 <a href="<%= ResolveUrl("~/lecturer/lecturer_materials.aspx") %>" data-nav-link="lecturer_materials.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
                     <i data-lucide="folder-open" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
-                    <span class="flex-1">Materials</span>
+                    <span class="flex-1">Upload Materials</span>
                 </a>
             </li>
         </ul>
@@ -61,7 +74,7 @@
                 </a>
             </li>
             <li>
-                <a href="#" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all" style="font-size:14px;font-weight:500">
+                <a href="<%= ResolveUrl("~/shared/help.aspx") %>" data-nav-link="help.aspx" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020] data-[active=true]:font-semibold" style="font-size:14px;font-weight:500">
                     <i data-lucide="life-buoy" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
                     Help &amp; Support
                 </a>

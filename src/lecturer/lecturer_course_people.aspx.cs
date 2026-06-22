@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Web;
 using src.services;
 
@@ -62,8 +63,12 @@ namespace src.lecturer
         {
             get
             {
-                int count = _students.Count;
-                return count + (count == 1 ? " student enrolled" : " students enrolled");
+                int enrolled = _students.Count(s => !s.IsPending);
+                int pending = _students.Count(s => s.IsPending);
+                string label = enrolled + (enrolled == 1 ? " student enrolled" : " students enrolled");
+                if (pending > 0)
+                    label += ", " + pending + " pending";
+                return label;
             }
         }
 

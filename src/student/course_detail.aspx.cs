@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Web;
 using System.Web.UI;
@@ -104,6 +105,27 @@ namespace src.student
             }
         }
 
+        protected bool HasLecturerFeedback(object dataItem)
+        {
+            var assignment = dataItem as StudentCourseAssignment;
+            return assignment != null &&
+                (!string.IsNullOrWhiteSpace(assignment.Feedback) ||
+                 !string.IsNullOrWhiteSpace(assignment.AnnotatedFileUrl));
+        }
+
+        protected string FeedbackFileUrl(object value)
+        {
+            string url = Convert.ToString(value);
+            return string.IsNullOrWhiteSpace(url) ? "" : ResolveUrl(url);
+        }
+
+        protected bool IsQuiz(object dataItem)
+        {
+            var assignment = dataItem as StudentCourseAssignment;
+            return assignment != null &&
+                string.Equals(assignment.AssignmentType, "Quiz", StringComparison.OrdinalIgnoreCase);
+        }
+
         private string SaveUploadedSubmission(FileUpload upload, int assignmentId)
         {
             string extension = Path.GetExtension(upload.FileName);
@@ -181,16 +203,25 @@ namespace src.student
             }
         }
 
+        protected string MaterialPreviewUrl(object materialId)
+        {
+            return ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(Convert.ToString(materialId)));
+        }
+
         /// <summary>Due/status line for an assignment card.</summary>
         protected string DueLabel(string status, DateTime due)
         {
-            if (status == "MARKED") return "Graded · " + due.ToString("d MMM");
-            if (status == "SUBMITTED") return "Submitted · " + due.ToString("d MMM");
+            string deadline = due.ToString("d MMM yyyy 'at' h:mm", CultureInfo.InvariantCulture) +
+                (due.Hour < 12 ? " a.m." : " p.m.");
+            if (status == "MARKED") return "Graded · Due " + deadline;
+            if (status == "SUBMITTED") return "Submitted · Due " + deadline;
             int days = (int)(due.Date - DateTime.Today).TotalDays;
-            if (days < 0) return "Overdue · " + due.ToString("d MMM");
-            if (days == 0) return "Today · 11:59 PM";
-            if (days == 1) return "Tomorrow · 11:59 PM";
-            return "In " + days + " days";
+            if (due < DateTime.Now) return "Overdue · " + deadline;
+            if (days == 0) return "Today · " + due.ToString("h:mm", CultureInfo.InvariantCulture) +
+                (due.Hour < 12 ? " a.m." : " p.m.");
+            if (days == 1) return "Tomorrow · " + due.ToString("h:mm", CultureInfo.InvariantCulture) +
+                (due.Hour < 12 ? " a.m." : " p.m.");
+            return "Due " + deadline;
         }
 
         protected StudentGradebook Book { get { return _gradebook; } }

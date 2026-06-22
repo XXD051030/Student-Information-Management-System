@@ -47,14 +47,14 @@ namespace src.admin
 
         private void BindPreview()
         {
-            int? semesterId = ToNullableInt(ddlSemester.SelectedValue);
-            int? programmeId = ToNullableInt(ddlProgramme.SelectedValue);
+            string semesterId = EmptyToNull(ddlSemester.SelectedValue);
+            string programmeId = EmptyToNull(ddlProgramme.SelectedValue);
             string status = ddlStatus.SelectedValue;
 
-            DateTime? dateFrom = ToNullableDate(txtDateFrom.Text);
-            DateTime? dateTo = ToNullableDate(txtDateTo.Text);
+            DateTime? dateFrom = null;
+            DateTime? dateTo = null;
 
-            var reportData = reportService.GetStudentAcademicReport(
+            var studentReportData = reportService.GetStudentAcademicReport(
                 semesterId,
                 programmeId,
                 status,
@@ -62,35 +62,76 @@ namespace src.admin
                 dateTo
             );
 
-            rptPreview.DataSource = reportData.Take(10).ToList();
+            rptPreview.DataSource = studentReportData.Take(10).ToList();
             rptPreview.DataBind();
 
-            litPreviewCount.Text = "Showing " + Math.Min(10, reportData.Count) + " of " + reportData.Count + " record(s).";
+            litPreviewCount.Text = "Showing " + Math.Min(10, studentReportData.Count) + " of " + studentReportData.Count + " record(s).";
 
-            emptyPreviewPanel.Visible = reportData.Count == 0;
+            emptyPreviewPanel.Visible = studentReportData.Count == 0;
+
+            var programmeReportData = reportService.GetProgrammePerformanceReport(
+                semesterId,
+                programmeId,
+                status,
+                dateFrom,
+                dateTo
+            );
+
+            rptProgrammePreview.DataSource = programmeReportData.Take(10).ToList();
+            rptProgrammePreview.DataBind();
+
+            litProgrammePreviewCount.Text = "Showing " + Math.Min(10, programmeReportData.Count) + " of " + programmeReportData.Count + " programme performance record(s).";
+
+            emptyProgrammePreviewPanel.Visible = programmeReportData.Count == 0;
+
+            var courseReportData = reportService.GetCoursePerformanceReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptCoursePreview.DataSource = courseReportData.Take(10).ToList();
+            rptCoursePreview.DataBind();
+
+            litCoursePreviewCount.Text = "Showing " + Math.Min(10, courseReportData.Count) + " of " + courseReportData.Count + " course performance record(s).";
+
+            emptyCoursePreviewPanel.Visible = courseReportData.Count == 0;
+
+            var attendanceReportData = reportService.GetAttendanceSummaryReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptAttendancePreview.DataSource = attendanceReportData.Take(10).ToList();
+            rptAttendancePreview.DataBind();
+
+            litAttendancePreviewCount.Text = "Showing " + Math.Min(10, attendanceReportData.Count) + " of " + attendanceReportData.Count + " course attendance record(s).";
+
+            emptyAttendancePreviewPanel.Visible = attendanceReportData.Count == 0;
+
+            var atRiskReportData = reportService.GetAtRiskStudentReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptAtRiskPreview.DataSource = atRiskReportData.Take(10).ToList();
+            rptAtRiskPreview.DataBind();
+
+            litAtRiskPreviewCount.Text = "Showing " + Math.Min(10, atRiskReportData.Count) + " of " + atRiskReportData.Count + " at-risk student(s).";
+
+            emptyAtRiskPreviewPanel.Visible = atRiskReportData.Count == 0;
+
         }
 
-        private int? ToNullableInt(string value)
+        private static string EmptyToNull(string value)
         {
-            int result;
-            if (int.TryParse(value, out result))
-            {
-                return result;
-            }
-
-            return null;
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
-        private DateTime? ToNullableDate(string value)
-        {
-            DateTime result;
-
-            if (DateTime.TryParse(value, out result))
-            {
-                return result;
-            }
-
-            return null;
-        }
     }
 }

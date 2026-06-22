@@ -118,7 +118,7 @@
 
     //  determine the password input 
     pwInput.addEventListener('input', function () {
-        var valid = pwInput.value.length >= 6;
+        var valid = pwInput.value.length > 0;
         setSubmitEnabled(pwSubmit, valid);
         if (pwInput.value.length > 0 && !valid) {
             pwError.classList.remove('hidden');

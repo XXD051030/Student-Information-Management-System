@@ -28,7 +28,7 @@ namespace student_information_management_system
             scheduleRepeater.DataBind();
             gradeRepeater.DataSource = _data.ToGrade;
             gradeRepeater.DataBind();
-            coursesRepeater.DataSource = _data.Courses.Take(4).ToList();
+            coursesRepeater.DataSource = _data.Courses.Take(6).ToList();
             coursesRepeater.DataBind();
             announcementsRepeater.DataSource = _data.Announcements;
             announcementsRepeater.DataBind();
@@ -190,7 +190,7 @@ namespace student_information_management_system
 
         protected int MyCoursesCount
         {
-            get { return _data != null ? Math.Min(_data.Courses.Count, 4) : 0; }
+            get { return _data != null ? Math.Min(_data.Courses.Count, 6) : 0; }
         }
 
         protected string MyCoursesSubtitle
@@ -208,9 +208,27 @@ namespace student_information_management_system
             return count + (count == 1 ? " student enrolled" : " students enrolled");
         }
 
+        protected string CourseUrl(object offeringId)
+        {
+            return ResolveUrl("~/lecturer/lecturer_course_dashboard.aspx?offering=" +
+                Convert.ToString(offeringId, CultureInfo.InvariantCulture));
+        }
+
+        protected string GradeUrl(object offeringId, object assessmentId)
+        {
+            return ResolveUrl("~/lecturer/lecturer_grades.aspx?offering=" +
+                Convert.ToString(offeringId, CultureInfo.InvariantCulture) + "&assessment=" +
+                Convert.ToString(assessmentId, CultureInfo.InvariantCulture) + "#submissions");
+        }
+
         protected int AnnouncementCount
         {
             get { return _data != null ? _data.Announcements.Count : 0; }
+        }
+
+        protected bool HasMoreAnnouncements
+        {
+            get { return _data != null && _data.TotalAnnouncementCount > 5; }
         }
 
         protected string FormatRelativeTime(DateTime when)

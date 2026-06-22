@@ -94,6 +94,18 @@
 
     if ((o = e.target.closest("[data-tab]"))) { activateTab(o.closest("[data-tabs]"), o.getAttribute("data-tab")); return; }
 
+    if ((o = e.target.closest("[data-accordion-toggle]"))) {
+      var item = o.closest("[data-accordion]");
+      if (item) {
+        var body = item.querySelector("[data-accordion-body]");
+        var icon = item.querySelector("[data-accordion-icon]");
+        var collapsed = !body || body.style.display === "none";
+        if (body) body.style.display = collapsed ? "" : "none";
+        if (icon) icon.style.transform = collapsed ? "rotate(0deg)" : "rotate(-90deg)";
+      }
+      return;
+    }
+
     if ((o = e.target.closest("[data-dropdown-toggle]"))) {
       var menu = o.closest("[data-dropdown]").querySelector("[data-dropdown-menu]");
       var isOpen = menu.style.display === "block";
@@ -116,7 +128,9 @@
       return;
     }
     if ((o = e.target.closest("[data-toast]"))) {
-      window.toast.success(o.getAttribute("data-toast"), o.getAttribute("data-toast-desc") || undefined);
+      var toastType = o.getAttribute("data-toast-type") || "success";
+      var toastMethod = window.toast[toastType] || window.toast.info;
+      toastMethod(o.getAttribute("data-toast"), o.getAttribute("data-toast-desc") || undefined);
       closeAllDropdowns();
       return;
     }

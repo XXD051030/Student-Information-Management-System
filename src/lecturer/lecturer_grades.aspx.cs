@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Web;
+using System.Web.Script.Services;
+using System.Web.Services;
 using System.Web.UI.WebControls;
 using src.services;
 
@@ -9,12 +12,17 @@ namespace student_information_management_system
 {
     public partial class lecturer_grades : src.security.LecturerPage
     {
+        private const int MaximumAnnotationDraftLength = 2 * 1024 * 1024;
+
         private LecturerProfile _lecturer;
         private List<LecturerAssessmentOption> _assessments = new List<LecturerAssessmentOption>();
         private List<LecturerGradeRow> _rows = new List<LecturerGradeRow>();
         private int _assessmentId;
         private int? _offeringFilter;
         private bool _hasInvalidMarks;
+
+        protected bool IsCourseScoped { get { return _offeringFilter.HasValue; } }
+        protected int SelectedOfferingId { get { return _offeringFilter.GetValueOrDefault(); } }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -34,21 +42,24 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
                 _offeringFilter = offeringId;
-            else
-            {
-                Response.Redirect("~/lecturer/lecturer_courses.aspx");
-                return;
-            }
 
-            // Facade already scopes assessments to the offering
-            _assessments = LecturerPortalService.GetAssessments(user, _offeringFilter.Value);
+            _assessments = _offeringFilter.HasValue
+                ? LecturerPortalService.GetAssessments(user, _offeringFilter.Value)
+                : LecturerPortalService.GetAssessments(user);
             if (!IsPostBack)
             {
                 assessmentSelect.DataSource = _assessments;
                 assessmentSelect.DataTextField = "Label";
                 assessmentSelect.DataValueField = "AssessmentId";
                 assessmentSelect.DataBind();
-                if (_assessments.Count > 0) assessmentSelect.SelectedIndex = 0;
+                int requestedAssessmentId;
+                string requestedValue = int.TryParse(Request.QueryString["assessment"], out requestedAssessmentId)
+                    ? requestedAssessmentId.ToString(CultureInfo.InvariantCulture)
+                    : "";
+                if (assessmentSelect.Items.FindByValue(requestedValue) != null)
+                    assessmentSelect.SelectedValue = requestedValue;
+                else if (_assessments.Count > 0)
+                    assessmentSelect.SelectedIndex = 0;
             }
 
             if (!int.TryParse(assessmentSelect.SelectedValue, out _assessmentId) && _assessments.Count > 0)
@@ -111,8 +122,111 @@ namespace student_information_management_system
         {
             if (e.CommandName != "SaveReview") return;
 
-            ShowStatus("Feedback is not available in this version.", false);
-            return;
+            int submissionId;
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out submissionId) || submissionId <= 0)
+            {
+                ShowStatus("The submission could not be identified.", false);
+                return;
+            }
+
+            var feedbackInput = e.Item.FindControl("reviewFeedbackInput") as TextBox;
+            var annotatedUpload = e.Item.FindControl("annotatedFileInput") as FileUpload;
+            string feedback = feedbackInput == null ? "" : feedbackInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(feedback))
+            {
+                ShowStatus("Feedback is required before saving.", false);
+                return;
+            }
+
+            string annotatedFileUrl = "";
+
+            if (annotatedUpload != null && annotatedUpload.HasFile)
+            {
+                try
+                {
+                    annotatedFileUrl = SaveAnnotatedFile(annotatedUpload, submissionId);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ShowStatus(ex.Message, false);
+                    return;
+                }
+            }
+
+            bool saved = LecturerPortalService.SaveSubmissionReview(
+                UserContextFactory.FromSession(Session),
+                submissionId,
+                feedback,
+                annotatedFileUrl);
+
+            if (!saved && !string.IsNullOrWhiteSpace(annotatedFileUrl))
+                TryDeleteAnnotatedFile(annotatedFileUrl);
+
+            ShowStatus(saved ? "Submission feedback saved." : "Submission feedback could not be saved.", saved);
+            LoadRows();
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object LoadAnnotationDraft(int submissionId)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired.", annotationsJson = "" };
+
+            string annotationsJson = LecturerPortalService.GetAnnotationDraft(user, submissionId);
+            return new { success = true, message = "", annotationsJson = annotationsJson };
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object SaveAnnotationDraft(int submissionId, string annotationsJson)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired." };
+
+            annotationsJson = annotationsJson ?? "[]";
+            if (annotationsJson.Length > MaximumAnnotationDraftLength)
+                return new { success = false, message = "This annotation draft is too large to save." };
+
+            bool saved = LecturerPortalService.SaveAnnotationDraft(user, submissionId, annotationsJson);
+            return new
+            {
+                success = saved,
+                message = saved ? "Annotation progress saved." : "Annotation progress could not be saved."
+            };
+        }
+
+        private string SaveAnnotatedFile(FileUpload upload, int submissionId)
+        {
+            string extension = Path.GetExtension(upload.FileName);
+            extension = string.IsNullOrWhiteSpace(extension) ? "" : extension.ToLowerInvariant();
+            string[] allowed = { ".pdf", ".png", ".jpg", ".jpeg" };
+            if (Array.IndexOf(allowed, extension) < 0)
+                throw new InvalidOperationException("Annotated files must be PDF, PNG, JPG, or JPEG.");
+            if (upload.PostedFile.ContentLength > 10 * 1024 * 1024)
+                throw new InvalidOperationException("Annotated file is larger than 10 MB.");
+
+            string folder = Server.MapPath("~/uploads/feedback");
+            Directory.CreateDirectory(folder);
+            string baseName = Path.GetFileNameWithoutExtension(upload.FileName);
+            foreach (char c in Path.GetInvalidFileNameChars()) baseName = baseName.Replace(c, '-');
+            if (string.IsNullOrWhiteSpace(baseName)) baseName = "annotated";
+
+            string fileName = "submission-" + submissionId + "-" +
+                DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) + "-" + baseName + extension;
+            upload.SaveAs(Path.Combine(folder, fileName));
+            return "~/uploads/feedback/" + fileName;
+        }
+
+        private void TryDeleteAnnotatedFile(string url)
+        {
+            if (!url.StartsWith("~/uploads/feedback/", StringComparison.OrdinalIgnoreCase)) return;
+            string path = Server.MapPath(url);
+            if (File.Exists(path)) File.Delete(path);
         }
 
         private void LoadRows()
@@ -135,6 +249,7 @@ namespace student_information_management_system
 
                 int submissionId;
                 if (submissionHidden == null || input == null
+                    || !input.Enabled
                     || !int.TryParse(submissionHidden.Value, out submissionId)
                     || submissionId == 0)
                     continue;
@@ -207,6 +322,25 @@ namespace student_information_management_system
             if (g == "F" || g == "D") return "bg-[#e0162b]/10 text-[#a01020]";
             if (g.StartsWith("A")) return "bg-emerald-50 text-emerald-700";
             return "bg-blue-50 text-blue-700";
+        }
+
+        protected string SubmissionStatusClass(object isMissing)
+        {
+            return Convert.ToBoolean(isMissing)
+                ? "text-[#e0162b] font-semibold"
+                : "text-slate-400";
+        }
+
+        protected string MarkStatusClass(object isMissing, object hasMarks)
+        {
+            if (Convert.ToBoolean(isMissing)) return "text-[#e0162b]";
+            return Convert.ToBoolean(hasMarks) ? "text-emerald-700" : "text-amber-700";
+        }
+
+        protected string MarkStatusText(object isMissing, object hasMarks)
+        {
+            if (Convert.ToBoolean(isMissing)) return "Missing";
+            return Convert.ToBoolean(hasMarks) ? "Ready" : "Draft";
         }
 
         private void ShowStatus(string message, bool success)

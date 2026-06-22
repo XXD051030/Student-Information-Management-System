@@ -20,10 +20,10 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <button class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
+                <a runat="server" href="~/lecturer/lecturer_attendance.aspx#weekly-schedule" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
                     <i data-lucide="calendar-days" class="h-4 w-4"></i>
                     Today's schedule
-                </button>
+                </a>
             </div>
         </div>
     </section>
@@ -39,7 +39,7 @@
                     <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= ActiveCoursesCount %></p>
                 </div>
             </div>
-            <p class="mt-3 text-slate-400" style="font-size:12px">this trimester</p>
+            <p class="mt-3 text-slate-400" style="font-size:12px">this semester</p>
         </div>
 
         <%-- Attendance --%>
@@ -90,7 +90,7 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Today's Schedule</h2>
                     <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= TodayScheduleSubtitle %></p>
                 </div>
-                <a href="#" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a runat="server" href="~/lecturer/lecturer_attendance.aspx#weekly-schedule" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     Full week <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
@@ -132,7 +132,8 @@
             <asp:Repeater ID="gradeRepeater" runat="server">
                 <HeaderTemplate><ul class="space-y-2 px-3 pb-4"></HeaderTemplate>
                 <ItemTemplate>
-                    <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
+                    <li>
+                      <a href='<%# GradeUrl(Eval("OfferingId"), Eval("AssessmentId")) %>' class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
                         <span class='mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg <%# DueBadgeClass((DateTime)Eval("DueDate")) %>'>
                             <i data-lucide='<%# DueIcon((DateTime)Eval("DueDate")) %>' class="h-4 w-4"></i>
                         </span>
@@ -146,6 +147,7 @@
                                 <span class="text-slate-500"><%# Eval("PendingCount") %> to mark</span>
                             </p>
                         </div>
+                      </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>
@@ -154,9 +156,9 @@
                 <p class="px-6 py-8 text-center text-slate-400" style="font-size:13px">Nothing awaiting grading.</p>
             <% } %>
             <div class="border-t border-slate-100 p-3">
-                <button class="w-full rounded-xl py-2.5 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
+                <a runat="server" href="~/lecturer/lecturer_grades.aspx#submissions" class="block w-full rounded-xl py-2.5 text-center text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
                     View all submissions
-                </button>
+                </a>
             </div>
         </div>
 
@@ -179,7 +181,8 @@
             <asp:Repeater ID="coursesRepeater" runat="server">
                 <HeaderTemplate><ul class="grid gap-3 sm:grid-cols-2"></HeaderTemplate>
                 <ItemTemplate>
-                    <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
+                    <li class="group rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all">
+                      <a href='<%# CourseUrl(Eval("OfferingId")) %>' class="block p-4">
                         <div class="flex items-center justify-between">
                             <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:<%# AccentColor(Eval("Color") as string) %>15;color:<%# AccentColor(Eval("Color") as string) %>">
                                 <i data-lucide="book-open" class="h-4 w-4"></i>
@@ -188,6 +191,7 @@
                         </div>
                         <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseName").ToString()) %></p>
                         <p class="mt-0.5 text-slate-500" style="font-size:12px"><%# EnrolledLabel((int)Eval("EnrolledCount")) %></p>
+                      </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>
@@ -206,16 +210,24 @@
                     </span>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Announcements</h2>
                 </div>
+                <% if (HasMoreAnnouncements) { %>
+                <a href='<%= ResolveUrl("~/lecturer/lecturer_announcement.aspx") %>' class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:12px;font-weight:600">
+                    See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+                </a>
+                <% } %>
             </header>
             <asp:Repeater ID="announcementsRepeater" runat="server">
                 <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>
                 <ItemTemplate>
                     <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
+                        <a href='<%# ResolveUrl("~/lecturer/lecturer_announcement.aspx?id=" + Eval("AnnouncementId")) %>' class="block rounded-lg p-1 -m-1 hover:bg-slate-50 transition-colors">
                         <div class="flex items-center gap-2">
+                            <i data-lucide="pin" class='<%# Convert.ToBoolean(Eval("IsPinned")) ? "h-3.5 w-3.5 text-amber-500" : "h-3.5 w-3.5 text-slate-300" %>'></i>
                             <span class="text-slate-400" style="font-size:11.5px"><%# Server.HtmlEncode(FormatRelativeTime((DateTime)Eval("CreatedAt"))) %></span>
                         </div>
                         <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
                         <p class="mt-1 text-slate-500 line-clamp-2" style="font-size:12.5px;line-height:1.55"><%# Server.HtmlEncode(Eval("Content").ToString()) %></p>
+                        </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>

@@ -18,15 +18,23 @@
             </div>
             <div class="px-6 py-6">
                 <div class="flex items-center gap-5">
-                    <div class="relative">
+                    <div id="avatar-trigger" data-upload-url="<%= ResolveUrl("~/icon_upload.ashx") %>" class="group relative inline-block cursor-pointer" title="Change profile photo">
                         <% if (!string.IsNullOrEmpty(IconUrl)) { %>
-                            <img src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" class="h-20 w-20 rounded-full object-cover" />
+                            <img id="profile-icon-img" src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" class="h-20 w-20 rounded-full object-cover"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            <div id="profile-icon-initials" class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="display:none;font-size:26px;font-weight:700">S</div>
                         <% } else { %>
-                            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:26px;font-weight:700"><%= Initials %></div>
+                            <div id="profile-icon-initials" class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:26px;font-weight:700">S</div>
                         <% } %>
-                        <span class="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
-                            <i data-lucide="check" class="h-3 w-3 text-white"></i>
-                        </span>
+                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-colors group-hover:bg-black/45">
+                            <i data-lucide="camera" class="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100"></i>
+                        </div>
+                        <button type="button" id="change-icon-btn"
+                                class="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-700 text-white hover:bg-slate-900 transition-colors"
+                                title="Change profile photo">
+                            <i data-lucide="camera" class="h-3.5 w-3.5"></i>
+                        </button>
+                        <input type="file" id="icon-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="hidden" />
                     </div>
                     <div class="min-w-0">
                         <p class="text-slate-900 truncate" style="font-size:18px;font-weight:700;letter-spacing:-0.01em"><%= FullName %></p>
@@ -136,7 +144,7 @@
                 <h2 class="text-slate-900 inline-flex items-center gap-2" style="font-size:15px;font-weight:700">
                     <i data-lucide="lock" class="h-4 w-4 text-slate-500"></i> Change password
                 </h2>
-                <p class="text-slate-500" style="font-size:12.5px">Use at least 8 characters with a mix of letters, numbers, and symbols.</p>
+                <p class="text-slate-500" style="font-size:12.5px">Use at least 8 characters with uppercase and lowercase letters, a number, and a symbol.</p>
             </div>
 
             <div id="password-form" class="px-6 py-6" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
@@ -200,63 +208,32 @@
             </div>
             <div class="divide-y divide-slate-100">
 
-                <%-- Email notifications toggle --%>
-                <div class="flex items-start gap-4 px-6 py-4">
-                    <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
-                        <i data-lucide="bell" class="h-4 w-4"></i>
-                    </span>
-                    <div class="flex-1">
-                        <p class="text-slate-900" style="font-size:13.5px;font-weight:600">Email notifications</p>
-                        <p class="text-slate-500" style="font-size:12px">Assignment reminders, grade releases, and announcements.</p>
-                    </div>
-                    <button type="button" id="email-notif-toggle" data-on="true" class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors bg-[#e0162b]" aria-pressed="true">
-                        <span id="email-notif-knob" class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform translate-x-[18px]"></span>
-                    </button>
-                </div>
-
-                <%-- Language (static) --%>
+                <%-- Display language --%>
                 <div class="flex items-start gap-4 px-6 py-4">
                     <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
                         <i data-lucide="globe" class="h-4 w-4"></i>
                     </span>
                     <div class="flex-1">
                         <p class="text-slate-900" style="font-size:13.5px;font-weight:600">Display language</p>
-                        <p class="text-slate-500" style="font-size:12px">Used across the portal interface.</p>
+                        <p class="text-slate-500" style="font-size:12px">Translated across the portal interface.</p>
                     </div>
-                    <span class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 h-9 text-slate-700" style="font-size:12.5px;font-weight:600">English</span>
+                    <select id="portal-lang-select" translate="no"
+                            class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 h-9 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
+                            style="font-size:12.5px;font-weight:600">
+                        <option value="en">English</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="zh-CN">中文 (简体)</option>
+                        <option value="zh-TW">中文 (繁體)</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="ar">العربية</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                    </select>
                 </div>
             </div>
-        </section>
-
-        <%-- Active sessions --%>
-        <section class="rounded-lg border border-slate-200 bg-white">
-            <div class="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                <div>
-                    <h2 class="text-slate-900" style="font-size:15px;font-weight:700">Active sessions</h2>
-                    <p class="text-slate-500" style="font-size:12.5px">Devices currently signed in to your account.</p>
-                </div>
-                <button class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-9 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:12.5px;font-weight:600">
-                    Sign out of all other sessions
-                </button>
-            </div>
-            <ul class="divide-y divide-slate-100">
-                <li class="flex items-center justify-between gap-3 px-6 py-4">
-                    <div class="min-w-0">
-                        <p class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Chrome &middot; Windows 11</p>
-                        <p class="text-slate-500" style="font-size:12px">Penang, MY</p>
-                    </div>
-                    <span class="inline-flex items-center gap-1 rounded border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-emerald-700" style="font-size:10px;font-weight:700;letter-spacing:0.04em">
-                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> THIS DEVICE
-                    </span>
-                </li>
-                <li class="flex items-center justify-between gap-3 px-6 py-4">
-                    <div class="min-w-0">
-                        <p class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Safari &middot; iPhone 15</p>
-                        <p class="text-slate-500" style="font-size:12px">Penang, MY</p>
-                    </div>
-                    <button class="text-[#e0162b] hover:text-[#a01020]" style="font-size:12px;font-weight:600">Sign out</button>
-                </li>
-            </ul>
         </section>
 
         <%-- Sign out --%>
@@ -277,5 +254,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/account/account.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/shared/account.js") %>"></script>
 </asp:Content>

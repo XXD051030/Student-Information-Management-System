@@ -13,14 +13,15 @@ namespace src.lecturer
 
     public partial class lecturer_course_dashboard
     {
+        /// <summary>
+        /// modulesRepeater control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Repeater modulesRepeater;
 
         /// <summary>
-        /// announcementsRepeater control.
+        /// assessmentsRepeater control.
         /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater announcementsRepeater;
+        protected global::System.Web.UI.WebControls.Repeater assessmentsRepeater;
+
     }
 }
