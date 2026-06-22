@@ -165,7 +165,7 @@
             <header class="flex items-center justify-between mb-5">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">My Courses</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Semester 1 &middot; 2025/26</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Trimester 1 &middot; 2025/26</p>
                 </div>
                 <a href="/student/courses.aspx" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>

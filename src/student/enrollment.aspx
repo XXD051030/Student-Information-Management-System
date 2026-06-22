@@ -8,7 +8,7 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500"><%= Server.HtmlEncode(AcademicYearLabel) %></p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Course Enrollment</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Register for courses for <span class="text-slate-900 font-semibold"><%= Server.HtmlEncode(TermLabel) %></span>.
+                Register for courses for <span class="text-slate-900 font-semibold"><%= Server.HtmlEncode(YearAndTrimesterLabel) %> &middot; <%= Server.HtmlEncode(TermLabel) %></span>.
             </p>
         </div>
     </div>

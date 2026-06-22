@@ -36,14 +36,15 @@ END;
 
 IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'intake_id') IS NULL
     EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS ADD intake_id varchar(20) NULL');
-IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'registration_start') IS NULL
-    EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS ADD registration_start date NULL');
-IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'registration_end') IS NULL
-    EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS ADD registration_end date NULL');
-IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'add_drop_end') IS NULL
-    EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS ADD add_drop_end date NULL');
 IF COL_LENGTH('dbo.STUDENTS', 'intake_id') IS NULL
     EXEC('ALTER TABLE dbo.STUDENTS ADD intake_id varchar(20) NULL');
+
+IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'registration_start') IS NOT NULL
+    EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS DROP COLUMN registration_start');
+IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'registration_end') IS NOT NULL
+    EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS DROP COLUMN registration_end');
+IF COL_LENGTH('dbo.ACADEMIC_SESSIONS', 'add_drop_end') IS NOT NULL
+    EXEC('ALTER TABLE dbo.ACADEMIC_SESSIONS DROP COLUMN add_drop_end');
 
 INSERT INTO dbo.INTAKES (intake_id, intake_name, intake_month, status)
 SELECT DISTINCT
@@ -62,12 +63,6 @@ AND NOT EXISTS
 EXEC('UPDATE dbo.ACADEMIC_SESSIONS
 SET intake_id = UPPER(LEFT(DATENAME(MONTH, start_date), 3)) + CONVERT(varchar(4), YEAR(start_date))
 WHERE intake_id IS NULL AND start_date IS NOT NULL');
-
-EXEC('UPDATE dbo.ACADEMIC_SESSIONS
-SET registration_start = DATEADD(day, -28, start_date),
-    registration_end = DATEADD(day, -1, start_date),
-    add_drop_end = DATEADD(day, 7, start_date)
-WHERE registration_start IS NULL OR registration_end IS NULL OR add_drop_end IS NULL');
 
 EXEC('UPDATE s
 SET intake_id = a.intake_id

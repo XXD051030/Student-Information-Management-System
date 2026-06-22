@@ -338,7 +338,16 @@ namespace src.services.admin
                     var programmeId = ResolveProgramme(conn, tx, request.ProgrammeOrDepartment);
                     using (var cmd = new SqlCommand(
                         "INSERT INTO STUDENTS (student_id, user_id, programme_id, student_name, student_email, phone, semester, current_standing, session, intake_id, status) " +
-                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', '', @intake, @status)", conn, tx))
+                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', " +
+                        "COALESCE(" +
+                        "(SELECT TOP 1 academic_year + ' ' + semester FROM ACADEMIC_SESSIONS WHERE end_date >= GETDATE() ORDER BY start_date)," +
+                        "(SELECT TOP 1 academic_year + ' ' + semester FROM ACADEMIC_SESSIONS ORDER BY start_date DESC)," +
+                        "''" +
+                        "), " +
+                        "COALESCE(" +
+                        "(SELECT TOP 1 intake_id FROM ACADEMIC_SESSIONS WHERE end_date >= GETDATE() ORDER BY start_date)," +
+                        "(SELECT TOP 1 intake_id FROM ACADEMIC_SESSIONS ORDER BY start_date DESC)" +
+                        "), @status)", conn, tx))
                     {
                         cmd.Parameters.AddWithValue("@sid", studentId);
                         cmd.Parameters.AddWithValue("@uid", userId);
@@ -784,7 +793,7 @@ namespace src.services.admin
             AcademicIntakeSchema.Ensure();
             const string sql =
                 "SELECT s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, s.status, " +
-                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, i.intake_month " +
+                "s.intake_id, i.intake_name, i.intake_month " +
                 "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id ORDER BY s.start_date";
             var rows = new List<AdminCalendarEventRow>();
             using (var conn = Db.OpenConnection())
@@ -802,9 +811,9 @@ namespace src.services.admin
                     var intakeName = Text(reader["intake_name"]);
                     var intakeMonth = Convert.ToDateTime(reader["intake_month"]);
                     var sem = intakeName + " - " + semester;
-                    var registrationStart = Convert.ToDateTime(reader["registration_start"]);
-                    var registrationEnd = Convert.ToDateTime(reader["registration_end"]);
-                    var addDropEnd = Convert.ToDateTime(reader["add_drop_end"]);
+                    var registrationStart = start.AddDays(-7);
+                    var registrationEnd = start.AddDays(-1);
+                    var addDropEnd = start.AddDays(7);
                     AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
                         "Registration opens", registrationStart, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
                     AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
@@ -848,12 +857,7 @@ namespace src.services.admin
             if (request == null) throw new ArgumentException("Missing calendar event details.");
             if (!DateTime.TryParse(request.StartDate, out var startDate)) throw new ArgumentException("Start date is required.");
             if (!DateTime.TryParse(request.EndDate, out var endDate)) throw new ArgumentException("End date is required.");
-            if (!DateTime.TryParse(request.RegistrationStart, out var registrationStart)) throw new ArgumentException("Registration opening date is required.");
-            if (!DateTime.TryParse(request.RegistrationEnd, out var registrationEnd)) throw new ArgumentException("Registration closing date is required.");
-            if (!DateTime.TryParse(request.AddDropEnd, out var addDropEnd)) throw new ArgumentException("Add/drop closing date is required.");
             if (endDate < startDate) throw new ArgumentException("End date cannot be earlier than start date.");
-            if (registrationEnd < registrationStart || registrationEnd >= startDate) throw new ArgumentException("Registration must close before classes begin.");
-            if (addDropEnd < startDate || addDropEnd > endDate) throw new ArgumentException("Add/drop must close during the semester.");
 
             var intakeId = (request.IntakeId ?? "").Trim().ToUpperInvariant();
             var intakeName = (request.IntakeName ?? "").Trim().ToUpperInvariant();
@@ -883,18 +887,15 @@ namespace src.services.admin
                 }
                 var exists = Exists(conn, "SELECT 1 FROM ACADEMIC_SESSIONS WHERE session_id = @id", cmd => cmd.Parameters.AddWithValue("@id", sessionId));
                 var sql = exists
-                    ? "UPDATE ACADEMIC_SESSIONS SET intake_id=@intake, academic_year=@year, semester=@semester, registration_start=@regStart, registration_end=@regEnd, start_date=@start, add_drop_end=@addDrop, end_date=@end, status=@status WHERE session_id=@id"
-                    : "INSERT INTO ACADEMIC_SESSIONS (session_id,intake_id,academic_year,semester,registration_start,registration_end,start_date,add_drop_end,end_date,status) VALUES (@id,@intake,@year,@semester,@regStart,@regEnd,@start,@addDrop,@end,@status)";
+                    ? "UPDATE ACADEMIC_SESSIONS SET intake_id=@intake, academic_year=@year, semester=@semester, start_date=@start, end_date=@end, status=@status WHERE session_id=@id"
+                    : "INSERT INTO ACADEMIC_SESSIONS (session_id,intake_id,academic_year,semester,start_date,end_date,status) VALUES (@id,@intake,@year,@semester,@start,@end,@status)";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@id", sessionId);
                     cmd.Parameters.AddWithValue("@intake", intakeId);
                     cmd.Parameters.AddWithValue("@year", academicYear);
                     cmd.Parameters.AddWithValue("@semester", semester);
-                    cmd.Parameters.AddWithValue("@regStart", registrationStart.Date);
-                    cmd.Parameters.AddWithValue("@regEnd", registrationEnd.Date);
                     cmd.Parameters.AddWithValue("@start", startDate.Date);
-                    cmd.Parameters.AddWithValue("@addDrop", addDropEnd.Date);
                     cmd.Parameters.AddWithValue("@end", endDate.Date);
                     cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
@@ -1799,9 +1800,6 @@ namespace src.services.admin
         public string IntakeId { get; set; }
         public string IntakeName { get; set; }
         public string IntakeMonth { get; set; }
-        public string RegistrationStart { get; set; }
-        public string RegistrationEnd { get; set; }
-        public string AddDropEnd { get; set; }
         public string SemesterLabel { get; set; }
         public string StartDate { get; set; }
         public string EndDate { get; set; }

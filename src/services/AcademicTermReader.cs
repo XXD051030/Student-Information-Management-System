@@ -24,7 +24,7 @@ namespace src.services
             AcademicIntakeSchema.Ensure();
             const string sql =
                 "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
-                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
+                "s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS " +
                 "s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
                 "WHERE s.start_date <= @today AND s.end_date >= @today " +
@@ -54,20 +54,26 @@ namespace src.services
                 ? " AND (s.intake_id=(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) OR " +
                   "(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) IS NULL)"
                 : "";
-            string sql =
+            const string sqlBase =
                 "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
-                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
+                "s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
-                "WHERE s.registration_start <= @today AND s.add_drop_end >= @today" + intakeFilter +
-                " ORDER BY s.registration_start";
-            return GetTerm(sql, user) ?? current;
+                "WHERE DATEADD(day,-7,s.start_date)<=@today AND DATEADD(day,7,s.start_date)>=@today";
+            var result = GetTerm(sqlBase + intakeFilter + " ORDER BY s.start_date", user) ?? current;
+            // When no session matches the student's specific intake, fall back to any
+            // registration-open session — handles students whose intake_id was set to a
+            // future cohort (e.g. NOV2026) while the currently open window belongs to
+            // a different intake (e.g. JUN2026).
+            if (result == null && intakeFilter.Length > 0)
+                result = GetTerm(sqlBase + " ORDER BY s.start_date", user);
+            return result;
         }
 
         private static StudentRegistrationTerm GetCurrentTermForUser(UserContext user)
         {
             const string sql =
                 "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
-                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
+                "s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
                 "WHERE s.start_date<=@today AND s.end_date>=@today " +
                 "AND (s.intake_id=(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) OR " +
@@ -110,9 +116,9 @@ namespace src.services
                             Name = Text(reader["semester"]),
                             StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
                             EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4),
-                            RegistrationStart = DateValue(reader["registration_start"]) ?? (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-28),
-                            RegistrationEnd = DateValue(reader["registration_end"]) ?? (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-1),
-                            AddDropEnd = DateValue(reader["add_drop_end"]) ?? (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(7),
+                            RegistrationStart = (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-WindowDaysBeforeStart),
+                            RegistrationEnd = (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-1),
+                            AddDropEnd = (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(WindowDaysAfterStart),
                             MinCredits = hasCreditBounds
                                 ? NullableInt(reader["min_credits"]) ?? DefaultMinCredits
                                 : DefaultMinCredits,

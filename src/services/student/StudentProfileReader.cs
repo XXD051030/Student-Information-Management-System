@@ -13,15 +13,17 @@ namespace src.services
         public static StudentAccountProfile GetAccount(UserContext user)
         {
             if (!IsStudent(user)) return null;
+            AcademicIntakeSchema.Ensure();
 
             const string sql =
                 "SELECT TOP 1 s.student_id, u.username, s.student_name, s.student_email, s.phone, s.mailing_address, " +
                 "s.semester, s.session, s.icon, s.status, ISNULL(p.programme_name, '') AS programme_name, " +
-                "ISNULL(p.semester_count, 0) AS semester_count, ac.start_date " +
+                "ISNULL(p.semester_count, 0) AS semester_count, COALESCE(ac.start_date, i.intake_month) AS start_date " +
                 "FROM STUDENTS s " +
                 "JOIN USERS u ON u.user_id = s.user_id " +
                 "LEFT JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
                 "LEFT JOIN ACADEMIC_SESSIONS ac ON s.session = ac.academic_year + ' ' + ac.semester " +
+                "LEFT JOIN INTAKES i ON i.intake_id = s.intake_id " +
                 "WHERE s.user_id = @userId";
 
             using (var conn = Db.OpenConnection())

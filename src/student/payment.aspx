@@ -10,7 +10,7 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Step 2 of 2 &middot; Payment</p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Complete your payment</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Settle the tuition for <span class="text-slate-900 font-semibold">Y2 &middot; Semester 2 (Sep 2026)</span> to finalize your enrollment.
+                Settle the tuition for <span class="text-slate-900 font-semibold">Y2 &middot; Trimester 2 (Sep 2026)</span> to finalize your enrollment.
             </p>
         </div>
         <div class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
@@ -42,7 +42,7 @@
             <header class="flex items-center justify-between border-b border-slate-100 p-6">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Invoice summary</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Y2 &middot; Semester 2 (Sep 2026)</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Y2 &middot; Trimester 2 (Sep 2026)</p>
                 </div>
                 <span class="rounded-md bg-amber-50 px-2 py-1 text-amber-700" style="font-size:11.5px;font-weight:600">Pending payment</span>
             </header>
