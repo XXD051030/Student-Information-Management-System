@@ -306,9 +306,6 @@ namespace src.services.admin
             if (string.IsNullOrWhiteSpace(request.Email)) throw new ArgumentException("Email is required.");
 
             var tempPassword = GenerateTempPassword();
-            var intake = role == "STUDENT" ? new StudentBulkImportService().MatchIntake(DateTime.Today) : null;
-            if (role == "STUDENT" && intake == null)
-                throw new ArgumentException("No academic intake is configured for student registration.");
             string detailLabel;
             string detailId;
 
@@ -355,7 +352,6 @@ namespace src.services.admin
                         cmd.Parameters.AddWithValue("@name", request.FullName.Trim());
                         cmd.Parameters.AddWithValue("@email", request.Email.Trim());
                         cmd.Parameters.AddWithValue("@phone", (object)(request.Phone ?? "") ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@intake", intake.Id);
                         cmd.Parameters.AddWithValue("@status", status);
                         cmd.ExecuteNonQuery();
                     }
