@@ -156,7 +156,7 @@
         }
 
         #studentTimetable .fc-timegrid-slot {
-            height: 80px;
+            height: 108px;
         }
 
         #studentTimetable .fc-event {
