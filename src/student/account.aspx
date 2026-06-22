@@ -18,7 +18,7 @@
             </div>
             <div class="px-6 py-6">
                 <div class="flex items-center gap-5">
-                    <div class="relative inline-block">
+                    <div id="avatar-trigger" data-upload-url="<%= ResolveUrl("~/icon_upload.ashx") %>" class="group relative inline-block cursor-pointer" title="Change profile photo">
                         <% if (!string.IsNullOrEmpty(IconUrl)) { %>
                             <img id="profile-icon-img" src="<%= IconUrl %>" alt="<%= Server.HtmlEncode(FullName) %>" class="h-20 w-20 rounded-full object-cover"
                                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
@@ -26,8 +26,10 @@
                         <% } else { %>
                             <div id="profile-icon-initials" class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:26px;font-weight:700">S</div>
                         <% } %>
+                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-colors group-hover:bg-black/45">
+                            <i data-lucide="camera" class="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100"></i>
+                        </div>
                         <button type="button" id="change-icon-btn"
-                                data-upload-url="<%= ResolveUrl("~/icon_upload.ashx") %>"
                                 class="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-700 text-white hover:bg-slate-900 transition-colors"
                                 title="Change profile photo">
                             <i data-lucide="camera" class="h-3.5 w-3.5"></i>

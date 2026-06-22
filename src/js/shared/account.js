@@ -113,10 +113,18 @@
     // Profile icon upload
     var changeIconBtn = document.getElementById('change-icon-btn');
     var iconFileInput = document.getElementById('icon-file-input');
-    if (changeIconBtn && iconFileInput) {
-        var uploadUrl = changeIconBtn.getAttribute('data-upload-url');
+    var avatarTrigger = document.getElementById('avatar-trigger');
+    if (avatarTrigger && iconFileInput) {
+        var uploadUrl = avatarTrigger.getAttribute('data-upload-url');
+        var uploading = false;
 
-        changeIconBtn.addEventListener('click', function () {
+        // The whole avatar (#avatar-trigger) opens the file picker. The camera
+        // button lives inside it, so its clicks bubble up here too.
+        avatarTrigger.addEventListener('click', function (e) {
+            // iconFileInput.click() re-fires a bubbling click; ignore it so we
+            // don't recurse, and ignore clicks while an upload is in flight.
+            if (e.target === iconFileInput) return;
+            if (uploading) return;
             iconFileInput.click();
         });
 
@@ -127,9 +135,12 @@
             var form = new FormData();
             form.append('icon', file);
 
-            changeIconBtn.disabled = true;
-            var origInner = changeIconBtn.innerHTML;
-            changeIconBtn.innerHTML = '<svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+            uploading = true;
+            var origInner = changeIconBtn ? changeIconBtn.innerHTML : '';
+            if (changeIconBtn) {
+                changeIconBtn.disabled = true;
+                changeIconBtn.innerHTML = '<svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+            }
 
             fetch(uploadUrl, {
                 method: 'POST',
@@ -161,8 +172,11 @@
             }).catch(function () {
                 alert('Photo could not be saved. Please try again.');
             }).then(function () {
-                changeIconBtn.disabled = false;
-                changeIconBtn.innerHTML = origInner;
+                uploading = false;
+                if (changeIconBtn) {
+                    changeIconBtn.disabled = false;
+                    changeIconBtn.innerHTML = origInner;
+                }
                 if (window.lucide) lucide.createIcons();
                 iconFileInput.value = '';
             });
