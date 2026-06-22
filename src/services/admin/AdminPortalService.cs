@@ -15,6 +15,7 @@ namespace src.services.admin
     {
         public AdminLookupData GetLookups()
         {
+            AcademicIntakeSchema.Ensure();
             var data = new AdminLookupData();
             using (var conn = Db.OpenConnection())
             {
@@ -25,7 +26,8 @@ namespace src.services.admin
                 data.Lecturers = QueryOptions(conn,
                     "SELECT lecturer_id, lecturer_name + ' (' + lecturer_id + ')' FROM LECTURERS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY lecturer_name");
                 data.AcademicSessions = QueryOptions(conn,
-                    "SELECT academic_year + ' ' + semester, academic_year + ' ' + semester FROM ACADEMIC_SESSIONS ORDER BY start_date DESC");
+                    "SELECT s.session_id, i.intake_name + ' - ' + s.semester " +
+                    "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id ORDER BY s.start_date DESC");
                 data.AcademicYears = QuerySingleColumnOptions(conn,
                     "SELECT academic_year FROM (SELECT academic_year FROM ACADEMIC_SESSIONS UNION SELECT academic_year FROM COURSE_OFFERINGS) y ORDER BY academic_year DESC");
                 data.Semesters = QuerySingleColumnOptions(conn,
@@ -49,8 +51,8 @@ namespace src.services.admin
             EnsureOptions(data.ProgrammeStatuses, "Active", "Inactive");
             EnsureOptions(data.CourseStatuses, "Active", "Inactive");
             EnsureOptions(data.EducationLevels, "Undergraduate", "Postgraduate", "Foundation");
-            EnsureOptions(data.EventTypes, "Semester start", "Semester end", "Examination period",
-                "Registration deadline", "Add/drop deadline", "Holiday", "Academic break", "Result release");
+            EnsureOptions(data.EventTypes, "Registration opens", "Registration closes",
+                "Classes begin", "Add/drop closes", "Semester ends");
             EnsureOptions(data.EventStatuses, "Upcoming", "Scheduled", "Completed");
             EnsureOptions(data.AcademicStatuses, "Good Standing", "Probation", "At Risk", "Pending");
             return data;
@@ -296,6 +298,7 @@ namespace src.services.admin
 
         public int CreateUser(AdminUserSaveRequest request)
         {
+            AcademicIntakeSchema.Ensure();
             if (request == null) throw new ArgumentException("Missing user details.");
             var role = (request.Role ?? "").Trim().ToUpperInvariant();
             if (role != "STUDENT" && role != "LECTURER") throw new ArgumentException("Role must be Student or Lecturer.");
@@ -331,8 +334,9 @@ namespace src.services.admin
                     var studentId = "S" + userId.ToString("00000");
                     var programmeId = ResolveProgramme(conn, tx, request.ProgrammeOrDepartment);
                     using (var cmd = new SqlCommand(
-                        "INSERT INTO STUDENTS (student_id, user_id, programme_id, student_name, student_email, phone, semester, current_standing, session, status) " +
-                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 0, 'Good Standing', '', @status)", conn, tx))
+                        "INSERT INTO STUDENTS (student_id, user_id, programme_id, student_name, student_email, phone, semester, current_standing, session, intake_id, status) " +
+                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', '', " +
+                        "(SELECT TOP 1 intake_id FROM INTAKES WHERE status='ACTIVE' ORDER BY intake_month DESC), @status)", conn, tx))
                     {
                         cmd.Parameters.AddWithValue("@sid", studentId);
                         cmd.Parameters.AddWithValue("@uid", userId);
@@ -621,6 +625,7 @@ namespace src.services.admin
 
         public void SaveCourseAssignment(AdminCourseAssignmentSaveRequest request)
         {
+            AcademicIntakeSchema.Ensure();
             if (request == null) throw new ArgumentException("Missing assignment details.");
             var courseCode = CleanCode(request.CourseCode);
             if (string.IsNullOrWhiteSpace(courseCode)) throw new ArgumentException("Course code is required.");
@@ -630,17 +635,30 @@ namespace src.services.admin
             {
                 var courseId = ResolveCourse(conn, null, courseCode);
                 var lecturerId = ResolveLecturer(conn, null, request.Lecturer);
-                var semester = string.IsNullOrWhiteSpace(request.Semester) ? "Sem 1" : request.Semester.Trim();
-                var academicYear = string.IsNullOrWhiteSpace(request.AcademicYear) ? DateTime.Today.Year + "/" + (DateTime.Today.Year + 1) : request.AcademicYear.Trim();
+                var sessionId = (request.SessionId ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("Intake semester is required.");
+                string semester;
+                string academicYear;
+                using (var sessionCmd = new SqlCommand("SELECT semester, academic_year FROM ACADEMIC_SESSIONS WHERE session_id=@id", conn))
+                {
+                    sessionCmd.Parameters.AddWithValue("@id", sessionId);
+                    using (var reader = sessionCmd.ExecuteReader())
+                    {
+                        if (!reader.Read()) throw new ArgumentException("The selected intake semester does not exist.");
+                        semester = Text(reader["semester"]);
+                        academicYear = Text(reader["academic_year"]);
+                    }
+                }
                 var status = NormalizeStatus(request.Status);
 
                 if (request.OfferId > 0 && Exists(conn, "SELECT 1 FROM COURSE_OFFERINGS WHERE offer_id = @id", cmd => cmd.Parameters.AddWithValue("@id", request.OfferId)))
                 {
-                    using (var cmd = new SqlCommand("UPDATE COURSE_OFFERINGS SET course_id = @course, lecturer_id = @lecturer, semester = @semester, academic_year = @year, status = @status WHERE offer_id = @id", conn))
+                    using (var cmd = new SqlCommand("UPDATE COURSE_OFFERINGS SET course_id=@course, lecturer_id=@lecturer, session_id=@session, semester=@semester, academic_year=@year, status=@status WHERE offer_id=@id", conn))
                     {
                         cmd.Parameters.AddWithValue("@id", request.OfferId);
                         cmd.Parameters.AddWithValue("@course", courseId);
                         cmd.Parameters.AddWithValue("@lecturer", lecturerId);
+                        cmd.Parameters.AddWithValue("@session", sessionId);
                         cmd.Parameters.AddWithValue("@semester", semester);
                         cmd.Parameters.AddWithValue("@year", academicYear);
                         cmd.Parameters.AddWithValue("@status", status);
@@ -649,10 +667,11 @@ namespace src.services.admin
                     return;
                 }
 
-                using (var cmd = new SqlCommand("INSERT INTO COURSE_OFFERINGS (course_id, lecturer_id, semester, academic_year, section, status) VALUES (@course, @lecturer, @semester, @year, '', @status)", conn))
+                using (var cmd = new SqlCommand("INSERT INTO COURSE_OFFERINGS (course_id,lecturer_id,session_id,semester,academic_year,section,status) VALUES (@course,@lecturer,@session,@semester,@year,'',@status)", conn))
                 {
                     cmd.Parameters.AddWithValue("@course", courseId);
                     cmd.Parameters.AddWithValue("@lecturer", lecturerId);
+                    cmd.Parameters.AddWithValue("@session", sessionId);
                     cmd.Parameters.AddWithValue("@semester", semester);
                     cmd.Parameters.AddWithValue("@year", academicYear);
                     cmd.Parameters.AddWithValue("@status", status);
@@ -759,9 +778,11 @@ namespace src.services.admin
 
         public List<AdminCalendarEventRow> GetCalendarEvents()
         {
+            AcademicIntakeSchema.Ensure();
             const string sql =
-                "SELECT session_id, academic_year, semester, start_date, end_date, status " +
-                "FROM ACADEMIC_SESSIONS ORDER BY start_date";
+                "SELECT s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, s.status, " +
+                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, i.intake_month " +
+                "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id ORDER BY s.start_date";
             var rows = new List<AdminCalendarEventRow>();
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
@@ -774,79 +795,136 @@ namespace src.services.admin
                     var end = Convert.ToDateTime(reader["end_date"]);
                     var academicYear = Text(reader["academic_year"]);
                     var semester = Text(reader["semester"]);
-                    var sem = academicYear + " " + semester;
-                    rows.Add(new AdminCalendarEventRow
-                    {
-                        Id = sessionId + "-START",
-                        SessionId = sessionId,
-                        Title = semester + " Start",
-                        Type = "Semester start",
-                        StartDate = start,
-                        EndDate = start,
-                        SessionStartDate = start,
-                        SessionEndDate = end,
-                        Semester = sem,
-                        AcademicYear = academicYear,
-                        SemesterName = semester,
-                        Status = EventStatus(start, end)
-                    });
-                    rows.Add(new AdminCalendarEventRow
-                    {
-                        Id = sessionId + "-END",
-                        SessionId = sessionId,
-                        Title = semester + " End",
-                        Type = "Semester end",
-                        StartDate = end,
-                        EndDate = end,
-                        SessionStartDate = start,
-                        SessionEndDate = end,
-                        Semester = sem,
-                        AcademicYear = academicYear,
-                        SemesterName = semester,
-                        Status = EventStatus(start, end)
-                    });
+                    var intakeId = Text(reader["intake_id"]);
+                    var intakeName = Text(reader["intake_name"]);
+                    var intakeMonth = Convert.ToDateTime(reader["intake_month"]);
+                    var sem = intakeName + " - " + semester;
+                    var registrationStart = Convert.ToDateTime(reader["registration_start"]);
+                    var registrationEnd = Convert.ToDateTime(reader["registration_end"]);
+                    var addDropEnd = Convert.ToDateTime(reader["add_drop_end"]);
+                    AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
+                        "Registration opens", registrationStart, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                    AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
+                        "Registration closes", registrationEnd, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                    AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
+                        "Classes begin", start, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                    AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
+                        "Add/drop closes", addDropEnd, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
+                    AddMilestone(rows, sessionId, intakeId, intakeName, academicYear, semester, sem,
+                        "Semester ends", end, intakeMonth, registrationStart, registrationEnd, addDropEnd, start, end);
                 }
             }
             return rows;
         }
 
+        public List<AdminIntakeRow> GetIntakes()
+        {
+            AcademicIntakeSchema.Ensure();
+            var rows = new List<AdminIntakeRow>();
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(
+                "SELECT i.intake_id, i.intake_name, i.intake_month, i.status, COUNT(s.session_id) semester_count " +
+                "FROM INTAKES i LEFT JOIN ACADEMIC_SESSIONS s ON s.intake_id=i.intake_id " +
+                "GROUP BY i.intake_id,i.intake_name,i.intake_month,i.status ORDER BY i.intake_month DESC", conn))
+            using (var reader = cmd.ExecuteReader())
+                while (reader.Read())
+                    rows.Add(new AdminIntakeRow
+                    {
+                        IntakeId = Text(reader["intake_id"]),
+                        IntakeName = Text(reader["intake_name"]),
+                        IntakeMonth = Convert.ToDateTime(reader["intake_month"]),
+                        Status = Text(reader["status"]),
+                        SemesterCount = Int(reader["semester_count"])
+                    });
+            return rows;
+        }
+
         public void SaveAcademicSession(AdminAcademicSessionSaveRequest request)
         {
+            AcademicIntakeSchema.Ensure();
             if (request == null) throw new ArgumentException("Missing calendar event details.");
             if (!DateTime.TryParse(request.StartDate, out var startDate)) throw new ArgumentException("Start date is required.");
             if (!DateTime.TryParse(request.EndDate, out var endDate)) throw new ArgumentException("End date is required.");
+            if (!DateTime.TryParse(request.RegistrationStart, out var registrationStart)) throw new ArgumentException("Registration opening date is required.");
+            if (!DateTime.TryParse(request.RegistrationEnd, out var registrationEnd)) throw new ArgumentException("Registration closing date is required.");
+            if (!DateTime.TryParse(request.AddDropEnd, out var addDropEnd)) throw new ArgumentException("Add/drop closing date is required.");
             if (endDate < startDate) throw new ArgumentException("End date cannot be earlier than start date.");
+            if (registrationEnd < registrationStart || registrationEnd >= startDate) throw new ArgumentException("Registration must close before classes begin.");
+            if (addDropEnd < startDate || addDropEnd > endDate) throw new ArgumentException("Add/drop must close during the semester.");
 
-            var academicYear = (request.AcademicYear ?? "").Trim();
+            var intakeId = (request.IntakeId ?? "").Trim().ToUpperInvariant();
+            var intakeName = (request.IntakeName ?? "").Trim().ToUpperInvariant();
+            DateTime intakeMonth;
+            if (!DateTime.TryParse(request.IntakeMonth, out intakeMonth)) throw new ArgumentException("Intake month is required.");
+            if (string.IsNullOrWhiteSpace(intakeId)) intakeId = intakeMonth.ToString("MMMyyyy").ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(intakeName)) intakeName = intakeMonth.ToString("MMMM yyyy").ToUpperInvariant();
+            var academicYear = startDate.Year.ToString();
             var semester = (request.Semester ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(academicYear) || string.IsNullOrWhiteSpace(semester))
-            {
-                SplitSemesterLabel(request.SemesterLabel, out academicYear, out semester);
-            }
-            if (string.IsNullOrWhiteSpace(academicYear)) academicYear = startDate.Year + "/" + (startDate.Year + 1);
             if (string.IsNullOrWhiteSpace(semester)) semester = "Semester";
 
             var sessionId = CleanSessionId(request.SessionId);
-            if (string.IsNullOrWhiteSpace(sessionId)) sessionId = BuildSessionId(academicYear, semester);
+            if (string.IsNullOrWhiteSpace(sessionId)) sessionId = BuildSessionId(intakeId, semester);
             var status = NormalizeAcademicSessionStatus(request.Status);
 
             using (var conn = Db.OpenConnection())
             {
+                using (var intakeCmd = new SqlCommand(
+                    "IF EXISTS(SELECT 1 FROM INTAKES WHERE intake_id=@id) " +
+                    "UPDATE INTAKES SET intake_name=@name,intake_month=@month,status='ACTIVE' WHERE intake_id=@id " +
+                    "ELSE INSERT INTO INTAKES(intake_id,intake_name,intake_month,status) VALUES(@id,@name,@month,'ACTIVE')", conn))
+                {
+                    intakeCmd.Parameters.AddWithValue("@id", intakeId);
+                    intakeCmd.Parameters.AddWithValue("@name", intakeName);
+                    intakeCmd.Parameters.AddWithValue("@month", new DateTime(intakeMonth.Year, intakeMonth.Month, 1));
+                    intakeCmd.ExecuteNonQuery();
+                }
                 var exists = Exists(conn, "SELECT 1 FROM ACADEMIC_SESSIONS WHERE session_id = @id", cmd => cmd.Parameters.AddWithValue("@id", sessionId));
                 var sql = exists
-                    ? "UPDATE ACADEMIC_SESSIONS SET academic_year = @year, semester = @semester, start_date = @start, end_date = @end, status = @status WHERE session_id = @id"
-                    : "INSERT INTO ACADEMIC_SESSIONS (session_id, academic_year, semester, start_date, end_date, status) VALUES (@id, @year, @semester, @start, @end, @status)";
+                    ? "UPDATE ACADEMIC_SESSIONS SET intake_id=@intake, academic_year=@year, semester=@semester, registration_start=@regStart, registration_end=@regEnd, start_date=@start, add_drop_end=@addDrop, end_date=@end, status=@status WHERE session_id=@id"
+                    : "INSERT INTO ACADEMIC_SESSIONS (session_id,intake_id,academic_year,semester,registration_start,registration_end,start_date,add_drop_end,end_date,status) VALUES (@id,@intake,@year,@semester,@regStart,@regEnd,@start,@addDrop,@end,@status)";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@id", sessionId);
+                    cmd.Parameters.AddWithValue("@intake", intakeId);
                     cmd.Parameters.AddWithValue("@year", academicYear);
                     cmd.Parameters.AddWithValue("@semester", semester);
+                    cmd.Parameters.AddWithValue("@regStart", registrationStart.Date);
+                    cmd.Parameters.AddWithValue("@regEnd", registrationEnd.Date);
                     cmd.Parameters.AddWithValue("@start", startDate.Date);
+                    cmd.Parameters.AddWithValue("@addDrop", addDropEnd.Date);
                     cmd.Parameters.AddWithValue("@end", endDate.Date);
                     cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
             }
+        }
+
+        private static void AddMilestone(List<AdminCalendarEventRow> rows, string sessionId,
+            string intakeId, string intakeName, string academicYear, string semester,
+            string semesterLabel, string type, DateTime date, DateTime intakeMonth, DateTime registrationStart,
+            DateTime registrationEnd, DateTime addDropEnd, DateTime start, DateTime end)
+        {
+            rows.Add(new AdminCalendarEventRow
+            {
+                Id = sessionId + "-" + type.Replace(" ", "-"),
+                SessionId = sessionId,
+                Title = type,
+                Type = type,
+                StartDate = date,
+                EndDate = date,
+                SessionStartDate = start,
+                SessionEndDate = end,
+                Semester = semesterLabel,
+                AcademicYear = academicYear,
+                SemesterName = semester,
+                IntakeId = intakeId,
+                IntakeName = intakeName,
+                IntakeMonth = intakeMonth,
+                RegistrationStart = registrationStart,
+                RegistrationEnd = registrationEnd,
+                AddDropEnd = addDropEnd,
+                Status = date < DateTime.Today ? "Completed" : date == DateTime.Today ? "Active" : "Scheduled"
+            });
         }
 
         public void DeleteAcademicSession(string sessionId)
@@ -1122,8 +1200,9 @@ namespace src.services.admin
 
         public List<AdminCourseMetric> GetCourseMetrics()
         {
+            AcademicIntakeSchema.Ensure();
             const string sql =
-                "SELECT co.offer_id, co.semester AS offering_semester, c.course_code, c.course_name, c.credit_hour, p.programme_code, " +
+                "SELECT co.offer_id, co.session_id, COALESCE(i.intake_name + ' - ' + sem.semester, co.semester) AS offering_semester, c.course_code, c.course_name, c.credit_hour, p.programme_code, " +
                 "MAX(COALESCE(st.semester, 0)) AS semester_no, l.lecturer_name, " +
                 "COUNT(DISTINCT e.student_id) AS enrolled, " +
                 "COUNT(DISTINCT ats.session_id) AS sessions_held, " +
@@ -1133,6 +1212,8 @@ namespace src.services.admin
                 "FROM COURSE_OFFERINGS co " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
                 "JOIN PROGRAMMES p ON p.programme_id = c.programme_id " +
+                "LEFT JOIN ACADEMIC_SESSIONS sem ON sem.session_id=co.session_id " +
+                "LEFT JOIN INTAKES i ON i.intake_id=sem.intake_id " +
                 "LEFT JOIN LECTURERS l ON l.lecturer_id = co.lecturer_id " +
                 "LEFT JOIN ENROLLMENTS e ON e.offer_id = co.offer_id AND e.status IN ('ENROLLED','PENDING') " +
                 "LEFT JOIN STUDENTS st ON st.student_id = e.student_id " +
@@ -1140,7 +1221,7 @@ namespace src.services.admin
                 "LEFT JOIN ATTENDANCE_RECORDS ar ON ar.session_id = ats.session_id AND ar.student_id = e.student_id " +
                 "LEFT JOIN ASSIGNMENTS a ON a.offer_id = co.offer_id " +
                 "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id AND sub.student_id = e.student_id " +
-                "GROUP BY co.offer_id, co.semester, c.course_code, c.course_name, c.credit_hour, p.programme_code, l.lecturer_name " +
+                "GROUP BY co.offer_id, co.session_id, i.intake_name, sem.semester, co.semester, c.course_code, c.course_name, c.credit_hour, p.programme_code, l.lecturer_name " +
                 "ORDER BY c.course_code";
 
             var list = new List<AdminCourseMetric>();
@@ -1158,6 +1239,7 @@ namespace src.services.admin
                     list.Add(new AdminCourseMetric
                     {
                         OfferId = Int(reader["offer_id"]),
+                        SessionId = Text(reader["session_id"]),
                         OfferingSemester = Text(reader["offering_semester"]),
                         Code = Text(reader["course_code"]),
                         Title = Text(reader["course_name"]),
@@ -1613,10 +1695,18 @@ namespace src.services.admin
             academicYear = "";
             semester = text;
             var parts = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 3)
+            DateTime intakeMonth;
+            if (parts.Length >= 4 && DateTime.TryParseExact(
+                parts[0], "MMMM", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AllowWhiteSpaces, out intakeMonth))
             {
-                academicYear = parts[parts.Length - 1];
-                semester = string.Join(" ", parts.Take(parts.Length - 1));
+                academicYear = parts[1];
+                semester = string.Join(" ", parts.Skip(2));
+            }
+            else if (parts.Length >= 3)
+            {
+                academicYear = parts[0];
+                semester = string.Join(" ", parts.Skip(1));
             }
         }
     }
@@ -1694,6 +1784,7 @@ namespace src.services.admin
         public string Lecturer { get; set; }
         public string Semester { get; set; }
         public string AcademicYear { get; set; }
+        public string SessionId { get; set; }
         public string Status { get; set; }
     }
 
@@ -1702,6 +1793,12 @@ namespace src.services.admin
         public string SessionId { get; set; }
         public string AcademicYear { get; set; }
         public string Semester { get; set; }
+        public string IntakeId { get; set; }
+        public string IntakeName { get; set; }
+        public string IntakeMonth { get; set; }
+        public string RegistrationStart { get; set; }
+        public string RegistrationEnd { get; set; }
+        public string AddDropEnd { get; set; }
         public string SemesterLabel { get; set; }
         public string StartDate { get; set; }
         public string EndDate { get; set; }
@@ -1735,7 +1832,22 @@ namespace src.services.admin
         public string Semester { get; set; }
         public string AcademicYear { get; set; }
         public string SemesterName { get; set; }
+        public string IntakeId { get; set; }
+        public string IntakeName { get; set; }
+        public DateTime IntakeMonth { get; set; }
+        public DateTime RegistrationStart { get; set; }
+        public DateTime RegistrationEnd { get; set; }
+        public DateTime AddDropEnd { get; set; }
         public string Status { get; set; }
+    }
+
+    public class AdminIntakeRow
+    {
+        public string IntakeId { get; set; }
+        public string IntakeName { get; set; }
+        public DateTime IntakeMonth { get; set; }
+        public string Status { get; set; }
+        public int SemesterCount { get; set; }
     }
 
     public class AdminStudentDetailSummary
@@ -1918,6 +2030,7 @@ namespace src.services.admin
     public class AdminCourseMetric
     {
         public int OfferId { get; set; }
+        public string SessionId { get; set; }
         public string OfferingSemester { get; set; }
         public string Code { get; set; }
         public string Title { get; set; }
