@@ -60,6 +60,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform">
@@ -91,6 +93,7 @@
     <Content Include="admin\report_generator.aspx" />
     <Content Include="admin\student_detail.aspx" />
     <Content Include="admin\user_management.aspx" />
+    <Content Include="admin\templates\student_bulk_import_template.xlsx" />
     <Content Include="js\admin\course-attendance\attendance.js" />
     <Content Include="js\admin\course-passfail\passfail.js" />
     <Content Include="js\admin\shared\icons.js" />
@@ -347,6 +350,7 @@
     <Compile Include="services\PasswordResetService.cs" />
     <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
+    <Compile Include="services\admin\StudentBulkImportService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AttendancePdfService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />
@@ -636,6 +640,7 @@
   <ItemGroup>
     <Content Include="login\LoginLayout.master" />
     <None Include="packages.config" />
+    <None Include="scripts\build_student_import_template.mjs" />
     <Content Include="site.master" />
     <Content Include="student\StudentLayout.master" />
     <Content Include="lecturer\LecturerLayout.Master" />
