@@ -1,192 +1,208 @@
-﻿// Attendance page: clickable course cards + semester filter.
-// The server renders every course card (all kept semesters) and serializes the
-// full per-course data to window.attendanceData. This script filters cards by
-// semester, recomputes the hero summary from the visible courses, and repaints
-// the detail panel (header, KPI strip, sessions table, footer) on card click.
+// Student attendance filters, course navigation, and filtered PDF export.
 (function () {
     "use strict";
 
-    var data = window.attendanceData || { courses: [], defaultOfferingId: 0 };
-
-    // Index courses by offeringId. Object keys are strings, and the card
-    // data-offering attribute is a string, so lookups stay consistent.
+    var data = window.attendanceData || { courses: [] };
     var byOffering = {};
-    data.courses.forEach(function (c) { byOffering[String(c.offeringId)] = c; });
+    data.courses.forEach(function (course) { byOffering[String(course.offeringId)] = course; });
 
-    var selectedOfferingId = String(data.defaultOfferingId || "");
+    var selectedCardClass = "text-left rounded-lg border bg-white p-5 border-[#e0162b] ring-1 ring-[#e0162b]/10 cursor-pointer";
+    var cardClass = "text-left rounded-lg border bg-white p-5 border-slate-200 cursor-pointer";
 
-    // Mirror of attendance.aspx.cs CourseCardClass (both selection states).
-    var SELECTED_CARD =
-        "text-left rounded-lg border bg-white p-5 border-slate-200 cursor-pointer";
-    var UNSELECTED_CARD =
-        "text-left rounded-lg border bg-white p-5 border-slate-200 cursor-pointer";
-
-    // Mirror of attendance.aspx.cs StatusBadgeClass / StatusIcon.
-    function badge(status) {
-        switch (status) {
-            case "PRESENT":
-                return { cls: "inline-flex items-center gap-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-100 px-1.5 py-0.5", icon: "check-circle-2" };
-            case "LATE":
-                return { cls: "inline-flex items-center gap-1 rounded border bg-sky-50 text-sky-700 border-sky-100 px-1.5 py-0.5", icon: "clock" };
-            case "ABSENT":
-                return { cls: "inline-flex items-center gap-1 rounded border bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20 px-1.5 py-0.5", icon: "x-circle" };
-            default:
-                return { cls: "inline-flex items-center gap-1 rounded border bg-slate-50 text-slate-700 border-slate-200 px-1.5 py-0.5", icon: "circle" };
-        }
+    function el(id) { return document.getElementById(id); }
+    function text(id, value) { if (el(id)) { el(id).textContent = value; } }
+    function show(id, visible) { if (el(id)) { el(id).style.display = visible ? "" : "none"; } }
+    function value(id, fallback) { return el(id) ? el(id).value : fallback; }
+    function cards() { return Array.prototype.slice.call(document.querySelectorAll("#course-grid [data-offering]")); }
+    function esc(value) {
+        var node = document.createElement("div");
+        node.textContent = value == null ? "" : String(value);
+        return node.innerHTML;
     }
 
-    function esc(s) {
-        var d = document.createElement("div");
-        d.textContent = s == null ? "" : String(s);
-        return d.innerHTML;
+    function filters() {
+        return {
+            semester: value("semester-filter", "all"),
+            course: value("attendance-course-filter", "all"),
+            status: value("attendance-status-filter", "all"),
+            dateFrom: value("attendance-date-from", ""),
+            dateTo: value("attendance-date-to", "")
+        };
     }
 
-    function cards() {
-        return Array.prototype.slice.call(
-            document.querySelectorAll("#course-grid [data-offering]"));
+    function matchesSemester(course, semester) {
+        return semester === "all" || String(course.semesterId) === semester;
     }
 
-    function setText(id, txt) {
-        var el = document.getElementById(id);
-        if (el) { el.textContent = txt; }
+    function matchesSession(session, current) {
+        return (current.status === "all" || session.status === current.status) &&
+            (!current.dateFrom || session.dateIso >= current.dateFrom) &&
+            (!current.dateTo || session.dateIso <= current.dateTo);
     }
 
-    function show(id, on) {
-        var el = document.getElementById(id);
-        if (el) { el.style.display = on ? "" : "none"; }
+    function getCourses(current) {
+        return data.courses.filter(function (course) {
+            return matchesSemester(course, current.semester) &&
+                (current.course === "all" || String(course.offeringId) === current.course);
+        });
     }
 
-    // Mirror of attendance.aspx.cs FormatRate: one optional decimal, "N/A" when empty.
-    function formatRate(present, total) {
-        if (total === 0) { return "N/A"; }
-        var r = Math.round((present / total) * 1000) / 10;
-        var str = (r % 1 === 0) ? String(r) : r.toFixed(1);
-        return str + "%";
+    function getRows(courses, current) {
+        var rows = [];
+        courses.forEach(function (course) {
+            course.sessions.forEach(function (session) {
+                if (matchesSession(session, current)) { rows.push({ course: course, session: session }); }
+            });
+        });
+        return rows.sort(function (left, right) {
+            if (left.session.dateIso !== right.session.dateIso) {
+                return left.session.dateIso < right.session.dateIso ? 1 : -1;
+            }
+            return left.session.time < right.session.time ? 1 : -1;
+        });
     }
 
-    function rowHtml(s) {
-        var b = badge(s.status);
+    function totals(rows) {
+        var result = { present: 0, late: 0, absent: 0 };
+        rows.forEach(function (row) {
+            if (row.session.status === "PRESENT") { result.present += 1; }
+            if (row.session.status === "LATE") { result.late += 1; }
+            if (row.session.status === "ABSENT") { result.absent += 1; }
+        });
+        result.total = result.present + result.late + result.absent;
+        return result;
+    }
+
+    function rate(present, total) {
+        if (!total) { return "N/A"; }
+        var percentage = Math.round((present / total) * 1000) / 10;
+        return (percentage % 1 === 0 ? String(percentage) : percentage.toFixed(1)) + "%";
+    }
+
+    function statusBadge(status) {
+        if (status === "PRESENT") return { cls: "bg-emerald-50 text-emerald-700 border-emerald-100", icon: "check-circle-2" };
+        if (status === "LATE") return { cls: "bg-sky-50 text-sky-700 border-sky-100", icon: "clock" };
+        if (status === "ABSENT") return { cls: "bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20", icon: "x-circle" };
+        return { cls: "bg-slate-50 text-slate-700 border-slate-200", icon: "circle" };
+    }
+
+    function rowHtml(row) {
+        var session = row.session;
+        var course = row.course;
+        var badge = statusBadge(session.status);
         return '<tr class="hover:bg-slate-50/60">' +
-            '<td class="px-6 py-3.5">' +
-            '<div class="text-slate-900" style="font-size:13px;font-weight:600">' + esc(s.date) + '</div>' +
-            '<div class="text-slate-500" style="font-size:11px">' + esc(s.day) + '</div>' +
-            '</td>' +
-            '<td class="px-4 py-3.5 text-slate-700" style="font-size:12.5px">' + esc(s.time) + '</td>' +
-            '<td class="px-4 py-3.5">' +
-            '<span class="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-700" style="font-size:10.5px;font-weight:700;letter-spacing:0.04em">' + esc(s.type) + '</span>' +
-            '</td>' +
-            '<td class="px-4 py-3.5 text-slate-700" style="font-size:12.5px">' + esc(s.venue) + '</td>' +
-            '<td class="px-6 py-3.5">' +
-            '<span class="' + b.cls + '" style="font-size:10.5px;font-weight:700;letter-spacing:0.04em">' +
-            '<i data-lucide="' + b.icon + '" class="h-3 w-3"></i> ' + esc(s.status) +
-            '</span>' +
-            '</td>' +
-            '</tr>';
+            '<td class="px-6 py-3.5"><div class="text-slate-900" style="font-size:13px;font-weight:600">' + esc(session.date) + '</div><div class="text-slate-500" style="font-size:11px">' + esc(session.day) + '</div></td>' +
+            '<td class="px-4 py-3.5 text-slate-700" style="font-size:12.5px">' + esc(session.time) + '</td>' +
+            '<td class="px-4 py-3.5"><div class="text-slate-900" style="font-size:12px;font-weight:700">' + esc(course.code) + '</div><div class="truncate text-slate-500" style="font-size:10.5px">' + esc(course.name) + '</div></td>' +
+            '<td class="px-4 py-3.5"><span class="inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-700" style="font-size:10.5px;font-weight:700">' + esc(session.type) + '</span></td>' +
+            '<td class="px-4 py-3.5 text-slate-700" style="font-size:12.5px">' + esc(session.venue) + '</td>' +
+            '<td class="px-6 py-3.5"><span class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 ' + badge.cls + '" style="font-size:10.5px;font-weight:700"><i data-lucide="' + badge.icon + '" class="h-3 w-3"></i> ' + esc(session.status) + '</span></td></tr>';
     }
 
-    function selectCourse(offeringId) {
-        offeringId = String(offeringId);
-        selectedOfferingId = offeringId;
-
-        cards().forEach(function (card) {
-            var on = card.getAttribute("data-offering") === offeringId;
-            card.className = on ? SELECTED_CARD : UNSELECTED_CARD;
-        });
-
-        var c = byOffering[offeringId];
-        if (!c) { return; }
-
-        var accent = document.getElementById("detail-accent");
-        if (accent) { accent.style.backgroundColor = c.color; }
-        setText("detail-code", c.code);
-        setText("detail-name", c.name);
-        setText("detail-lecturer", c.lecturer);
-        setText("detail-present", String(c.present));
-        setText("detail-late", String(c.late));
-        setText("detail-absent", String(c.absent));
-
-        var body = document.getElementById("sessions-body");
-        if (body) { body.innerHTML = c.sessions.map(rowHtml).join(""); }
-        show("empty-sessions", c.sessions.length === 0);
-        setText("sessions-footer",
-            "Showing " + c.sessions.length + " of " + c.sessions.length + " recorded sessions");
-
-        if (window.lucide && typeof window.lucide.createIcons === "function") {
-            window.lucide.createIcons();
-        }
+    function rebuildCourses(semester) {
+        var select = el("attendance-course-filter");
+        if (!select) return;
+        var previous = select.value || "all";
+        select.innerHTML = '<option value="all">All courses</option>';
+        data.courses.filter(function (course) { return matchesSemester(course, semester); })
+            .forEach(function (course) {
+                var option = document.createElement("option");
+                option.value = String(course.offeringId);
+                option.textContent = course.code + " - " + course.name;
+                select.appendChild(option);
+            });
+        select.value = Array.prototype.some.call(select.options, function (option) {
+            return option.value === previous;
+        }) ? previous : "all";
     }
 
-    function applyFilter(value) {
-        var exportLink = document.getElementById("export-attendance");
-        if (exportLink) {
-            var baseUrl = exportLink.getAttribute("data-base-url") || exportLink.href.split("?")[0];
-            exportLink.setAttribute("data-base-url", baseUrl);
-            exportLink.href = value === "all"
-                ? baseUrl
-                : baseUrl + "?semesterId=" + encodeURIComponent(value);
-        }
-
-        var visible = [];
+    function updateCards(current) {
+        var count = 0;
         cards().forEach(function (card) {
-            var sid = card.getAttribute("data-semester-id");
-            var on = value === "all" || sid === value;
-            card.style.display = on ? "" : "none";
-            if (on) { visible.push(card); }
+            var course = byOffering[card.getAttribute("data-offering")];
+            var visible = course && matchesSemester(course, current.semester);
+            if (visible) count += 1;
+            card.style.display = visible ? "" : "none";
+            card.className = visible && current.course === String(course.offeringId) ? selectedCardClass : cardClass;
         });
+        show("empty-courses", count === 0);
+    }
 
-        // Hero recompute from the visible courses.
-        var present = 0, late = 0, absent = 0, total = 0;
-        visible.forEach(function (card) {
-            var c = byOffering[card.getAttribute("data-offering")];
-            if (!c) { return; }
-            present += c.present; late += c.late; absent += c.absent; total += c.total;
-        });
-        setText("hero-rate", formatRate(present, total));
-        setText("hero-present", String(present));
-        setText("hero-late", String(late));
-        setText("hero-absent", String(absent));
-        setText("hero-subtext", total === 0
-            ? "No attendance records yet"
-            : present + " present / " + total + " recorded across " +
-            visible.length + " " + (visible.length === 1 ? "course" : "courses"));
+    function updateExport(current) {
+        var link = el("export-attendance");
+        if (!link) return;
+        var base = link.getAttribute("data-base-url") || link.href.split("?")[0];
+        link.setAttribute("data-base-url", base);
+        var params = [];
+        if (current.semester !== "all") params.push("semesterId=" + encodeURIComponent(current.semester));
+        if (current.course !== "all") params.push("offeringId=" + encodeURIComponent(current.course));
+        if (current.status !== "all") params.push("status=" + encodeURIComponent(current.status));
+        if (current.dateFrom) params.push("dateFrom=" + encodeURIComponent(current.dateFrom));
+        if (current.dateTo) params.push("dateTo=" + encodeURIComponent(current.dateTo));
+        link.href = base + (params.length ? "?" + params.join("&") : "");
+    }
 
-        show("empty-courses", visible.length === 0);
+    function render() {
+        var current = filters();
+        var courses = getCourses(current);
+        var rows = getRows(courses, current);
+        var summary = totals(rows);
+        var one = courses.length === 1 && current.course !== "all" ? courses[0] : null;
+        var advanced = current.course !== "all" || current.status !== "all" || current.dateFrom || current.dateTo;
 
-        // Keep the current selection if it is still visible, else pick the first.
-        var keep = visible.filter(function (card) {
-            return card.getAttribute("data-offering") === selectedOfferingId;
-        })[0];
-        var target = keep || visible[0];
+        updateCards(current);
+        updateExport(current);
+        text("hero-label", advanced ? "FILTERED ATTENDANCE" : "OVERALL ATTENDANCE");
+        text("hero-rate", rate(summary.present, summary.total));
+        text("hero-present", summary.present);
+        text("hero-late", summary.late);
+        text("hero-absent", summary.absent);
+        text("hero-subtext", rows.length ? summary.present + " present / " + summary.total + " recorded across " + courses.length + " " + (courses.length === 1 ? "course" : "courses") : "No attendance records match the selected filters");
 
-        if (target) {
-            show("detail-panel", true);
-            show("empty-detail", false);
-            selectCourse(target.getAttribute("data-offering"));
-        } else {
-            show("detail-panel", false);
-            show("empty-detail", true);
-        }
+        if (el("detail-accent")) el("detail-accent").style.backgroundColor = one ? one.color : "#e0162b";
+        text("detail-code", one ? one.code : "FILTERED RECORDS");
+        text("detail-name", one ? one.name : "All courses");
+        text("detail-lecturer", one ? one.lecturer : courses.length + " " + (courses.length === 1 ? "course" : "courses") + " in the selected scope");
+        text("detail-present", summary.present);
+        text("detail-late", summary.late);
+        text("detail-absent", summary.absent);
+        text("detail-filter-label", rows.length + " matching " + (rows.length === 1 ? "session" : "sessions"));
+        text("attendance-filter-count", rows.length + " " + (rows.length === 1 ? "record" : "records"));
+        text("sessions-footer", "Showing " + rows.length + " filtered " + (rows.length === 1 ? "session" : "sessions") + " from " + courses.length + " " + (courses.length === 1 ? "course" : "courses"));
+        if (el("sessions-body")) el("sessions-body").innerHTML = rows.map(rowHtml).join("");
+        show("detail-panel", courses.length > 0);
+        show("empty-detail", courses.length === 0);
+        show("empty-sessions", courses.length > 0 && rows.length === 0);
+
+        if (el("attendance-date-from")) el("attendance-date-from").max = current.dateTo || "";
+        if (el("attendance-date-to")) el("attendance-date-to").min = current.dateFrom || "";
+        if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+    }
+
+    function clearFilters() {
+        ["attendance-date-from", "attendance-date-to"].forEach(function (id) { if (el(id)) el(id).value = ""; });
+        ["attendance-course-filter", "attendance-status-filter"].forEach(function (id) { if (el(id)) el(id).value = "all"; });
+        render();
     }
 
     function init() {
+        var semester = el("semester-filter");
+        rebuildCourses(semester ? semester.value : "all");
         cards().forEach(function (card) {
             card.addEventListener("click", function () {
-                selectCourse(card.getAttribute("data-offering"));
+                if (el("attendance-course-filter")) el("attendance-course-filter").value = card.getAttribute("data-offering");
+                render();
+                if (el("detail-panel")) el("detail-panel").scrollIntoView({ behavior: "smooth", block: "start" });
             });
         });
-
-        var sel = document.getElementById("semester-filter");
-        if (sel) {
-            sel.addEventListener("change", function () { applyFilter(sel.value); });
-            applyFilter(sel.value);
-        } else {
-            applyFilter("all");
-        }
+        if (semester) semester.addEventListener("change", function () { rebuildCourses(semester.value); render(); });
+        ["attendance-course-filter", "attendance-status-filter", "attendance-date-from", "attendance-date-to"].forEach(function (id) {
+            if (el(id)) el(id).addEventListener("change", render);
+        });
+        if (el("attendance-clear-filters")) el("attendance-clear-filters").addEventListener("click", clearFilters);
+        render();
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
 })();
