@@ -60,6 +60,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform">
@@ -78,6 +80,7 @@
     <Content Include="assistant\chat.aspx" />
     <Content Include="ai.config.example" />
     <Content Include="smtp.config" />
+    <Content Include="translate.config.example" />
     <Content Include="admin\AdminLayout.master" />
     <Content Include="admin\academic_calendar.aspx" />
     <Content Include="admin\academic_performance.aspx" />
@@ -90,6 +93,7 @@
     <Content Include="admin\report_generator.aspx" />
     <Content Include="admin\student_detail.aspx" />
     <Content Include="admin\user_management.aspx" />
+    <Content Include="admin\templates\student_bulk_import_template.xlsx" />
     <Content Include="js\admin\course-attendance\attendance.js" />
     <Content Include="js\admin\course-passfail\passfail.js" />
     <Content Include="js\admin\shared\icons.js" />
@@ -121,6 +125,8 @@
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
     <Content Include="icon_upload.ashx" />
+    <Content Include="translate.ashx" />
+    <Content Include="js\shared\translate.js" />
     <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
@@ -138,14 +144,17 @@
     <Content Include="lecturer\lecturer_notifications.aspx" />
     <Content Include="devtools\ai_console.aspx" />
     <Content Include="shared\email_test.aspx" />
+    <Content Include="shared\help.aspx" />
     <Content Include="shared\material_preview.aspx" />
     <Content Include="student\account.aspx" />
     <Content Include="student\notifications.aspx" />
     <Content Include="student\attendance.aspx" />
+    <Content Include="student\attendance-report.ashx" />
     <Content Include="student\courses.aspx" />
     <Content Include="student\course_detail.aspx" />
     <Content Include="student\enrollment.aspx" />
     <Content Include="student\grades.aspx" />
+    <Content Include="student\transcript.ashx" />
     <Content Include="student\student_dashboard.aspx" />
     <Content Include="student\timetable.aspx" />
     <Content Include="student\payment.aspx" />
@@ -170,6 +179,7 @@
       <DependentUpon>assistant_widget.ascx</DependentUpon>
     </Compile>
     <Compile Include="services\AiConsoleService.cs" />
+    <Compile Include="services\TranslationService.cs" />
     <Compile Include="controls\sidebar.ascx.cs">
       <DependentUpon>sidebar.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -311,6 +321,9 @@
     <Compile Include="icon_upload.ashx.cs">
       <DependentUpon>icon_upload.ashx</DependentUpon>
     </Compile>
+    <Compile Include="translate.ashx.cs">
+      <DependentUpon>translate.ashx</DependentUpon>
+    </Compile>
     <Compile Include="lecturer\material_publish.ashx.cs">
       <DependentUpon>material_publish.ashx</DependentUpon>
     </Compile>
@@ -324,12 +337,22 @@
     <Compile Include="lecturer\lecturer_take_attendance.aspx.designer.cs">
       <DependentUpon>lecturer_take_attendance.aspx</DependentUpon>
     </Compile>
+    <Compile Include="lecturer\lecturer_timetable.aspx.cs">
+      <DependentUpon>lecturer_timetable.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_timetable.aspx.designer.cs">
+      <DependentUpon>lecturer_timetable.aspx</DependentUpon>
+    </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
+    <Compile Include="services\AcademicIntakeSchema.cs" />
     <Compile Include="services\AccountPasswordService.cs" />
     <Compile Include="services\PasswordResetService.cs" />
     <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
+    <Compile Include="services\admin\StudentBulkImportService.cs" />
     <Compile Include="services\AssignmentService.cs" />
+    <Compile Include="services\AttendancePdfService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />
     <Compile Include="services\CookieService.cs" />
     <Compile Include="services\email\EmailLayout.cs" />
@@ -340,6 +363,7 @@
     <Compile Include="services\ServiceMap.cs" />
     <Compile Include="services\StudentPortalService.cs" />
     <Compile Include="services\SubmissionService.cs" />
+    <Compile Include="services\TranscriptPdfService.cs" />
     <Compile Include="services\UserContext.cs" />
     <Compile Include="services\UserContextFactory.cs" />
     <Compile Include="services\student\StudentPortalFormat.cs" />
@@ -501,6 +525,13 @@
     <Compile Include="shared\email_test.aspx.designer.cs">
       <DependentUpon>email_test.aspx</DependentUpon>
     </Compile>
+    <Compile Include="shared\help.aspx.cs">
+      <DependentUpon>help.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\help.aspx.designer.cs">
+      <DependentUpon>help.aspx</DependentUpon>
+    </Compile>
     <Compile Include="shared\material_preview.aspx.cs">
       <DependentUpon>material_preview.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -543,6 +574,9 @@
     <Compile Include="student\attendance.aspx.designer.cs">
       <DependentUpon>attendance.aspx</DependentUpon>
     </Compile>
+    <Compile Include="student\attendance-report.ashx.cs">
+      <DependentUpon>attendance-report.ashx</DependentUpon>
+    </Compile>
     <Compile Include="student\courses.aspx.cs">
       <DependentUpon>courses.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -570,6 +604,9 @@
     </Compile>
     <Compile Include="student\grades.aspx.designer.cs">
       <DependentUpon>grades.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\transcript.ashx.cs">
+      <DependentUpon>transcript.ashx</DependentUpon>
     </Compile>
     <Compile Include="student\student_dashboard.aspx.cs">
       <DependentUpon>student_dashboard.aspx</DependentUpon>
@@ -603,6 +640,7 @@
   <ItemGroup>
     <Content Include="login\LoginLayout.master" />
     <None Include="packages.config" />
+    <None Include="scripts\build_student_import_template.mjs" />
     <Content Include="site.master" />
     <Content Include="student\StudentLayout.master" />
     <Content Include="lecturer\LecturerLayout.Master" />

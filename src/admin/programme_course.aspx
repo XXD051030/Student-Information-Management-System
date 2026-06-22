@@ -9,13 +9,6 @@
             <p class="mt-1 text-slate-500" style="font-size:14px">Manage programmes, courses, and lecturer course assignments.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <div class="relative" data-dropdown>
-                <button type="button" data-dropdown-toggle class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600"><i data-lucide="download" class="h-4 w-4"></i> Export <i data-lucide="chevron-down" class="h-3.5 w-3.5"></i></button>
-                <div data-dropdown-menu style="display:none" class="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-                    <button type="button" data-toast="Use Reports to generate downloadable files" data-toast-type="info" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-slate-700 hover:bg-slate-50" style="font-size:13px;font-weight:500"><i data-lucide="file-text" class="h-4 w-4 text-[#e0162b]"></i> Export as PDF</button>
-                    <button type="button" data-toast="Use Reports to generate downloadable files" data-toast-type="info" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-slate-700 hover:bg-slate-50" style="font-size:13px;font-weight:500"><i data-lucide="file-spreadsheet" class="h-4 w-4 text-emerald-600"></i> Export as Excel</button>
-                </div>
-            </div>
             <span data-tab-panel="programmes"><button type="button" data-modal-open="prog-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Programme</button></span>
             <span data-tab-panel="courses"><button type="button" data-modal-open="course-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Course</button></span>
             <span data-tab-panel="assign"><button type="button" data-modal-open="assign-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Assignment</button></span>
@@ -216,7 +209,7 @@
             <input type="hidden" data-field="offerId" />
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme</span><div class="mt-1.5"><select data-field="programme" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= ProgrammeOptionsHtml %></select></div></label>
-                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Semester</span><div class="mt-1.5"><select data-field="semester" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= SemesterOptionsHtml %></select></div></label>
+                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Intake Semester</span><div class="mt-1.5"><select data-field="semester" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= SemesterOptionsHtml %></select></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Course Code</span><div class="mt-1.5"><input data-field="code" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Title</span><div class="mt-1.5"><input data-field="name" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Credit</span><div class="mt-1.5"><input data-field="credit" type="number" value="3" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
@@ -323,7 +316,7 @@
                     var am = document.getElementById("assign-modal");
                     setField(am, "offerId", row && row.dataset.offerId);
                     setField(am, "programme", row && row.dataset.programme);
-                    setField(am, "semester", row && row.dataset.semester);
+                    setField(am, "semester", row && row.dataset.sessionId);
                     setField(am, "code", row && row.dataset.courseCode);
                     setField(am, "name", row && row.dataset.title);
                     setField(am, "credit", row && row.dataset.credit);
@@ -428,7 +421,7 @@
                 offerId: parseInt(field(am, "offerId"), 10) || 0,
                 courseCode: field(am, "code"),
                 lecturer: field(am, "lecturer"),
-                semester: field(am, "semester"),
+                sessionId: field(am, "semester"),
                 status: "Active"
               }
             }).then(function () { done("Assignment saved"); })

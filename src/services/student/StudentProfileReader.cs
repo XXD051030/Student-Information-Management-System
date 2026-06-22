@@ -16,7 +16,8 @@ namespace src.services
 
             const string sql =
                 "SELECT TOP 1 s.student_id, u.username, s.student_name, s.student_email, s.phone, s.mailing_address, " +
-                "s.semester, s.session, s.icon, s.status, ISNULL(p.programme_name, '') AS programme_name, ac.start_date " +
+                "s.semester, s.session, s.icon, s.status, ISNULL(p.programme_name, '') AS programme_name, " +
+                "ISNULL(p.semester_count, 0) AS semester_count, ac.start_date " +
                 "FROM STUDENTS s " +
                 "JOIN USERS u ON u.user_id = s.user_id " +
                 "LEFT JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
@@ -39,6 +40,7 @@ namespace src.services
                         Phone = Text(reader["phone"]),
                         MailingAddress = Text(reader["mailing_address"]),
                         CurrentSemesterNo = IntValue(reader["semester"]),
+                        ProgrammeSemesterCount = IntValue(reader["semester_count"]),
                         CurrentSession = Text(reader["session"]),
                         IconPath = Text(reader["icon"]),
                         Status = Text(reader["status"]),

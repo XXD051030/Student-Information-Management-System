@@ -25,7 +25,7 @@ namespace src.services
                 "LEFT JOIN LECTURERS l ON l.lecturer_id = co.lecturer_id " +
                 "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
                 "AND co.semester = @semester AND co.academic_year = @academicYear " +
-                "ORDER BY t.day_of_week, t.start_time";
+                "ORDER BY CASE t.day_of_week WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 WHEN 'Sunday' THEN 7 ELSE 8 END, t.start_time";
 
             var sessions = new List<StudentClassSession>();
             using (var conn = Db.OpenConnection())

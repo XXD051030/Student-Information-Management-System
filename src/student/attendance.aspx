@@ -16,9 +16,9 @@
                     <%= SemesterOptionsHtml %>
                 </select>
             </div>
-            <button type="button" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
+            <a id="export-attendance" href="<%= ResolveUrl("~/student/attendance-report.ashx") %>" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
                 <i data-lucide="download" class="h-4 w-4"></i> Export report
-            </button>
+            </a>
         </div>
     </div>
 
@@ -30,13 +30,51 @@
         </p>
     </div>
 
+    <%-- Attendance filters --%>
+    <section class="mt-5 rounded-lg border border-slate-200 bg-white p-4">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end">
+            <div class="grid flex-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <label class="block">
+                    <span class="mb-1.5 block text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">DATE FROM</span>
+                    <input id="attendance-date-from" type="date" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b] focus:ring-2 focus:ring-[#e0162b]/10" style="font-size:13px" />
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">DATE TO</span>
+                    <input id="attendance-date-to" type="date" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b] focus:ring-2 focus:ring-[#e0162b]/10" style="font-size:13px" />
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">COURSE</span>
+                    <select id="attendance-course-filter" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b] focus:ring-2 focus:ring-[#e0162b]/10" style="font-size:13px">
+                        <option value="all">All courses</option>
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">STATUS</span>
+                    <select id="attendance-status-filter" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b] focus:ring-2 focus:ring-[#e0162b]/10" style="font-size:13px">
+                        <option value="all">All statuses</option>
+                        <option value="PRESENT">Present</option>
+                        <option value="LATE">Late</option>
+                        <option value="ABSENT">Absent</option>
+                        <option value="N/A">Not recorded</option>
+                    </select>
+                </label>
+            </div>
+            <div class="flex items-center justify-between gap-3 xl:pb-0.5">
+                <span id="attendance-filter-count" class="whitespace-nowrap text-slate-500" style="font-size:12px"></span>
+                <button id="attendance-clear-filters" type="button" class="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 text-slate-700 transition-colors hover:bg-slate-50" style="font-size:13px;font-weight:600">
+                    <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i> Clear filters
+                </button>
+            </div>
+        </div>
+    </section>
+
     <%-- Hero summary --%>
     <section class="mt-6">
         <div class="rounded-lg border border-slate-200 bg-gradient-to-br from-[#e0162b] to-[#a01020] p-6 text-white relative overflow-hidden">
             <div class="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
             <div class="relative flex items-start justify-between">
                 <div>
-                    <p class="text-white/80" style="font-size:11.5px;font-weight:600;letter-spacing:0.08em">OVERALL ATTENDANCE</p>
+                    <p id="hero-label" class="text-white/80" style="font-size:11.5px;font-weight:600;letter-spacing:0.08em">OVERALL ATTENDANCE</p>
                     <p class="mt-2" style="font-size:56px;font-weight:800;letter-spacing:-0.02em;line-height:1"><span id="hero-rate"><%: OverallRateDisplay %></span></p>
                     <p id="hero-subtext" class="mt-2 text-white/80" style="font-size:13px"><%: OverallSubtext %></p>
                 </div>
@@ -119,7 +157,7 @@
                 </div>
                 <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-slate-700" style="font-size:12px;font-weight:600">
                     <i data-lucide="filter" class="h-3.5 w-3.5"></i>
-                    All sessions
+                    <span id="detail-filter-label">All sessions</span>
                 </span>
             </header>
 
@@ -152,16 +190,18 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left table-fixed">
                     <colgroup>
-                        <col style="width:22%" />
-                        <col style="width:20%" />
                         <col style="width:18%" />
-                        <col style="width:20%" />
-                        <col style="width:20%" />
+                        <col style="width:15%" />
+                        <col style="width:18%" />
+                        <col style="width:14%" />
+                        <col style="width:17%" />
+                        <col style="width:18%" />
                     </colgroup>
                     <thead class="bg-slate-50/60 text-slate-500" style="font-size:10.5px;font-weight:700;letter-spacing:0.06em">
                         <tr>
                             <th class="px-6 py-3">DATE</th>
                             <th class="px-4 py-3">TIME</th>
+                            <th class="px-4 py-3">COURSE</th>
                             <th class="px-4 py-3">TYPE</th>
                             <th class="px-4 py-3">ROOM</th>
                             <th class="px-6 py-3">STATUS</th>
@@ -176,6 +216,7 @@
                                         <div class="text-slate-500" style="font-size:11px"><%#: SessionDayDisplay(Container.DataItem) %></div>
                                     </td>
                                     <td class="px-4 py-3.5 text-slate-700" style="font-size:12.5px"><%#: SessionTimeDisplay(Container.DataItem) %></td>
+                                    <td class="px-4 py-3.5 text-slate-700" style="font-size:12px;font-weight:600"><%: DetailCourseCode %></td>
                                     <td class="px-4 py-3.5">
                                         <span class="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-700" style="font-size:10.5px;font-weight:700;letter-spacing:0.04em"><%#: SessionTypeDisplay(Container.DataItem) %></span>
                                     </td>
@@ -213,5 +254,5 @@
     <script type="text/javascript">
         window.attendanceData = <%= AttendancePayloadJson %>;
     </script>
-    <script src='<%= ResolveUrl("~/js/student/attendance.js") %>'></script>
+    <script src='<%= ResolveUrl("~/js/student/attendance.js?v=2") %>'></script>
 </asp:Content>

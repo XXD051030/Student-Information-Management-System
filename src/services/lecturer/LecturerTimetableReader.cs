@@ -33,7 +33,9 @@ namespace src.services
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
+                    {
                         list.Add(MapSession(reader));
+                    }
                 }
             }
             return list;

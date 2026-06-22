@@ -21,35 +21,61 @@ namespace src.services
 
         public static StudentRegistrationTerm GetCurrentTerm()
         {
+            AcademicIntakeSchema.Ensure();
             const string sql =
-                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date " +
+                "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
+                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS " +
-                "WHERE start_date <= @today AND end_date >= @today " +
-                "ORDER BY start_date DESC";
+                "s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
+                "WHERE s.start_date <= @today AND s.end_date >= @today " +
+                "ORDER BY s.start_date DESC";
             return GetTerm(sql);
         }
 
         public static StudentRegistrationTerm GetRegistrationTerm()
         {
+            return GetRegistrationTerm(null);
+        }
+
+        public static StudentRegistrationTerm GetRegistrationTerm(UserContext user)
+        {
+            AcademicIntakeSchema.Ensure();
             // If the current term's own add/drop window (start .. start+7) is still live,
             // that is the relevant term — a student mid-term shouldn't be bounced ahead
             // to the next term's pre-registration window. Otherwise registration is for
             // the next upcoming term (the one that has not started yet), so the window
             // sits before that term begins. Fall back to the current term only when there
             // is no future session in the calendar.
-            var current = GetCurrentTerm();
+            var current = user == null ? GetCurrentTerm() : GetCurrentTermForUser(user);
             if (current != null && DateTime.Today <= current.StartDate.AddDays(WindowDaysAfterStart))
                 return current;
 
-            const string sql =
-                "SELECT TOP 1 session_id, academic_year, semester, start_date, end_date " +
-                "FROM ACADEMIC_SESSIONS " +
-                "WHERE start_date > @today " +
-                "ORDER BY start_date";
-            return GetTerm(sql) ?? current;
+            string intakeFilter = user != null && user.IsStudent
+                ? " AND (s.intake_id=(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) OR " +
+                  "(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) IS NULL)"
+                : "";
+            string sql =
+                "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
+                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
+                "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
+                "WHERE s.registration_start <= @today AND s.add_drop_end >= @today" + intakeFilter +
+                " ORDER BY s.registration_start";
+            return GetTerm(sql, user) ?? current;
         }
 
-        private static StudentRegistrationTerm GetTerm(string sql)
+        private static StudentRegistrationTerm GetCurrentTermForUser(UserContext user)
+        {
+            const string sql =
+                "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
+                "s.registration_start, s.registration_end, s.add_drop_end, s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
+                "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
+                "WHERE s.start_date<=@today AND s.end_date>=@today " +
+                "AND (s.intake_id=(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) OR " +
+                "(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) IS NULL) ORDER BY s.start_date DESC";
+            return GetTerm(sql, user);
+        }
+
+        private static StudentRegistrationTerm GetTerm(string sql, UserContext user = null)
         {
             using (var conn = Db.OpenConnection())
             {
@@ -64,15 +90,12 @@ namespace src.services
                     hasCreditBounds = Convert.ToInt32(schemaCmd.ExecuteScalar()) == 1;
                 }
 
-                string compatibleSql = hasCreditBounds
-                    ? sql.Replace(
-                        "start_date, end_date ",
-                        "start_date, end_date, min_credits, max_credits ")
-                    : sql;
+                string compatibleSql = sql;
 
                 using (var cmd = new SqlCommand(compatibleSql, conn))
                 {
                     cmd.Parameters.AddWithValue("@today", DateTime.Today);
+                    if (sql.Contains("@userId")) cmd.Parameters.AddWithValue("@userId", user == null ? 0 : user.UserId);
                     using (var reader = cmd.ExecuteReader())
                     {
                         if (!reader.Read()) return null;
@@ -80,9 +103,14 @@ namespace src.services
                         {
                             SessionId = Text(reader["session_id"]),
                             AcademicYear = Text(reader["academic_year"]),
+                            IntakeId = HasColumn(reader, "intake_id") ? Text(reader["intake_id"]) : "",
+                            IntakeName = HasColumn(reader, "intake_name") ? Text(reader["intake_name"]) : "",
                             Name = Text(reader["semester"]),
                             StartDate = DateValue(reader["start_date"]) ?? DateTime.Today,
                             EndDate = DateValue(reader["end_date"]) ?? DateTime.Today.AddMonths(4),
+                            RegistrationStart = DateValue(reader["registration_start"]) ?? (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-28),
+                            RegistrationEnd = DateValue(reader["registration_end"]) ?? (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(-1),
+                            AddDropEnd = DateValue(reader["add_drop_end"]) ?? (DateValue(reader["start_date"]) ?? DateTime.Today).AddDays(7),
                             MinCredits = hasCreditBounds
                                 ? NullableInt(reader["min_credits"]) ?? DefaultMinCredits
                                 : DefaultMinCredits,
@@ -106,10 +134,10 @@ namespace src.services
             // Once classes start, a student with no enrollment yet stays in Phase 1
             // (direct self-registration) through start+7; Phase 2 (request-based
             // add/drop) only applies once the student actually holds an enrollment.
-            var registrationStart = term.StartDate.AddDays(-WindowDaysBeforeStart);
-            var registrationEnd = term.StartDate.AddDays(-1);
+            var registrationStart = term.RegistrationStart;
+            var registrationEnd = term.RegistrationEnd;
             var addDropStart = term.StartDate;
-            var addDropEnd = term.StartDate.AddDays(WindowDaysAfterStart);
+            var addDropEnd = term.AddDropEnd;
 
             int activePhase;
             if (today <= registrationEnd) activePhase = 1;
@@ -125,6 +153,13 @@ namespace src.services
                 IsOpen = today >= registrationStart && today <= addDropEnd,
                 ActivePhase = activePhase
             };
+        }
+
+        private static bool HasColumn(SqlDataReader reader, string name)
+        {
+            for (var i = 0; i < reader.FieldCount; i++)
+                if (string.Equals(reader.GetName(i), name, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         /// <summary>

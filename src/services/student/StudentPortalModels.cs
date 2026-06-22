@@ -20,6 +20,7 @@ namespace src.services
         public string ProgrammeName { get; set; }
         public DateTime? IntakeDate { get; set; }
         public int CurrentSemesterNo { get; set; }
+        public int ProgrammeSemesterCount { get; set; }
         public string Phone { get; set; }
         public string MailingAddress { get; set; }
         public string IconPath { get; set; }
@@ -149,8 +150,13 @@ namespace src.services
         public string SessionId { get; set; }
         public string Name { get; set; }
         public string AcademicYear { get; set; }
+        public string IntakeId { get; set; }
+        public string IntakeName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime RegistrationStart { get; set; }
+        public DateTime RegistrationEnd { get; set; }
+        public DateTime AddDropEnd { get; set; }
         public int MinCredits { get; set; }
         public int MaxCredits { get; set; }
     }
@@ -176,6 +182,7 @@ namespace src.services
         public string Schedule { get; set; }
         public int CreditHours { get; set; }
         public string Prerequisites { get; set; }
+        public bool PrerequisiteMet { get; set; }
         public int EnrolledCount { get; set; }
         public int Capacity { get; set; }
         public string MyStatus { get; set; }
@@ -189,6 +196,7 @@ namespace src.services
         public StudentRegistrationWindow Window { get; set; }
         public List<StudentOfferingOption> Offerings { get; set; }
         public int SemesterNo { get; set; }
+        public int SemesterCount { get; set; }
         public int AlreadyRegisteredCount { get; set; }
     }
 

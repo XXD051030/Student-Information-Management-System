@@ -42,24 +42,6 @@ namespace src.admin
         protected global::System.Web.UI.WebControls.DropDownList ddlProgramme;
 
         /// <summary>
-        /// txtDateFrom control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDateFrom;
-
-        /// <summary>
-        /// txtDateTo control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDateTo;
-
-        /// <summary>
         /// ddlStatus control.
         /// </summary>
         /// <remarks>
@@ -203,58 +185,5 @@ namespace src.admin
         /// </remarks>
         protected global::System.Web.UI.WebControls.PlaceHolder emptyAtRiskPreviewPanel;
 
-        /// <summary>
-        /// rptTopPerformingPreview control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptTopPerformingPreview;
-
-        /// <summary>
-        /// litTopPerformingPreviewCount control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litTopPerformingPreviewCount;
-
-        /// <summary>
-        /// emptyTopPerformingPreviewPanel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.PlaceHolder emptyTopPerformingPreviewPanel;
-
-        /// <summary>
-        /// rptEnrolmentPreview control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptEnrolmentPreview;
-
-        /// <summary>
-        /// litEnrolmentPreviewCount control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litEnrolmentPreviewCount;
-
-        /// <summary>
-        /// emptyEnrolmentPreviewPanel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.PlaceHolder emptyEnrolmentPreviewPanel;
     }
 }

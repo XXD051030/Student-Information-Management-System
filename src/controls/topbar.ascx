@@ -12,11 +12,11 @@
 
     <div class="ml-auto flex items-center gap-2">
 
-        <button type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                aria-label="Help">
+        <a href="<%= ResolveUrl("~/shared/help.aspx") %>"
+           class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+           aria-label="Help">
             <i data-lucide="help-circle" class="h-5 w-5"></i>
-        </button>
+        </a>
 
         <a href="<%= ResolveUrl("~/student/notifications.aspx") %>"
            class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"

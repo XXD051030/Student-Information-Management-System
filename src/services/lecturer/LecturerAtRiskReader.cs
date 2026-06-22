@@ -76,7 +76,7 @@ namespace src.services
             if (user == null || !user.IsLecturer) return result;
 
             string selectSql =
-                "SELECT DISTINCT e.offer_id, s.student_id, s.student_name, p.programme_code, " +
+                "SELECT DISTINCT e.offer_id, co.academic_year, co.semester AS offering_semester, s.student_id, s.student_name, p.programme_code, " +
                 "ISNULL(s.semester, 0) AS semester_no, c.course_code, c.course_name, " +
                 "ISNULL(g.grade_point, 0) AS grade_point, ISNULL(g.letter_grade, 'N/A') AS letter_grade " +
                 "FROM ENROLLMENTS e " +
@@ -100,6 +100,8 @@ namespace src.services
                         pairs.Add(new AcademicPerformancePair
                         {
                             OfferId = IntValue(reader["offer_id"]),
+                            AcademicYear = Text(reader["academic_year"]),
+                            OfferingSemester = Text(reader["offering_semester"]),
                             StudentId = Text(reader["student_id"]),
                             FullName = Text(reader["student_name"]),
                             ProgrammeCode = Text(reader["programme_code"]),
@@ -120,6 +122,8 @@ namespace src.services
                     {
                         OfferingId = pair.OfferId,
                         StudentId = pair.StudentId,
+                        AcademicYear = pair.AcademicYear,
+                        OfferingSemester = pair.OfferingSemester,
                         FullName = pair.FullName,
                         ProgrammeCode = pair.ProgrammeCode,
                         Semester = pair.Semester,
@@ -141,6 +145,8 @@ namespace src.services
         private class AcademicPerformancePair
         {
             public int OfferId { get; set; }
+            public string AcademicYear { get; set; }
+            public string OfferingSemester { get; set; }
             public string StudentId { get; set; }
             public string FullName { get; set; }
             public string ProgrammeCode { get; set; }

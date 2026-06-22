@@ -19,6 +19,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="<%= ResolveUrl("~/css/site.css") %>" rel="stylesheet" />
 
+    <%-- Display-language guard: when a non-English language is active, hide the
+         body until translate.js has swapped the text in, so the English source
+         never flashes. A 3s fallback reveals the page if translation stalls. --%>
+    <style>html.tx-hide body { visibility: hidden !important; }</style>
+    <script>
+        (function () {
+            try {
+                var l = localStorage.getItem('portal_lang');
+                if (l && l !== 'en') {
+                    document.documentElement.classList.add('tx-hide');
+                    setTimeout(function () {
+                        document.documentElement.classList.remove('tx-hide');
+                    }, 3000);
+                }
+            } catch (e) { }
+        })();
+    </script>
+
     <asp:ContentPlaceHolder ID="HeadPlaceholder" runat="server" />
 </head>
 
@@ -33,6 +51,8 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="<%= ResolveUrl("~/js/core/icons-init.js") %>?v=3"></script>
+    <script>window.PORTAL_TRANSLATE_URL = '<%= ResolveUrl("~/translate.ashx") %>';</script>
+    <script src="<%= ResolveUrl("~/js/shared/translate.js") %>?v=2"></script>
     <asp:ContentPlaceHolder ID="ScriptsPlaceholder" runat="server" />
 
 </body>

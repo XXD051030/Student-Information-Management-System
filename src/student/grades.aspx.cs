@@ -62,7 +62,7 @@ namespace src.student
         {
             var semester = dataItem as StudentGradeSemester;
             if (semester == null) return "";
-            return "Y" + YearNo(semester.SemesterNo) + " T" + TrimesterNo(semester.SemesterNo);
+            return "Y" + YearNo(semester.SemesterNo) + " S" + SemesterNoInYear(semester.SemesterNo);
         }
 
         protected string SemesterTitle(object dataItem)
@@ -71,7 +71,7 @@ namespace src.student
             if (semester == null) return "";
 
             return "Year " + YearNo(semester.SemesterNo)
-                + " - Trimester " + TrimesterNo(semester.SemesterNo)
+                + " - Semester " + SemesterNoInYear(semester.SemesterNo)
                 + " (" + semester.StartDate.ToString("MMM yyyy") + ")";
         }
 
@@ -276,7 +276,7 @@ namespace src.student
             return Math.Max(1, ((semesterNo - 1) / 3) + 1);
         }
 
-        private static int TrimesterNo(int semesterNo)
+        private static int SemesterNoInYear(int semesterNo)
         {
             return Math.Max(1, ((semesterNo - 1) % 3) + 1);
         }
