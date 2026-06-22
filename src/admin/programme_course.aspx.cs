@@ -34,7 +34,7 @@ namespace src.admin
             EducationLevelOptionsHtml = AdminPortalService.RenderOptions(lookups.EducationLevels, null);
             ProgrammeStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, null);
             CourseStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, null);
-            SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.Semesters, null);
+            SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, null);
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select lecturer...");
             ProgrammeStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, "All statuses");
             CourseStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, "All statuses");
@@ -101,7 +101,7 @@ namespace src.admin
             var html = new StringBuilder();
             foreach (var c in service.GetCourseMetrics())
             {
-                html.Append("<tr data-row data-offer-id=\"").Append(c.OfferId).Append("\" data-programme=\"").Append(Attr(c.Programme)).Append("\" data-semester=\"").Append(Attr(c.OfferingSemester)).Append("\" data-course-code=\"").Append(Attr(c.Code)).Append("\" data-title=\"").Append(Attr(c.Title)).Append("\" data-credit=\"").Append(c.CreditHours).Append("\" data-lecturer=\"").Append(Attr(c.Lecturer)).Append("\" data-search=\"").Append(Attr((c.Programme + " " + c.Code + " " + c.Title + " " + c.Lecturer).ToLowerInvariant())).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<tr data-row data-offer-id=\"").Append(c.OfferId).Append("\" data-programme=\"").Append(Attr(c.Programme)).Append("\" data-session-id=\"").Append(Attr(c.SessionId)).Append("\" data-semester=\"").Append(Attr(c.OfferingSemester)).Append("\" data-course-code=\"").Append(Attr(c.Code)).Append("\" data-title=\"").Append(Attr(c.Title)).Append("\" data-credit=\"").Append(c.CreditHours).Append("\" data-lecturer=\"").Append(Attr(c.Lecturer)).Append("\" data-search=\"").Append(Attr((c.Programme + " " + c.Code + " " + c.Title + " " + c.Lecturer).ToLowerInvariant())).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(c.Programme)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(c.OfferingSemester)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"text-slate-900 font-medium\">").Append(Html(c.Code)).Append("</span></td>");

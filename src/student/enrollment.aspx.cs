@@ -69,7 +69,7 @@ namespace src.student
             get
             {
                 if (_regSemester == null) return "the upcoming semester";
-                return _regSemester.Name + " (" + _regSemester.StartDate.ToString("MMM yyyy") + ")";
+                return _regSemester.IntakeName + " · " + _regSemester.Name;
             }
         }
 

@@ -51,8 +51,8 @@ namespace src.admin
             string programmeId = EmptyToNull(ddlProgramme.SelectedValue);
             string status = ddlStatus.SelectedValue;
 
-            DateTime? dateFrom = ToNullableDate(txtDateFrom.Text);
-            DateTime? dateTo = ToNullableDate(txtDateTo.Text);
+            DateTime? dateFrom = null;
+            DateTime? dateTo = null;
 
             var studentReportData = reportService.GetStudentAcademicReport(
                 semesterId,
@@ -126,33 +126,6 @@ namespace src.admin
 
             emptyAtRiskPreviewPanel.Visible = atRiskReportData.Count == 0;
 
-            var topPerformingReportData = reportService.GetTopPerformingStudentReport(
-                semesterId,
-                programmeId,
-                dateFrom,
-                dateTo
-            );
-
-            rptTopPerformingPreview.DataSource = topPerformingReportData.Take(10).ToList();
-            rptTopPerformingPreview.DataBind();
-
-            litTopPerformingPreviewCount.Text = "Showing " + Math.Min(10, topPerformingReportData.Count) + " of " + topPerformingReportData.Count + " top-performing student(s).";
-
-            emptyTopPerformingPreviewPanel.Visible = topPerformingReportData.Count == 0;
-
-            var enrolmentReportData = reportService.GetEnrolmentSummaryReport(
-                semesterId,
-                programmeId,
-                dateFrom,
-                dateTo
-            );
-
-            rptEnrolmentPreview.DataSource = enrolmentReportData.Take(10).ToList();
-            rptEnrolmentPreview.DataBind();
-
-            litEnrolmentPreviewCount.Text = "Showing " + Math.Min(10, enrolmentReportData.Count) + " of " + enrolmentReportData.Count + " semester enrolment record(s).";
-
-            emptyEnrolmentPreviewPanel.Visible = enrolmentReportData.Count == 0;
         }
 
         private static string EmptyToNull(string value)
@@ -160,16 +133,5 @@ namespace src.admin
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
-        private DateTime? ToNullableDate(string value)
-        {
-            DateTime result;
-
-            if (DateTime.TryParse(value, out result))
-            {
-                return result;
-            }
-
-            return null;
-        }
     }
 }

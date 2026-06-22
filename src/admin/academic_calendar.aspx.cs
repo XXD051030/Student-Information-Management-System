@@ -16,6 +16,7 @@ namespace src.admin
         protected string EventRowsHtml { get; private set; }
         protected string SemesterOptionsHtml { get; private set; }
         protected string SemesterFilterOptionsHtml { get; private set; }
+        protected string IntakeFilterOptionsHtml { get; private set; }
         protected string EventTypeOptionsHtml { get; private set; }
         protected string EventTypeFilterOptionsHtml { get; private set; }
         protected string EventStatusOptionsHtml { get; private set; }
@@ -30,6 +31,9 @@ namespace src.admin
             var lookups = service.GetLookups();
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, null);
             SemesterFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, "All semesters");
+            IntakeFilterOptionsHtml = AdminPortalService.RenderOptions(
+                service.GetIntakes().ConvertAll(i => new AdminOption { Value = i.IntakeId, Text = i.IntakeName }),
+                "All intakes");
             EventTypeOptionsHtml = AdminPortalService.RenderOptions(lookups.EventTypes, null);
             EventTypeFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.EventTypes, "All types");
             EventStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.EventStatuses, null);
@@ -40,14 +44,19 @@ namespace src.admin
             var html = new StringBuilder();
             foreach (var item in events)
             {
-                html.Append("<tr data-row data-session-id=\"").Append(Attr(item.SessionId)).Append("\" data-academic-year=\"").Append(Attr(item.AcademicYear)).Append("\" data-semester-name=\"").Append(Attr(item.SemesterName)).Append("\" data-start-date=\"").Append(item.SessionStartDate.ToString("yyyy-MM-dd")).Append("\" data-end-date=\"").Append(item.SessionEndDate.ToString("yyyy-MM-dd")).Append("\" data-status=\"").Append(Attr(item.Status)).Append("\" data-search=\"").Append(Attr((item.Title + " " + item.Type).ToLowerInvariant())).Append("\" data-sem=\"").Append(Attr(item.Semester)).Append("\" data-type=\"").Append(Attr(item.Type)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<tr data-row data-session-id=\"").Append(Attr(item.SessionId)).Append("\" data-intake=\"").Append(Attr(item.IntakeId)).Append("\" data-academic-year=\"").Append(Attr(item.AcademicYear)).Append("\" data-semester-name=\"").Append(Attr(item.SemesterName)).Append("\" data-start-date=\"").Append(item.SessionStartDate.ToString("yyyy-MM-dd")).Append("\" data-end-date=\"").Append(item.SessionEndDate.ToString("yyyy-MM-dd")).Append("\" data-status=\"").Append(Attr(item.Status)).Append("\" data-search=\"").Append(Attr((item.Title + " " + item.Type).ToLowerInvariant())).Append("\" data-sem=\"").Append(Attr(item.SessionId)).Append("\" data-type=\"").Append(Attr(item.Type)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"text-slate-900 font-medium\">").Append(Html(item.Title)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(item.Type)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(item.StartDate.ToString("dd MMM yyyy")).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(item.EndDate.ToString("dd MMM yyyy")).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(item.Semester)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ").Append(StatusBadge(item.Status)).Append("\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(item.Status)).Append("</span></td>");
-                html.Append("<td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\"><div class=\"flex items-center justify-end gap-1\"><button type=\"button\" data-calendar-edit data-modal-open=\"event-modal\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"pencil\" class=\"h-3.5 w-3.5\"></i></button><button type=\"button\" data-calendar-delete data-session-id=\"").Append(Attr(item.SessionId)).Append("\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-[#e0162b] hover:bg-[#e0162b]/5\"><i data-lucide=\"trash-2\" class=\"h-3.5 w-3.5\"></i></button></div></td></tr>");
+                html.Append("<td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\"><div class=\"flex items-center justify-end gap-1\">");
+                if (!string.Equals(item.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    html.Append("<button type=\"button\" data-calendar-edit data-modal-open=\"semester-modal\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"pencil\" class=\"h-3.5 w-3.5\"></i></button>");
+                }
+                html.Append("<button type=\"button\" data-calendar-delete data-session-id=\"").Append(Attr(item.SessionId)).Append("\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-[#e0162b] hover:bg-[#e0162b]/5\"><i data-lucide=\"trash-2\" class=\"h-3.5 w-3.5\"></i></button></div></td></tr>");
             }
             html.Append("<tr data-table-empty style=\"display:none\"><td colspan=\"7\" class=\"px-6 py-12 text-center text-slate-400\" style=\"font-size:13px\">No events match your filters.</td></tr>");
             return html.ToString();
