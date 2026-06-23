@@ -204,17 +204,29 @@ namespace src.services
                     else
                     {
                         using (var moduleCommand = new SqlCommand(
-                            "SELECT TOP 1 module_id FROM MODULES WHERE offer_id = @offerId ORDER BY week_number, module_id",
+                            "SELECT TOP 1 module_id FROM MODULES WITH (UPDLOCK, HOLDLOCK) " +
+                            "WHERE offer_id = @offerId ORDER BY week_number, module_id",
                             conn, transaction))
                         {
                             moduleCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
                             var value = moduleCommand.ExecuteScalar();
-                            if (value == null || value == DBNull.Value)
+                            moduleId = value == null || value == DBNull.Value ? "" : value.ToString();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(moduleId))
+                        {
+                            moduleId = "MOD_" + input.OfferingId + "_GEN";
+                            using (var createModule = new SqlCommand(
+                                "INSERT INTO MODULES (module_id, offer_id, module_title, module_description, week_number) " +
+                                "VALUES (@moduleId, @offerId, @title, @description, NULL)",
+                                conn, transaction))
                             {
-                                transaction.Rollback();
-                                return 0;
+                                createModule.Parameters.AddWithValue("@moduleId", moduleId);
+                                createModule.Parameters.AddWithValue("@offerId", input.OfferingId);
+                                createModule.Parameters.AddWithValue("@title", "General");
+                                createModule.Parameters.AddWithValue("@description", "General course materials.");
+                                createModule.ExecuteNonQuery();
                             }
-                            moduleId = value.ToString();
                         }
                     }
 

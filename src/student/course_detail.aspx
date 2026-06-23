@@ -326,7 +326,7 @@
                         </div>
                         <asp:Repeater ID="barsRepeater" runat="server">
                             <ItemTemplate>
-                                <div class="flex-1 flex flex-col items-center gap-1 z-10" style="min-width:0">
+                                <div class="flex-1 h-full flex flex-col items-center justify-end gap-1 z-10" style="min-width:0">
                                     <div class="w-full rounded-t-md" style='height:<%# (bool)Eval("IsGraded") ? System.Math.Round(System.Convert.ToDecimal(Eval("Marks")) / System.Convert.ToInt32(Eval("MaxMarks")) * 72, 0) : 0 %>%;background-color:var(--course-accent)'></div>
                                     <span class="text-slate-500 text-center" title='<%# Server.HtmlEncode(Eval("Name").ToString()) %>' style="font-size:10px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block"><%# Server.HtmlEncode(Eval("Name").ToString()) %></span>
                                 </div>
