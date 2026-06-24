@@ -28,6 +28,7 @@ namespace src.services
                 "FROM ACADEMIC_SESSIONS " +
                 "s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
                 "WHERE s.start_date <= @today AND s.end_date >= @today " +
+                "AND (s.status IS NULL OR s.status <> 'Completed') " +
                 "ORDER BY s.start_date DESC";
             return GetTerm(sql);
         }
@@ -58,7 +59,8 @@ namespace src.services
                 "SELECT TOP 1 s.session_id, s.academic_year, s.semester, s.start_date, s.end_date, " +
                 "s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
-                "WHERE DATEADD(day,-7,s.start_date)<=@today AND DATEADD(day,7,s.start_date)>=@today";
+                "WHERE DATEADD(day,-7,s.start_date)<=@today AND DATEADD(day,7,s.start_date)>=@today " +
+                "AND (s.status IS NULL OR s.status <> 'Completed')";
             var result = GetTerm(sqlBase + intakeFilter + " ORDER BY s.start_date", user) ?? current;
             // When no session matches the student's specific intake, fall back to any
             // registration-open session — handles students whose intake_id was set to a
@@ -76,6 +78,7 @@ namespace src.services
                 "s.intake_id, i.intake_name, s.min_credits, s.max_credits " +
                 "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
                 "WHERE s.start_date<=@today AND s.end_date>=@today " +
+                "AND (s.status IS NULL OR s.status <> 'Completed') " +
                 "AND (s.intake_id=(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) OR " +
                 "(SELECT intake_id FROM STUDENTS WHERE user_id=@userId) IS NULL) ORDER BY s.start_date DESC";
             return GetTerm(sql, user);

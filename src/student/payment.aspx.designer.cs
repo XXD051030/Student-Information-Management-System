@@ -13,10 +13,16 @@ namespace src.student
 
     public partial class payment
     {
+        protected global::System.Web.UI.WebControls.Literal litTermHeader;
+        protected global::System.Web.UI.WebControls.Literal litTermSummary;
+        protected global::System.Web.UI.WebControls.Literal litStudentName;
+        protected global::System.Web.UI.WebControls.Literal litStudentIdProgramme;
+        protected global::System.Web.UI.WebControls.Literal litStudentEmail;
         protected global::System.Web.UI.WebControls.HiddenField hfAmount;
         protected global::System.Web.UI.WebControls.HiddenField hfDescription;
         protected global::System.Web.UI.WebControls.HiddenField hfMethod;
         protected global::System.Web.UI.WebControls.HiddenField hfOfferingIds;
+        protected global::System.Web.UI.WebControls.HiddenField hfPaymentToken;
         protected global::System.Web.UI.WebControls.Button btnPay;
     }
 }

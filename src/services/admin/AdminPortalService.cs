@@ -335,7 +335,7 @@ namespace src.services.admin
                     var programmeId = ResolveProgramme(conn, tx, request.ProgrammeOrDepartment);
                     using (var cmd = new SqlCommand(
                         "INSERT INTO STUDENTS (student_id, user_id, programme_id, student_name, student_email, phone, semester, current_standing, session, intake_id, status) " +
-                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 1, 'Good Standing', " +
+                        "VALUES (@sid, @uid, @pid, @name, @email, @phone, 0, 'Good Standing', " +
                         "COALESCE(" +
                         "(SELECT TOP 1 academic_year + ' ' + semester FROM ACADEMIC_SESSIONS WHERE end_date >= GETDATE() ORDER BY start_date)," +
                         "(SELECT TOP 1 academic_year + ' ' + semester FROM ACADEMIC_SESSIONS ORDER BY start_date DESC)," +
@@ -866,7 +866,6 @@ namespace src.services.admin
             if (string.IsNullOrWhiteSpace(semester)) semester = "Semester";
 
             var sessionId = CleanSessionId(request.SessionId);
-            if (string.IsNullOrWhiteSpace(sessionId)) sessionId = BuildSessionId(intakeId, semester);
             var status = NormalizeAcademicSessionStatus(request.Status);
 
             if (!int.TryParse(request.MinCredits, out var minCredits)) throw new ArgumentException("Minimum credits is required.");
@@ -876,6 +875,10 @@ namespace src.services.admin
 
             using (var conn = Db.OpenConnection())
             {
+                // New sessions always get the next sequential id (1, 2, 3, ...), even if the
+                // intake/semester combination matches an existing session.
+                if (string.IsNullOrWhiteSpace(sessionId)) sessionId = NextSessionId(conn);
+
                 using (var intakeCmd = new SqlCommand(
                     "IF EXISTS(SELECT 1 FROM INTAKES WHERE intake_id=@id) " +
                     "UPDATE INTAKES SET intake_name=@name,intake_month=@month,status='ACTIVE' WHERE intake_id=@id " +
@@ -1686,16 +1689,15 @@ namespace src.services.admin
             return (value ?? "").Replace("-START", "").Replace("-END", "").Trim();
         }
 
-        private static string BuildSessionId(string academicYear, string semester)
+        // Always increases, regardless of whether the intake/semester combination
+        // already has a session — ignores any non-numeric legacy session ids.
+        private static string NextSessionId(SqlConnection conn)
         {
-            var raw = (academicYear + "-" + semester).ToUpperInvariant();
-            var sb = new StringBuilder();
-            foreach (var ch in raw)
+            using (var cmd = new SqlCommand(
+                "SELECT ISNULL(MAX(TRY_CAST(session_id AS INT)), 0) + 1 FROM ACADEMIC_SESSIONS", conn))
             {
-                if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+                return Convert.ToInt32(cmd.ExecuteScalar()).ToString();
             }
-            var id = sb.ToString();
-            return id.Length > 20 ? id.Substring(0, 20) : id;
         }
 
         private static void SplitSemesterLabel(string label, out string academicYear, out string semester)

@@ -92,7 +92,7 @@ namespace src.services.admin
                     using (var cmd = new SqlCommand(
                         "INSERT INTO STUDENTS (student_id,user_id,programme_id,student_name,student_email,phone," +
                         "semester,current_standing,session,intake_id,status) " +
-                        "VALUES (@sid,@uid,@programme,@name,@email,@phone,1,'Good Standing','',@intake,@status)",
+                        "VALUES (@sid,@uid,@programme,@name,@email,@phone,0,'Good Standing','',@intake,@status)",
                         conn, tx))
                     {
                         cmd.Parameters.AddWithValue("@sid", studentId);

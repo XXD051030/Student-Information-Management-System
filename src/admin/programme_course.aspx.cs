@@ -23,6 +23,7 @@ namespace src.admin
         protected string CourseOptionsHtml { get; private set; }
         protected string ProgrammeStatusFilterOptionsHtml { get; private set; }
         protected string CourseStatusFilterOptionsHtml { get; private set; }
+        protected string PrerequisiteItemsHtml { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -38,8 +39,25 @@ namespace src.admin
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, null);
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select lecturer...");
             CourseOptionsHtml = BuildCourseOptions();
+            PrerequisiteItemsHtml = BuildPrerequisiteItems();
             ProgrammeStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, "All statuses");
             CourseStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, "All statuses");
+        }
+
+        private string BuildPrerequisiteItems()
+        {
+            var html = new StringBuilder();
+            foreach (var c in service.GetCourseCatalog())
+            {
+                html.Append("<li data-prereq-item data-code=\"").Append(Attr(c.Code))
+                    .Append("\" data-programme=\"").Append(Attr(c.Programme)).Append("\">")
+                    .Append("<label class=\"flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer\">")
+                    .Append("<input type=\"checkbox\" data-prereq-check value=\"").Append(Attr(c.Code)).Append("\" class=\"h-4 w-4 rounded border-slate-300 text-[#e0162b]\" />")
+                    .Append("<span class=\"text-slate-900 font-medium\" style=\"font-size:13px\">").Append(Html(c.Code)).Append("</span>")
+                    .Append("<span class=\"text-slate-500\" style=\"font-size:12.5px\">").Append(Html(c.Name)).Append("</span>")
+                    .Append("</label></li>");
+            }
+            return html.ToString();
         }
 
         private string BuildCourseOptions()

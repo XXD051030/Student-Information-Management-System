@@ -10,7 +10,7 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Step 2 of 2 &middot; Payment</p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Complete your payment</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Settle the tuition for <span class="text-slate-900 font-semibold">Y2 &middot; Semester 2 (Sep 2026)</span> to finalize your enrollment.
+                Settle the tuition for <span class="text-slate-900 font-semibold"><asp:Literal ID="litTermHeader" runat="server" /></span> to finalize your enrollment.
             </p>
         </div>
         <div class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
@@ -42,7 +42,7 @@
             <header class="flex items-center justify-between border-b border-slate-100 p-6">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Invoice summary</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Y2 &middot; Semester 2 (Sep 2026)</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px"><asp:Literal ID="litTermSummary" runat="server" /></p>
                 </div>
                 <span class="rounded-md bg-amber-50 px-2 py-1 text-amber-700" style="font-size:11.5px;font-weight:600">Pending payment</span>
             </header>
@@ -51,13 +51,13 @@
             <div class="border-b border-slate-100 px-6 py-4 grid gap-1 sm:grid-cols-2">
                 <div>
                     <p class="text-slate-400" style="font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Student</p>
-                    <p class="mt-0.5 text-slate-900" style="font-size:13.5px;font-weight:600">Aisyah Yusoff</p>
-                    <p class="text-slate-500" style="font-size:12px">I22020045 &middot; BSc Computer Science</p>
+                    <p class="mt-0.5 text-slate-900" style="font-size:13.5px;font-weight:600"><asp:Literal ID="litStudentName" runat="server" /></p>
+                    <p class="text-slate-500" style="font-size:12px"><asp:Literal ID="litStudentIdProgramme" runat="server" /></p>
                 </div>
                 <div>
                     <p class="text-slate-400" style="font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Due date</p>
                     <p class="mt-0.5 text-slate-900" style="font-size:13.5px;font-weight:600">31 Aug 2026</p>
-                    <p class="text-slate-500" style="font-size:12px">aisyah.yusoff@student.newinti.edu.my</p>
+                    <p class="text-slate-500" style="font-size:12px"><asp:Literal ID="litStudentEmail" runat="server" /></p>
                 </div>
             </div>
 
@@ -245,7 +245,10 @@
             <asp:HiddenField ID="hfDescription" runat="server" />
             <asp:HiddenField ID="hfMethod" runat="server" />
             <asp:HiddenField ID="hfOfferingIds" runat="server" />
+            <asp:HiddenField ID="hfPaymentToken" runat="server" />
             <asp:Button ID="btnPay" runat="server" OnClick="PayBtn_Click"
+                OnClientClick="try{sessionStorage.removeItem('sims:enrolled');}catch(e){} this.disabled=true;this.value='Processing…';"
+                UseSubmitBehavior="false"
                 CssClass="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 h-12 bg-[#e0162b] text-white hover:bg-[#a01020] shadow-[0_8px_20px_-8px_rgba(224,22,43,0.55)] transition-all"
                 style="font-size:14px;font-weight:700"
                 Text="Pay" />

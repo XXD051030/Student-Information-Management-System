@@ -21,6 +21,7 @@ namespace src.services
         public DateTime? IntakeDate { get; set; }
         public int CurrentSemesterNo { get; set; }
         public int ProgrammeSemesterCount { get; set; }
+        public int SemestersPerYear { get; set; }
         public string Phone { get; set; }
         public string MailingAddress { get; set; }
         public string IconPath { get; set; }

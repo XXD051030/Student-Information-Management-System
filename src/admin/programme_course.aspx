@@ -187,10 +187,9 @@
                     <button type="button" data-dropdown-toggle class="flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-left text-slate-400 hover:border-slate-300" style="font-size:12.5px"><span>Select prerequisites&hellip;</span><i data-lucide="chevron-down" class="h-4 w-4 text-slate-400"></i></button>
                     <div data-dropdown-menu style="display:none" class="absolute left-0 right-0 z-20 mt-1 rounded-md border border-slate-200 bg-white shadow-lg">
                         <div class="border-b border-slate-100 px-3 py-2 text-slate-500" style="font-size:11.5px">Students must pass these courses before enrolling.</div>
-                        <ul class="max-h-56 overflow-y-auto py-1">
-                            <li><label class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-[#e0162b]" /><span class="text-slate-900 font-medium" style="font-size:13px">CSC1010</span><span class="text-slate-500" style="font-size:12.5px">Introduction to Programming</span></label></li>
-                            <li><label class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-[#e0162b]" /><span class="text-slate-900 font-medium" style="font-size:13px">CSC2024</span><span class="text-slate-500" style="font-size:12.5px">Mobile App Development</span></label></li>
-                            <li><label class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-[#e0162b]" /><span class="text-slate-900 font-medium" style="font-size:13px">CSC2030</span><span class="text-slate-500" style="font-size:12.5px">Machine Learning Fundamentals</span></label></li>
+                        <ul class="max-h-56 overflow-y-auto py-1" id="prereq-list">
+                            <%= PrerequisiteItemsHtml %>
+                            <li id="prereq-empty" style="display:none" class="px-3 py-3 text-slate-400" style="font-size:12.5px">No courses available for this programme.</li>
                         </ul>
                     </div>
                 </div>
@@ -273,6 +272,32 @@
                 if (window.toast) window.toast.success(message);
                 setTimeout(function () { location.reload(); }, 450);
             }
+            function filterPrerequisiteItems(modal, currentCode, checkedCodes) {
+                var programme = (modal.querySelector('[data-field="programme"]') || {}).value || "";
+                var list = document.getElementById("prereq-list");
+                var emptyMsg = document.getElementById("prereq-empty");
+                if (!list) return;
+                var items = list.querySelectorAll("[data-prereq-item]");
+                var visible = 0;
+                Array.prototype.forEach.call(items, function (li) {
+                    var itemCode = li.getAttribute("data-code");
+                    var itemProgramme = li.getAttribute("data-programme");
+                    var hide = (itemCode === currentCode) || (programme && itemProgramme && itemProgramme !== programme);
+                    li.style.display = hide ? "none" : "";
+                    if (!hide) visible++;
+                    var cb = li.querySelector("[data-prereq-check]");
+                    if (cb && checkedCodes !== undefined) {
+                        cb.checked = checkedCodes.indexOf(itemCode) !== -1;
+                    }
+                });
+                if (emptyMsg) emptyMsg.style.display = (visible === 0) ? "" : "none";
+            }
+            function collectPrerequisites(modal) {
+                var checks = modal.querySelectorAll("[data-prereq-check]:checked");
+                var codes = [];
+                Array.prototype.forEach.call(checks, function (cb) { codes.push(cb.value); });
+                return codes.join(",");
+            }
             function filterCourseOptions(modal, keepValue) {
                 var programmeSel = modal.querySelector('[data-field="programme"]');
                 var courseSel = modal.querySelector('[data-field="course"]');
@@ -329,6 +354,8 @@
                     setField(courseModal, "programme", courseRow && courseRow.dataset.programme);
                     setField(courseModal, "creditHours", courseRow && courseRow.dataset.creditHours);
                     setField(courseModal, "status", courseRow && courseRow.dataset.status);
+                    var prereqs = (courseRow && courseRow.dataset.prerequisites) ? courseRow.dataset.prerequisites.split(",").map(function(s){return s.trim();}).filter(Boolean) : [];
+                    filterPrerequisiteItems(courseModal, courseRow && courseRow.dataset.code, prereqs);
                     return;
                 }
 
@@ -372,6 +399,7 @@
                     setField(freshCourse, "name", "");
                     setField(freshCourse, "creditHours", "3");
                     setField(freshCourse, "status", "Active");
+                    filterPrerequisiteItems(freshCourse, "", []);
                 }
 
                 var newAssignment = e.target.closest("[data-modal-open='assign-modal']");
@@ -426,7 +454,7 @@
                             name: field(cm, "name"),
                             programme: field(cm, "programme"),
                             creditHours: parseInt(field(cm, "creditHours"), 10) || 1,
-                            prerequisites: "",
+                            prerequisites: collectPrerequisites(cm),
                             status: field(cm, "status")
                         }
                     }).then(function () { done("Course saved"); })
@@ -497,9 +525,15 @@
         }, true);
         document.addEventListener("change", function (e) {
           var am = document.getElementById("assign-modal");
-          if (!am || !am.contains(e.target)) return;
-          if (e.target.matches('[data-field="programme"]')) filterCourseOptions(am);
-          else if (e.target.matches('[data-field="course"]')) applyCourseCredit(am);
+          if (am && am.contains(e.target)) {
+            if (e.target.matches('[data-field="programme"]')) filterCourseOptions(am);
+            else if (e.target.matches('[data-field="course"]')) applyCourseCredit(am);
+          }
+          var cm = document.getElementById("course-modal");
+          if (cm && cm.contains(e.target) && e.target.matches('[data-field="programme"]')) {
+            var currentCode = (cm.querySelector('[data-field="code"]') || {}).value || "";
+            filterPrerequisiteItems(cm, currentCode);
+          }
         });
       })();
     </script>

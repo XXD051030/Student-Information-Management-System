@@ -296,7 +296,7 @@ namespace src.lecturer
                     daysOfWeek = new[] { ToFullCalendarDay(session.DayOfWeek) },
                     startTime = FormatCalendarTime(session.StartTime),
                     endTime = FormatCalendarTime(session.EndTime),
-                    startRecur = _term != null ? FormatDate(_term.StartDate) : (string)null,
+                    startRecur = _term != null ? FormatDate(WeekStart(_term.StartDate)) : (string)null,
                     endRecur = _term != null ? FormatDate(_term.EndDate.AddDays(1)) : (string)null,
                     backgroundColor = color + "18",
                     borderColor = color + "40",
@@ -391,6 +391,14 @@ namespace src.lecturer
         private static string FormatDate(DateTime date)
         {
             return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+
+        // Anchors recurring events to the Monday of the start week so days before
+        // a mid-week semester start date (e.g. Wednesday) still show in the first week.
+        private static DateTime WeekStart(DateTime date)
+        {
+            int diff = ((int)date.DayOfWeek + 6) % 7;
+            return date.AddDays(-diff);
         }
 
         private static string FormatCalendarTime(TimeSpan time)
