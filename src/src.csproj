@@ -355,6 +355,7 @@
     <Compile Include="services\AcademicTermReader.cs" />
     <Compile Include="services\AcademicIntakeSchema.cs" />
     <Compile Include="services\AccountPasswordService.cs" />
+    <Compile Include="services\AccountProfileService.cs" />
     <Compile Include="services\PasswordResetService.cs" />
     <Compile Include="services\AccountWebMethods.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
