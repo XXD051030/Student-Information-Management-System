@@ -208,12 +208,12 @@ namespace src.services.admin
         public List<AdminProgrammeRow> GetProgrammes()
         {
             const string sql =
-                "SELECT p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, " +
+                "SELECT p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, p.department_id, " +
                 "COUNT(DISTINCT c.course_id) AS course_count, COUNT(DISTINCT s.student_id) AS student_count " +
                 "FROM PROGRAMMES p " +
                 "LEFT JOIN COURSES c ON c.programme_id = p.programme_id " +
                 "LEFT JOIN STUDENTS s ON s.programme_id = p.programme_id " +
-                "GROUP BY p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status " +
+                "GROUP BY p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, p.department_id " +
                 "ORDER BY p.programme_code";
             var rows = new List<AdminProgrammeRow>();
             using (var conn = Db.OpenConnection())
@@ -231,6 +231,7 @@ namespace src.services.admin
                         Duration = Text(reader["duration"]),
                         Semesters = Int(reader["semester_count"]),
                         Status = Title(Text(reader["status"])),
+                        DepartmentId = Text(reader["department_id"]),
                         CourseCount = Int(reader["course_count"]),
                         StudentCount = Int(reader["student_count"])
                     });
@@ -499,13 +500,16 @@ namespace src.services.admin
             var code = CleanCode(request.Code);
             if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Programme code is required.");
             if (string.IsNullOrWhiteSpace(request.Name)) throw new ArgumentException("Programme name is required.");
+            if (string.IsNullOrWhiteSpace(request.Department)) throw new ArgumentException("Department is required.");
 
             using (var conn = Db.OpenConnection())
             {
-                var departmentId = ResolveDepartment(conn, null, code);
+                // Use the department the admin picked; ResolveDepartment maps the selected
+                // id/code to a real department_id (falling back only if it can't be matched).
+                var departmentId = ResolveDepartment(conn, null, request.Department);
                 var exists = Exists(conn, "SELECT 1 FROM PROGRAMMES WHERE programme_id = @id OR programme_code = @id", cmd => cmd.Parameters.AddWithValue("@id", code));
                 var sql = exists
-                    ? "UPDATE PROGRAMMES SET programme_code = @code, programme_name = @name, education_level = @level, duration = @duration, semester_count = @semesters, status = @status WHERE programme_id = @id OR programme_code = @id"
+                    ? "UPDATE PROGRAMMES SET department_id = @department, programme_code = @code, programme_name = @name, education_level = @level, duration = @duration, semester_count = @semesters, status = @status WHERE programme_id = @id OR programme_code = @id"
                     : "INSERT INTO PROGRAMMES (programme_id, department_id, programme_code, programme_name, education_level, duration, semester_count, status) VALUES (@id, @department, @code, @name, @level, @duration, @semesters, @status)";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
@@ -1769,6 +1773,7 @@ namespace src.services.admin
         public string Duration { get; set; }
         public int Semesters { get; set; }
         public string Status { get; set; }
+        public string Department { get; set; }
     }
 
     public class AdminDepartmentSaveRequest
@@ -1998,6 +2003,7 @@ namespace src.services.admin
         public string Duration { get; set; }
         public int Semesters { get; set; }
         public string Status { get; set; }
+        public string DepartmentId { get; set; }
         public int CourseCount { get; set; }
         public int StudentCount { get; set; }
     }

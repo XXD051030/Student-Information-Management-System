@@ -15,6 +15,7 @@ namespace src.admin
         protected string CourseRowsHtml { get; private set; }
         protected string AssignmentRowsHtml { get; private set; }
         protected string ProgrammeOptionsHtml { get; private set; }
+        protected string DepartmentOptionsHtml { get; private set; }
         protected string EducationLevelOptionsHtml { get; private set; }
         protected string ProgrammeStatusOptionsHtml { get; private set; }
         protected string CourseStatusOptionsHtml { get; private set; }
@@ -33,6 +34,7 @@ namespace src.admin
             AssignmentRowsHtml = BuildAssignmentRows();
             var lookups = service.GetLookups();
             ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, null);
+            DepartmentOptionsHtml = AdminPortalService.RenderOptions(lookups.Departments, "Select department...");
             EducationLevelOptionsHtml = AdminPortalService.RenderOptions(lookups.EducationLevels, null);
             ProgrammeStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, null);
             CourseStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, null);
@@ -95,7 +97,7 @@ namespace src.admin
             var html = new StringBuilder();
             foreach (var p in service.GetProgrammes())
             {
-                html.Append("<tr data-row data-code=\"").Append(Attr(p.Code)).Append("\" data-name=\"").Append(Attr(p.Name)).Append("\" data-level=\"").Append(Attr(p.Level)).Append("\" data-duration=\"").Append(Attr(p.Duration)).Append("\" data-semesters=\"").Append(p.Semesters).Append("\" data-search=\"").Append(Attr((p.Code + " " + p.Name).ToLowerInvariant())).Append("\" data-status=\"").Append(Attr(p.Status)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<tr data-row data-code=\"").Append(Attr(p.Code)).Append("\" data-name=\"").Append(Attr(p.Name)).Append("\" data-level=\"").Append(Attr(p.Level)).Append("\" data-duration=\"").Append(Attr(p.Duration)).Append("\" data-semesters=\"").Append(p.Semesters).Append("\" data-department=\"").Append(Attr(p.DepartmentId)).Append("\" data-search=\"").Append(Attr((p.Code + " " + p.Name).ToLowerInvariant())).Append("\" data-status=\"").Append(Attr(p.Status)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"text-slate-900 font-medium\">").Append(Html(p.Code)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(p.Name)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(p.Level)).Append("</td>");

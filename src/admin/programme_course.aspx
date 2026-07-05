@@ -156,6 +156,7 @@
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Code</span><div class="mt-1.5"><input data-field="code" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Name</span><div class="mt-1.5"><input data-field="name" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
+                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Department</span><div class="mt-1.5"><select data-field="department" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= DepartmentOptionsHtml %></select></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Level</span><div class="mt-1.5"><select data-field="level" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= EducationLevelOptionsHtml %></select></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Duration</span><div class="mt-1.5"><input data-field="duration" value="3 yrs" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Total Semesters</span><div class="mt-1.5"><input data-field="semesters" type="number" value="6" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
@@ -259,6 +260,20 @@
                 var el = modal.querySelector('[data-field="' + name + '"]');
                 return el ? el.value.trim() : "";
             }
+            // Returns true when every listed field has a value; otherwise flags the
+            // first empty one and returns false so the caller can stop before posting.
+            function requireFields(modal, specs) {
+                for (var i = 0; i < specs.length; i++) {
+                    var el = modal.querySelector('[data-field="' + specs[i].name + '"]');
+                    var value = el ? String(el.value).trim() : "";
+                    if (!value) {
+                        if (window.toast) window.toast.error(specs[i].label + " is required");
+                        if (el && el.focus) el.focus();
+                        return false;
+                    }
+                }
+                return true;
+            }
             function setField(modal, name, value) {
                 var el = modal.querySelector('[data-field="' + name + '"]');
                 if (!el) return;
@@ -338,6 +353,7 @@
                     var programmeModal = document.getElementById("prog-modal");
                     setField(programmeModal, "code", programmeRow && programmeRow.dataset.code);
                     setField(programmeModal, "name", programmeRow && programmeRow.dataset.name);
+                    setField(programmeModal, "department", programmeRow && programmeRow.dataset.department);
                     setField(programmeModal, "level", programmeRow && programmeRow.dataset.level);
                     setField(programmeModal, "duration", programmeRow && programmeRow.dataset.duration);
                     setField(programmeModal, "semesters", programmeRow && programmeRow.dataset.semesters);
@@ -378,6 +394,7 @@
                     var freshProgramme = document.getElementById("prog-modal");
                     setField(freshProgramme, "code", "");
                     setField(freshProgramme, "name", "");
+                    setField(freshProgramme, "department", "");
                     setField(freshProgramme, "level", "Undergraduate");
                     setField(freshProgramme, "duration", "3 yrs");
                     setField(freshProgramme, "semesters", "6");
@@ -418,10 +435,16 @@
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     var pm = document.getElementById("prog-modal");
+                    if (!requireFields(pm, [
+                        { name: "code", label: "Programme code" },
+                        { name: "name", label: "Programme name" },
+                        { name: "department", label: "Department" }
+                    ])) return;
                     post("SaveProgramme", {
                         request: {
                             code: field(pm, "code"),
                             name: field(pm, "name"),
+                            department: field(pm, "department"),
                             level: field(pm, "level"),
                             duration: field(pm, "duration"),
                             semesters: parseInt(field(pm, "semesters"), 10) || 1,
@@ -437,6 +460,10 @@
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     var dm = document.getElementById("department-modal");
+                    if (!requireFields(dm, [
+                        { name: "id", label: "Department code" },
+                        { name: "name", label: "Department name" }
+                    ])) return;
                     post("SaveDepartment", { request: { id: field(dm, "id"), name: field(dm, "name"), status: field(dm, "status") } })
                         .then(function () { done("Department saved"); })
                         .catch(function () { if (window.toast) window.toast.error("Could not save department"); });
@@ -448,6 +475,10 @@
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     var cm = document.getElementById("course-modal");
+                    if (!requireFields(cm, [
+                        { name: "code", label: "Course code" },
+                        { name: "name", label: "Course title" }
+                    ])) return;
                     post("SaveCourse", {
                         request: {
                             code: field(cm, "code"),
@@ -467,6 +498,11 @@
             e.preventDefault();
             e.stopImmediatePropagation();
             var am = document.getElementById("assign-modal");
+            if (!requireFields(am, [
+                { name: "course", label: "Course" },
+                { name: "lecturer", label: "Lecturer" },
+                { name: "semester", label: "Intake semester" }
+            ])) return;
             post("SaveCourseAssignment", {
               request: {
                 offerId: parseInt(field(am, "offerId"), 10) || 0,
