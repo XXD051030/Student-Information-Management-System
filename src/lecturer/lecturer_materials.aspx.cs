@@ -340,25 +340,6 @@ namespace student_information_management_system
             };
         }
 
-        [WebMethod(EnableSession = true)]
-        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-        public static object UpdateMaterialWeight(int materialId, decimal weight)
-        {
-            var context = HttpContext.Current;
-            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
-            if (user == null || !user.IsLecturer)
-                return new { success = false, message = "Your lecturer session has expired." };
-
-            var result = LecturerPortalService.UpdateMaterialWeight(user, materialId, weight);
-            return new
-            {
-                success = result.Success,
-                message = result.Message,
-                weight = result.Weight,
-                courseTotal = result.CourseTotal
-            };
-        }
-
         private string SaveMaterialFile(FileUpload upload, int offeringId, out string fileType, out int fileSizeBytes)
         {
             string extension = Path.GetExtension(upload.FileName);
@@ -508,13 +489,6 @@ namespace student_information_management_system
             return Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
         }
 
-        protected string WeightInputValue(object value)
-        {
-            return value == null || value == DBNull.Value
-                ? ""
-                : Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture);
-        }
-
         protected string CourseWeightLabel(object value)
         {
             if (value == null || value == DBNull.Value) return "Unweighted";
@@ -526,7 +500,8 @@ namespace student_information_management_system
             string id = value == null || value == DBNull.Value ? "" : value.ToString();
             return string.IsNullOrWhiteSpace(id)
                 ? ""
-                : ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(id));
+                : ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(id) +
+                    "&source=" + (_offeringFilter.HasValue ? "course" : "materials"));
         }
 
         protected void CourseModulesRepeater_ItemCommand(object source, RepeaterCommandEventArgs e)

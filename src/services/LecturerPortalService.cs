@@ -60,7 +60,6 @@ namespace src.services
         public static int AddMaterial(UserContext user, LecturerMaterialInput input) => LecturerMaterialReader.Add(user, input);
 
         public static decimal GetMaterialWeightTotal(UserContext user, int offeringId) => LecturerMaterialReader.GetWeightTotal(user, offeringId);
-        public static MaterialWeightUpdateResult UpdateMaterialWeight(UserContext user, int materialId, decimal weight) => LecturerMaterialReader.UpdateWeight(user, materialId, weight);
 
         public static bool DeleteMaterial(UserContext user, int materialId) => LecturerMaterialReader.Delete(user, materialId);
         public static bool UpdateModule(UserContext user, int offeringId, string moduleId, string title, string description) => LecturerMaterialReader.UpdateModule(user, offeringId, moduleId, title, description);

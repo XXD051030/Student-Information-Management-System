@@ -298,11 +298,4 @@ namespace src.services
         public DateTime UploadedAt { get; set; }
     }
 
-    public class MaterialWeightUpdateResult
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; }
-        public decimal Weight { get; set; }
-        public decimal CourseTotal { get; set; }
-    }
 }

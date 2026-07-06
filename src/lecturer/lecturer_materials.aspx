@@ -109,12 +109,6 @@
                                     </div>
                                     <i data-lucide="eye" class="h-4 w-4 text-slate-400"></i>
                                 </a>
-                                <button type="button" data-edit-material-weight='<%# Eval("MaterialId") %>'
-                                    data-material-title='<%# Html(Eval("Title")) %>' data-current-weight='<%# WeightInputValue(Eval("Weight")) %>'
-                                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-white hover:text-[#a01020]"
-                                    title="Edit course weight" aria-label="Edit course weight">
-                                    <i data-lucide="pencil" class="h-4 w-4"></i>
-                                </button>
                             </li>
                         </ItemTemplate>
                     </asp:Repeater>
@@ -192,13 +186,6 @@
                                     <p class="text-slate-400" style="font-size:10.5px;font-weight:800;letter-spacing:0.08em">COURSE WEIGHT</p>
                                     <p class="text-slate-900" style="font-size:14px;font-weight:800"><span data-material-weight-display='<%# Eval("MaterialId") %>'><%# WeightLabel(Eval("Weight")) %></span></p>
                                 </div>
-                                <button runat="server" Visible='<%# Eval("Weight") != null && Eval("Weight") != DBNull.Value %>'
-                                    type="button" data-edit-material-weight='<%# Eval("MaterialId") %>'
-                                    data-material-title='<%# Html(Eval("Title")) %>' data-current-weight='<%# WeightInputValue(Eval("Weight")) %>'
-                                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-[#a01020]"
-                                    title="Edit course weight" aria-label="Edit course weight">
-                                    <i data-lucide="pencil" class="h-4 w-4"></i>
-                                </button>
                                 <button type="button" data-delete-material='<%# Eval("MaterialId") %>' class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-[#e0162b]" title="Delete material"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
                             </div>
                         </li>
@@ -233,32 +220,6 @@
     </section>
     </asp:Panel>
 
-    <div data-weight-update-status class="fixed right-5 top-5 z-[90] hidden max-w-sm rounded-lg border px-4 py-3 shadow-xl" style="font-size:13px;font-weight:700"></div>
-    <dialog data-weight-editor class="m-auto w-[min(92vw,430px)] rounded-xl border border-slate-200 bg-white p-0 shadow-2xl">
-        <div class="flex items-start justify-between border-b border-slate-100 px-5 py-4">
-            <div>
-                <h2 class="text-slate-900" style="font-size:17px;font-weight:800">Edit course weight</h2>
-                <p data-weight-editor-title class="mt-1 text-slate-500" style="font-size:12.5px"></p>
-            </div>
-            <button type="button" data-weight-editor-close class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label="Close">
-                <i data-lucide="x" class="h-4 w-4"></i>
-            </button>
-        </div>
-        <div class="px-5 py-5">
-            <label class="block">
-                <span class="text-slate-600" style="font-size:12px;font-weight:800">COURSE WEIGHT %</span>
-                <input data-weight-editor-input type="number" min="0.01" max="100" step="0.01"
-                    class="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 text-slate-800"
-                    style="font-size:13px" />
-            </label>
-            <p class="mt-2 text-slate-500" style="font-size:11.5px">Changing weight does not remove the assessment, files, marks, or student submissions.</p>
-            <p data-weight-editor-error class="mt-3 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800" style="font-size:12px;font-weight:600"></p>
-            <div class="mt-5 flex justify-end gap-2">
-                <button type="button" data-weight-editor-close class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 px-4 text-slate-700 hover:bg-slate-50" style="font-size:12.5px;font-weight:700">Cancel</button>
-                <button type="button" data-save-material-weight class="inline-flex h-9 items-center justify-center rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020]" style="font-size:12.5px;font-weight:700">Save weight</button>
-            </div>
-        </div>
-    </dialog>
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="HeadPlaceholder" runat="server">
@@ -273,10 +234,6 @@
         }
         select[data-assessment-mode] option {
             color: #334155;
-        }
-        [data-weight-editor]::backdrop {
-            background: rgba(15, 23, 42, .48);
-            backdrop-filter: blur(1px);
         }
         .material-tab:hover {
             border-color: #e2e8f0;

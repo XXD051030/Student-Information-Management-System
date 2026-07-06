@@ -43,11 +43,11 @@
                     <asp:DropDownList ID="courseSelect" runat="server" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" />
                 </label>
                 <label class="block">
-                    <span class="text-slate-500" style="font-size:12px;font-weight:800">TITLE</span>
+                    <span class="text-slate-500" style="font-size:12px;font-weight:800">TITLE <span class="text-[#e0162b]">*</span></span>
                     <asp:TextBox ID="titleInput" runat="server" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" placeholder="Announcement title" style="font-size:13px" />
                 </label>
                 <label class="block lg:col-span-2">
-                    <span class="text-slate-500" style="font-size:12px;font-weight:800">MESSAGE</span>
+                    <span class="text-slate-500" style="font-size:12px;font-weight:800">MESSAGE <span class="text-[#e0162b]">*</span></span>
                     <asp:TextBox ID="messageInput" runat="server" TextMode="MultiLine" CssClass="mt-1.5 min-h-[120px] w-full rounded-md border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" placeholder="Write the announcement content" style="font-size:13px;line-height:1.55" />
                 </label>
                 <label class="block">
