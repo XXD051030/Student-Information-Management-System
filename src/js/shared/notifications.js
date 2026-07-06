@@ -9,12 +9,25 @@
 
     var list = document.getElementById('notif-list');
     if (!list) return;
+    var endpointBase = list.getAttribute('data-notification-endpoint') || '/student/notifications.aspx';
 
     var items = Array.prototype.slice.call(list.querySelectorAll('.notif-item'));
     var unreadEl = document.getElementById('unread-count');
     var emptyEl = document.getElementById('detail-empty');
     var cardEl = document.getElementById('detail-card');
     var current = null;
+    var yearFilter = document.querySelector('[data-notification-year-filter]');
+    var semesterFilter = document.querySelector('[data-notification-semester-filter]');
+    var courseFilter = document.querySelector('[data-notification-course-filter]');
+    var search = document.getElementById('notif-search');
+    var courseOptions = courseFilter ? Array.prototype.slice.call(courseFilter.options, 1).map(function (option) {
+        return {
+            value: option.value,
+            label: option.textContent,
+            year: option.getAttribute('data-year') || '',
+            semester: option.getAttribute('data-semester') || ''
+        };
+    }) : [];
 
     function badgeText(n) {
         return n > 9 ? '9+' : String(n);
@@ -94,6 +107,7 @@
         if (badge) badge.className = 'notif-badge rounded border px-1.5 py-0.5 ' + cat(item).badge;
         var pin = item.querySelector('.notif-pin');
         if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
+        item.style.opacity = item.getAttribute('data-read') === 'true' ? '0.7' : '';
         paintDot(item);
     }
 
@@ -118,9 +132,10 @@
         recount();
 
         var id = parseInt(item.getAttribute('data-id'), 10);
-        var endpoint = read ? '/student/notifications.aspx/MarkRead' : '/student/notifications.aspx/MarkUnread';
+        var type = item.getAttribute('data-type') || 'ANNOUNCEMENT';
+        var endpoint = endpointBase + (read ? '/MarkRead' : '/MarkUnread');
 
-        postJson(endpoint, { announcementId: id }).then(function (result) {
+        postJson(endpoint, { notificationType: type, notificationId: id }).then(function (result) {
             applyServerCount(result);
         }).catch(function () {
             applyReadState(item, currentRead);
@@ -148,6 +163,22 @@
         var detailContent = document.getElementById('detail-content');
         if (detailContent) detailContent.textContent = body ? body.textContent : '';
 
+        var fileUrl = item.getAttribute('data-fileurl') || '';
+        var attachEl = document.getElementById('detail-attachment');
+        if (attachEl) {
+            // attachEl carries the `inline-flex` utility class, which (like
+            // #detail-empty/#detail-card above) beats the `[hidden]` attribute
+            // in Tailwind's CDN stylesheet order — so toggle `display` directly.
+            if (fileUrl) {
+                attachEl.href = fileUrl;
+                attachEl.hidden = false;
+                attachEl.style.display = '';
+            } else {
+                attachEl.hidden = true;
+                attachEl.style.display = 'none';
+            }
+        }
+
         var pin = document.getElementById('detail-pin');
         if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
 
@@ -160,6 +191,42 @@
     function setText(id, val) {
         var el = document.getElementById(id);
         if (el) el.textContent = val || '';
+    }
+
+    function applyFilters() {
+        var year = yearFilter ? yearFilter.value : 'all';
+        var semester = semesterFilter ? semesterFilter.value : 'all';
+        var course = courseFilter ? courseFilter.value : 'all';
+        var q = search ? search.value.toLowerCase().trim() : '';
+
+        items.forEach(function (item) {
+            var hay = (item.getAttribute('data-title') + ' ' + item.getAttribute('data-course') + ' ' + item.getAttribute('data-author')).toLowerCase();
+            var visible =
+                (year === 'all' || item.getAttribute('data-year') === year) &&
+                (semester === 'all' || item.getAttribute('data-semester') === semester) &&
+                (course === 'all' || item.getAttribute('data-offering') === course) &&
+                (!q || hay.indexOf(q) !== -1);
+            item.parentElement.hidden = !visible;
+        });
+    }
+
+    function refreshCourseOptions() {
+        if (!courseFilter) return;
+        var selected = courseFilter.value;
+        var year = yearFilter ? yearFilter.value : 'all';
+        var semester = semesterFilter ? semesterFilter.value : 'all';
+        courseFilter.innerHTML = '<option value="all">All courses</option>';
+        courseOptions.forEach(function (course) {
+            if (year !== 'all' && course.year !== year) return;
+            if (semester !== 'all' && course.semester !== semester) return;
+            var option = document.createElement('option');
+            option.value = course.value;
+            option.textContent = course.label;
+            courseFilter.appendChild(option);
+        });
+        if (Array.prototype.some.call(courseFilter.options, function (option) { return option.value === selected; })) {
+            courseFilter.value = selected;
+        }
     }
 
     items.forEach(function (item) {
@@ -176,7 +243,7 @@
         items.forEach(function (item) { applyReadState(item, true); });
         syncBadges(0);
 
-        postJson('/student/notifications.aspx/MarkAllRead', {}).then(function (result) {
+        postJson(endpointBase + '/MarkAllRead', {}).then(function (result) {
             applyServerCount(result);
         }).catch(function () {
             items.forEach(function (item, index) {
@@ -191,19 +258,40 @@
         if (current) setRead(current, false);
     });
 
-    var search = document.getElementById('notif-search');
     if (search) search.addEventListener('input', function () {
-        var q = search.value.toLowerCase();
-        items.forEach(function (item) {
-            var hay = (item.getAttribute('data-title') + ' ' + item.getAttribute('data-course') + ' ' + item.getAttribute('data-author')).toLowerCase();
-            item.parentElement.hidden = q !== '' && hay.indexOf(q) === -1;
+        applyFilters();
+    });
+    [yearFilter, semesterFilter].forEach(function (filter) {
+        if (!filter) return;
+        filter.addEventListener('change', function () {
+            refreshCourseOptions();
+            applyFilters();
         });
     });
+    if (courseFilter) courseFilter.addEventListener('change', applyFilters);
+    refreshCourseOptions();
+    applyFilters();
 
     recount();
 
-    if (items.length) {
-        select(items[0]);
+    var params = new URLSearchParams(window.location.search);
+    var targetId = params.get('id');
+    var targetType = params.get('type');
+    var initialItem = null;
+    if (targetId) {
+        for (var i = 0; i < items.length; i++) {
+            var itemType = items[i].getAttribute('data-type') || 'ANNOUNCEMENT';
+            if (items[i].getAttribute('data-id') === targetId && (!targetType || itemType === targetType)) {
+                initialItem = items[i];
+                break;
+            }
+        }
+    }
+    if (!initialItem && items.length) initialItem = items[0];
+
+    if (initialItem) {
+        select(initialItem);
+        initialItem.scrollIntoView({ block: 'nearest' });
     } else {
         showDetail(false);
     }

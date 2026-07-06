@@ -14,6 +14,15 @@ namespace student_information_management_system
     public partial class lecturer_materials
     {
 
+        protected global::System.Web.UI.WebControls.Panel courseModulesPanel;
+        protected global::System.Web.UI.WebControls.Panel courseModuleStatusPanel;
+        protected global::System.Web.UI.WebControls.Literal courseModuleStatusMessage;
+        protected global::System.Web.UI.WebControls.Repeater courseModulesRepeater;
+        protected global::System.Web.UI.WebControls.Panel courseModulesEmptyPanel;
+        protected global::System.Web.UI.WebControls.Repeater courseAssignmentsRepeater;
+        protected global::System.Web.UI.WebControls.Panel courseAssignmentsEmptyPanel;
+        protected global::System.Web.UI.WebControls.Panel materialsManagerPanel;
+
         /// <summary>
         /// statusBanner control.
         /// </summary>
@@ -31,6 +40,11 @@ namespace student_information_management_system
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal statusMessage;
+
+        protected global::System.Web.UI.WebControls.DropDownList yearFilterSelect;
+        protected global::System.Web.UI.WebControls.DropDownList semesterFilterSelect;
+        protected global::System.Web.UI.WebControls.DropDownList uploadYearSelect;
+        protected global::System.Web.UI.WebControls.DropDownList uploadSemesterSelect;
 
         /// <summary>
         /// courseFilterSelect control.
@@ -78,6 +92,11 @@ namespace student_information_management_system
         protected global::System.Web.UI.WebControls.DropDownList materialTypeSelect;
 
         /// <summary>
+        /// weekSelect control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.DropDownList weekSelect;
+
+        /// <summary>
         /// titleInput control.
         /// </summary>
         /// <remarks>
@@ -103,6 +122,15 @@ namespace student_information_management_system
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox dueDateInput;
+
+        /// <summary>
+        /// dueTimeInput control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox dueTimeInput;
 
         /// <summary>
         /// weightInput control.

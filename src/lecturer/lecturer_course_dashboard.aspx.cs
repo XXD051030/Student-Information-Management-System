@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
 using src.services;
 
@@ -10,6 +11,10 @@ namespace src.lecturer
         private int _offeringId;
         private CourseDashboardStats _stats;
         private int _announcementCount;
+        private List<StudentCourseModule> _modules = new List<StudentCourseModule>();
+        private List<LecturerMaterialRow> _assessments = new List<LecturerMaterialRow>();
+        private int _totalModuleCount;
+        private int _totalAssessmentCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -43,20 +48,26 @@ namespace src.lecturer
 
             var announcements = LecturerPortalService.GetAnnouncements(user, _offeringId);
             _announcementCount = announcements.Count;
-            announcementsRepeater.DataSource = announcements
-                .OrderByDescending(a => a.CreatedAt)
-                .Take(3)
-                .Select(a => new
-                {
-                    a.AnnouncementId,
-                    a.Title,
-                    Content = a.Content,
-                    a.CreatedAt,
-                    IsPinned = false,
-                    AuthorName = "Lecturer"
-                })
+
+            var allModules = LecturerPortalService.GetCourseModules(user, _offeringId)
+                .Where(module => module.Items != null && module.Items.Count > 0)
+                .OrderByDescending(module => module.Items.Max(item => item.UploadedAt))
+                .ThenByDescending(module => module.Week)
                 .ToList();
-            announcementsRepeater.DataBind();
+            _totalModuleCount = allModules.Count;
+            _modules = allModules.Take(3).ToList();
+            modulesRepeater.DataSource = _modules;
+            modulesRepeater.DataBind();
+
+            var allAssessments = LecturerPortalService.GetMaterials(user, _offeringId)
+                .Where(m => !string.Equals(m.MaterialType, "Lecture Notes", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(m => m.UploadedAt)
+                .ThenByDescending(m => m.MaterialId)
+                .ToList();
+            _totalAssessmentCount = allAssessments.Count;
+            _assessments = allAssessments.Take(3).ToList();
+            assessmentsRepeater.DataSource = _assessments;
+            assessmentsRepeater.DataBind();
         }
 
         // ----- Header -----
@@ -83,6 +94,7 @@ namespace src.lecturer
         // ----- Overview metrics -----
 
         protected int EnrolledCount { get { return _stats.EnrolledCount; } }
+        protected int PendingCount { get { return _stats.PendingCount; } }
         protected int PendingGrading { get { return _stats.PendingGrading; } }
 
         /// <summary>Class average over published grades, e.g. "72.3%", or "—" when none.</summary>
@@ -109,10 +121,16 @@ namespace src.lecturer
 
         // ----- Card labels -----
 
-        /// <summary>"28 students" / "1 student".</summary>
+        /// <summary>"28 students" / "1 student", with optional pending count.</summary>
         protected string EnrolledLabel
         {
-            get { return _stats.EnrolledCount + (_stats.EnrolledCount == 1 ? " student" : " students"); }
+            get
+            {
+                string label = _stats.EnrolledCount + (_stats.EnrolledCount == 1 ? " student" : " students");
+                if (_stats.PendingCount > 0)
+                    label += ", " + _stats.PendingCount + " pending";
+                return label;
+            }
         }
 
         /// <summary>"3 announcements" / "1 announcement".</summary>
@@ -135,13 +153,52 @@ namespace src.lecturer
 
         /// <summary>Number of announcements (drives the empty-state on the latest panel).</summary>
         protected int AnnouncementCount { get { return _announcementCount; } }
+        protected int ModuleCount { get { return _modules.Count; } }
+        protected int AssessmentCount { get { return _assessments.Count; } }
+        protected int TotalModuleCount { get { return _totalModuleCount; } }
+        protected int TotalAssessmentCount { get { return _totalAssessmentCount; } }
 
         // ----- Sub-page links (carry the offering id) -----
 
-        protected string AnnouncementsUrl { get { return SubUrl("lecturer_announcement.aspx"); } }
+        protected string AnnouncementsUrl { get { return SubUrl("lecturer_announcement.aspx") + "&context=course"; } }
         protected string PeopleUrl { get { return SubUrl("lecturer_course_people.aspx"); } }
         protected string GradesUrl { get { return SubUrl("lecturer_grades.aspx"); } }
         protected string MaterialsUrl { get { return SubUrl("lecturer_materials.aspx"); } }
+        protected string ModulesUrl { get { return MaterialsUrl + "&tab=modules"; } }
+        protected string AssignmentsUrl { get { return MaterialsUrl + "&tab=assignments"; } }
+
+        protected string MaterialPreviewUrl(object materialId)
+        {
+            return ResolveUrl("~/shared/material_preview.aspx?id=" + materialId);
+        }
+
+        protected string DueDateDisplay(object value)
+        {
+            return value == null || value == DBNull.Value
+                ? "No due date"
+                : FormatDueDate(Convert.ToDateTime(value));
+        }
+
+        private static string FormatDueDate(DateTime due)
+        {
+            return due.ToString("d MMM yyyy 'at' h:mm", CultureInfo.InvariantCulture) +
+                (due.Hour < 12 ? " a.m." : " p.m.");
+        }
+
+        protected string WeightDisplay(object value)
+        {
+            return value == null || value == DBNull.Value
+                ? "Unweighted"
+                : Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+        }
+
+        protected string AssessmentIcon(object type)
+        {
+            string value = Convert.ToString(type);
+            if (value == "Quiz") return "circle-help";
+            if (value == "Test") return "clipboard-list";
+            return "clipboard-check";
+        }
 
         private string SubUrl(string page)
         {

@@ -1,34 +1,19 @@
-﻿// Course detail page: tab switching, module accordion, and pin toggle.
+﻿// Course detail page: tab switching and module accordion.
 // All content is rendered server-side; this script only drives interactivity.
 // Hooks in the markup:
 //   [data-action="switch-tab"][data-tab][data-active]  – tab buttons (with a
 //        child .tab-indicator); panes are [data-pane] (inactive ones are .hidden)
 //   [data-action="toggle-module"][data-week]           – accordion header; its
 //        sibling .module-items.hidden expands, its .module-chevron rotates
-//   [data-action="toggle-pin"][data-code]              – pin the course
 (function () {
     "use strict";
 
-    // Shared with the My Courses page so a pin set here shows there too.
-    var PIN_KEY = "courses.pinned";
     var INACTIVE = "#64748b"; // slate-500 for inactive tabs
 
     function activeColor() {
         var root = document.getElementById("course-detail-root") || document.documentElement;
         var color = window.getComputedStyle(root).getPropertyValue("--course-accent").trim();
         return color || INACTIVE;
-    }
-
-    function loadPins() {
-        try { return JSON.parse(localStorage.getItem(PIN_KEY)) || []; }
-        catch (e) { return []; }
-    }
-
-    function savePins(pins) {
-        // Storage can throw in private mode or when the quota is exceeded; the pin
-        // simply isn't persisted across reloads in that case.
-        try { localStorage.setItem(PIN_KEY, JSON.stringify(pins)); }
-        catch (e) { /* storage unavailable */ }
     }
 
     // ---- Tabs -------------------------------------------------------------
@@ -65,19 +50,9 @@
         if (chevron) { chevron.style.transform = open ? "rotate(90deg)" : ""; }
     }
 
-    // ---- Pin --------------------------------------------------------------
-    function paintPin(btn) {
-        var code = btn.getAttribute("data-code");
-        btn.style.color = loadPins().indexOf(code) !== -1 ? activeColor() : "";
-    }
-
-    function togglePin(btn) {
-        var code = btn.getAttribute("data-code");
-        var pins = loadPins();
-        var i = pins.indexOf(code);
-        if (i === -1) { pins.push(code); } else { pins.splice(i, 1); }
-        savePins(pins);
-        paintPin(btn);
+    function openAssignmentMaterial(card) {
+        var url = card.getAttribute("data-preview-url");
+        if (url) { window.location.href = url; }
     }
 
     function init() {
@@ -103,12 +78,22 @@
             }
         );
 
-        // Pin
         Array.prototype.forEach.call(
-            document.querySelectorAll('[data-action="toggle-pin"]'),
-            function (btn) {
-                paintPin(btn);
-                btn.addEventListener("click", function () { togglePin(btn); });
+            document.querySelectorAll('[data-action="open-assignment-material"]'),
+            function (card) {
+                card.addEventListener("click", function (event) {
+                    if (event.target.closest("a, button, input, textarea, select, summary, details, label")) {
+                        return;
+                    }
+                    openAssignmentMaterial(card);
+                });
+                card.addEventListener("keydown", function (event) {
+                    if (event.target !== card || (event.key !== "Enter" && event.key !== " ")) {
+                        return;
+                    }
+                    event.preventDefault();
+                    openAssignmentMaterial(card);
+                });
             }
         );
     }

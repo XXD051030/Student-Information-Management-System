@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace src.services
 {
+    public class AcademicSessionOption
+    {
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+
     public class StudentAccountProfile
     {
         public string StudentId { get; set; }
@@ -12,6 +20,8 @@ namespace src.services
         public string ProgrammeName { get; set; }
         public DateTime? IntakeDate { get; set; }
         public int CurrentSemesterNo { get; set; }
+        public int ProgrammeSemesterCount { get; set; }
+        public int SemestersPerYear { get; set; }
         public string Phone { get; set; }
         public string MailingAddress { get; set; }
         public string IconPath { get; set; }
@@ -72,10 +82,13 @@ namespace src.services
         public string FileUrl { get; set; }
         public string FileType { get; set; }
         public int? FileSizeBytes { get; set; }
+        public DateTime UploadedAt { get; set; }
     }
 
     public class StudentCourseAnnouncement
     {
+        public int NotificationId { get; set; }
+        public string NotificationType { get; set; }
         public int AnnouncementId { get; set; }
         public int OfferId { get; set; }
         public string CourseCode { get; set; }
@@ -86,6 +99,7 @@ namespace src.services
         public string AuthorRole { get; set; }
         public bool IsPinned { get; set; }
         public bool HasAttachment { get; set; }
+        public string FileUrl { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
@@ -96,6 +110,7 @@ namespace src.services
 
     public class StudentCourseAssignment
     {
+        public int MaterialId { get; set; }
         public int AssignmentId { get; set; }
         public int OfferId { get; set; }
         public string Title { get; set; }
@@ -107,7 +122,9 @@ namespace src.services
         public string SubmissionStatus { get; set; }
         public bool HasSubmission { get; set; }
         public string SubmissionFileUrl { get; set; }
+        public string MaterialFileUrl { get; set; }
         public string Feedback { get; set; }
+        public string AnnotatedFileUrl { get; set; }
         public decimal? Marks { get; set; }
         public string CourseCode { get; set; }
     }
@@ -136,8 +153,15 @@ namespace src.services
         public string SessionId { get; set; }
         public string Name { get; set; }
         public string AcademicYear { get; set; }
+        public string IntakeId { get; set; }
+        public string IntakeName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime RegistrationStart { get; set; }
+        public DateTime RegistrationEnd { get; set; }
+        public DateTime AddDropEnd { get; set; }
+        public int MinCredits { get; set; }
+        public int MaxCredits { get; set; }
     }
 
     public class StudentRegistrationWindow
@@ -161,6 +185,7 @@ namespace src.services
         public string Schedule { get; set; }
         public int CreditHours { get; set; }
         public string Prerequisites { get; set; }
+        public bool PrerequisiteMet { get; set; }
         public int EnrolledCount { get; set; }
         public int Capacity { get; set; }
         public string MyStatus { get; set; }
@@ -174,6 +199,8 @@ namespace src.services
         public StudentRegistrationWindow Window { get; set; }
         public List<StudentOfferingOption> Offerings { get; set; }
         public int SemesterNo { get; set; }
+        public int SemesterCount { get; set; }
+        public int AlreadyRegisteredCount { get; set; }
     }
 
     public class StudentAttendanceSession
@@ -317,5 +344,25 @@ namespace src.services
         public int CreditsEarned { get; set; }
         public int CreditsAttempted { get; set; }
         public int CoursesGraded { get; set; }
+    }
+
+    public class StudentPaymentRow
+    {
+        public string InvoiceNo { get; set; }
+        public string Description { get; set; }
+        public string TermLabel { get; set; }
+        public DateTime PaidDate { get; set; }
+        public string Method { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; }
+    }
+
+    public class StudentPaymentHistoryPage
+    {
+        public List<StudentPaymentRow> Rows { get; set; }
+        public decimal TotalPaid { get; set; }
+        public decimal PaidThisYear { get; set; }
+        public decimal Refunded { get; set; }
+        public int ReceiptCount { get; set; }
     }
 }

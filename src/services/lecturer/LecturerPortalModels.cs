@@ -20,6 +20,8 @@ namespace src.services
         public string CourseId { get; set; }
         public string CourseCode { get; set; }
         public string CourseName { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string SemesterName { get; set; }
         public int CreditHours { get; set; }
         public int EnrolledCount { get; set; }
@@ -42,6 +44,7 @@ namespace src.services
         public string SemesterName { get; set; }
         public string Color { get; set; }
         public int EnrolledCount { get; set; }
+        public int PendingCount { get; set; }
         public int PendingGrading { get; set; }
         public decimal? AverageGrade { get; set; }
         public decimal? AttendanceRate { get; set; }
@@ -71,6 +74,7 @@ namespace src.services
         public string ProgrammeName { get; set; }
         public string ProgrammeCode { get; set; }
         public string IconPath { get; set; }
+        public bool IsPending { get; set; }
         public string StudentNo { get { return StudentId; } }
     }
 
@@ -93,6 +97,21 @@ namespace src.services
         public string Status { get; set; }
     }
 
+    public class LecturerAttendanceHistoryRow
+    {
+        public int SessionId { get; set; }
+        public int OfferingId { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public DateTime SessionDate { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public int PresentCount { get; set; }
+        public int LateCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int RecordedCount { get; set; }
+    }
+
     public class LecturerAssessmentOption
     {
         public int AssessmentId { get; set; }
@@ -109,16 +128,18 @@ namespace src.services
         public decimal? Marks { get; set; }
         public bool HasMarks { get; set; }
         public DateTime? SubmittedAt { get; set; }
+        public DateTime? DueDate { get; set; }
         public string FileUrl { get; set; }
         public string Grade { get; set; }
         public string SubmissionStatus { get; set; }
+        public bool IsMissing { get; set; }
         public string StudentName { get { return FullName; } }
         public string StudentNo { get { return StudentId; } }
         public string LetterGrade { get { return Grade; } }
-        public bool HasSubmission { get { return SubmissionId > 0; } }
+        public bool HasSubmission { get { return SubmissionId > 0 && !IsMissing; } }
         public string SubmissionFileUrl { get { return FileUrl; } }
-        public string AnnotatedFileUrl { get { return ""; } }
-        public string Feedback { get { return ""; } }
+        public string AnnotatedFileUrl { get; set; }
+        public string Feedback { get; set; }
     }
 
     public class LecturerMaterialRow
@@ -127,6 +148,8 @@ namespace src.services
         public int OfferingId { get; set; }
         public string CourseCode { get; set; }
         public string CourseName { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string Title { get; set; }
         public string FileUrl { get; set; }
         public DateTime UploadedAt { get; set; }
@@ -134,6 +157,7 @@ namespace src.services
         public string Description { get; set; }
         public string FileType { get; set; }
         public string MaterialType { get; set; }
+        public int? Week { get; set; }
         public DateTime? DueDate { get; set; }
         public decimal? Weight { get; set; }
         public int? FileSizeBytes { get; set; }
@@ -142,6 +166,9 @@ namespace src.services
     public class LecturerAnnouncementRow
     {
         public int AnnouncementId { get; set; }
+        public int OfferingId { get; set; }
+        public string AcademicYear { get; set; }
+        public string Semester { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
         public string FileUrl { get; set; }
@@ -178,8 +205,42 @@ namespace src.services
         }
     }
 
+    public class LecturerAcademicPerformanceRow
+    {
+        public int OfferingId { get; set; }
+        public string StudentId { get; set; }
+        public string FullName { get; set; }
+        public string ProgrammeCode { get; set; }
+        public string AcademicYear { get; set; }
+        public string OfferingSemester { get; set; }
+        public int Semester { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public decimal? AttendanceRate { get; set; }
+        public decimal? AverageMarks { get; set; }
+        public decimal GradePoint { get; set; }
+        public string LetterGrade { get; set; }
+        public bool AttendanceRisk { get; set; }
+        public bool AcademicRisk { get; set; }
+        public bool IsAtRisk { get { return AttendanceRisk || AcademicRisk; } }
+        public string Status { get { return !AverageMarks.HasValue ? "Pending" : AverageMarks.Value >= 50m ? "Pass" : "Fail"; } }
+        public string RiskLevel { get { return AttendanceRisk && AcademicRisk ? "High" : "Medium"; } }
+        public string RiskReason
+        {
+            get
+            {
+                if (AttendanceRisk && AcademicRisk) return "Low attendance and low marks";
+                if (AttendanceRisk) return "Attendance below 80%";
+                if (AcademicRisk) return "Marks below 50%";
+                return "";
+            }
+        }
+    }
+
     public class LecturerGradingItem
     {
+        public int AssessmentId { get; set; }
+        public int OfferingId { get; set; }
         public string Title { get; set; }
         public string CourseCode { get; set; }
         public DateTime DueDate { get; set; }
@@ -194,6 +255,7 @@ namespace src.services
         public List<LecturerClassSession> TodayClasses { get; set; }
         public List<LecturerGradingItem> ToGrade { get; set; }
         public List<LecturerAnnouncementRow> Announcements { get; set; }
+        public int TotalAnnouncementCount { get; set; }
         public int ActiveCourses { get; set; }
         public int StudentsTaught { get; set; }
         public int SubmissionsToReview { get; set; }
@@ -206,13 +268,21 @@ namespace src.services
         public string Title { get; set; }
         public string Message { get; set; }
         public string FileUrl { get; set; }
+        public bool IsPinned { get; set; }
     }
 
     public class LecturerMaterialInput
     {
         public int OfferingId { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
+        public string MaterialType { get; set; }
+        public int? Week { get; set; }
+        public DateTime? DueDate { get; set; }
+        public decimal? Weight { get; set; }
         public string FileUrl { get; set; }
+        public string FileType { get; set; }
+        public int? FileSizeBytes { get; set; }
         public DateTime UploadedAt { get; set; }
     }
 }

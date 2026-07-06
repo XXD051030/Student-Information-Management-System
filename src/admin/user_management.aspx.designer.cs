@@ -13,5 +13,9 @@ namespace src.admin
 
     public partial class user_management
     {
+        protected global::System.Web.UI.WebControls.FileUpload StudentImportFile;
+        protected global::System.Web.UI.WebControls.Button UploadStudentFile;
+        protected global::System.Web.UI.WebControls.DropDownList IntakeOverride;
+        protected global::System.Web.UI.WebControls.Button ConfirmStudentImport;
     }
 }

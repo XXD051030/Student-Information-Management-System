@@ -3,7 +3,6 @@ using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
-using System.Web;
 
 namespace src.services.email
 {
@@ -27,12 +26,26 @@ namespace src.services.email
 
         /// <summary>Welcome email sent to the student's PERSONAL inbox; body shows
         /// their student (login) email + temporary password.</summary>
+        /// <param name="detailLabel">Optional extra row, e.g. "Programme" or "Department".</param>
+        /// <param name="detailValue">Value shown next to detailLabel.</param>
+        /// <param name="notes">Optional onboarding notes shown at the bottom of the email.</param>
         public static EmailResult SendNewAccount(string toPersonalEmail, string studentName,
-            string studentEmail, string tempPassword)
+            string studentEmail, string tempPassword, string detailLabel = null,
+            string detailValue = null, string notes = null)
         {
             string n = WebUtility.HtmlEncode(studentName);
             string e = WebUtility.HtmlEncode(studentEmail);
             string p = WebUtility.HtmlEncode(tempPassword);
+
+            string detailRow = string.IsNullOrWhiteSpace(detailValue) ? "" :
+                "<p style=\"margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#7b8794;\">"
+              + WebUtility.HtmlEncode(detailLabel) + "</p>"
+              + "<p style=\"margin:0 0 16px;font-size:15px;color:#1f2933;font-weight:bold;\">"
+              + WebUtility.HtmlEncode(detailValue) + "</p>";
+
+            string notesBlock = string.IsNullOrWhiteSpace(notes) ? "" :
+                "<p style=\"margin:18px 0 0;font-size:13px;line-height:1.6;color:#3e4c59;white-space:pre-line;\">"
+              + "<strong>Notes:</strong> " + WebUtility.HtmlEncode(notes) + "</p>";
 
             string inner =
                 "<h1 style=\"margin:0 0 16px;font-size:22px;color:#1f2933;\">Welcome, " + n + "</h1>"
@@ -47,9 +60,11 @@ namespace src.services.email
               + "<p style=\"margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#7b8794;\">Temporary password</p>"
               + "<p style=\"margin:0;font-size:18px;color:#1f2933;font-weight:bold;"
               + "font-family:'Courier New',monospace;letter-spacing:1px;\">" + p + "</p>"
+              + (string.IsNullOrEmpty(detailRow) ? "" : "<div style=\"margin-top:16px;\">" + detailRow + "</div>")
               + "</td></tr></table>"
               + "<p style=\"margin:0 0 4px;font-size:13px;line-height:1.6;color:#7b8794;\">"
-              + "For your security, please change this temporary password right after your first sign-in.</p>";
+              + "For your security, please change this temporary password right after your first sign-in.</p>"
+              + notesBlock;
 
             var msg = new EmailMessage
             {
@@ -58,8 +73,10 @@ namespace src.services.email
                 Text = "Welcome, " + studentName + "\n\n"
                      + "An account has been created for you on " + EmailLayout.BrandName + ".\n\n"
                      + "Student email: " + studentEmail + "\n"
-                     + "Temporary password: " + tempPassword + "\n\n"
-                     + "Please change this temporary password right after your first sign-in."
+                     + "Temporary password: " + tempPassword + "\n"
+                     + (string.IsNullOrWhiteSpace(detailValue) ? "" : detailLabel + ": " + detailValue + "\n")
+                     + "\nPlease change this temporary password right after your first sign-in."
+                     + (string.IsNullOrWhiteSpace(notes) ? "" : "\n\nNotes: " + notes)
             };
             return Send(toPersonalEmail, msg);
         }
@@ -145,7 +162,7 @@ namespace src.services.email
                     var htmlView = AlternateView.CreateAlternateViewFromString(
                         msg.Html ?? "", null, MediaTypeNames.Text.Html);
 
-                    string logoPath = HttpContext.Current.Server.MapPath("~/img/inti_logo.png");
+                    string logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "img", "inti_logo.png");
                     var logo = new LinkedResource(logoPath, "image/png")
                     {
                         ContentId = EmailLayout.LogoContentId,

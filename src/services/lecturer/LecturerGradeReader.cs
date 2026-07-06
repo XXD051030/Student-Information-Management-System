@@ -10,27 +10,44 @@ namespace src.services
     {
         public static List<LecturerAssessmentOption> GetAssessments(UserContext user, int offeringId)
         {
-            var options = new List<LecturerAssessmentOption>();
-            if (user == null) return options;
+            return GetAssessments(user, (int?)offeringId);
+        }
 
-            const string sql =
-                "SELECT assignment_id, title FROM ASSIGNMENTS WHERE offer_id = @offerId ORDER BY due_date, assignment_id";
+        public static List<LecturerAssessmentOption> GetAssessments(UserContext user, int? offeringId)
+        {
+            var options = new List<LecturerAssessmentOption>();
+            if (user == null || !user.IsLecturer) return options;
+            LecturerMaterialReader.EnsureAssessmentAssignments();
+
+            string sql =
+                "SELECT a.assignment_id, a.offer_id, a.title, c.course_code " +
+                "FROM ASSIGNMENTS a " +
+                "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
+                "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
+                "JOIN COURSES c ON c.course_id = co.course_id " +
+                "WHERE " + ServiceAccess.VisibleOfferScope("co") + " " +
+                "AND (@offerId = 0 OR a.offer_id = @offerId) " +
+                "AND mat.weight IS NOT NULL AND mat.weight > 0 " +
+                "ORDER BY a.due_date, a.assignment_id";
 
             using (var conn = Db.OpenConnection())
             {
-                if (!ServiceAccess.CanManageOffer(conn, user, offeringId)) return options;
                 using (var cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@offerId", offeringId);
+                    ServiceAccess.AddUserContextParameters(cmd, user);
+                    cmd.Parameters.AddWithValue("@offerId", offeringId.GetValueOrDefault());
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
+                            int rowOfferingId = IntValue(reader["offer_id"]);
+                            string title = Text(reader["title"]);
+                            string courseCode = Text(reader["course_code"]);
                             options.Add(new LecturerAssessmentOption
                             {
                                 AssessmentId = IntValue(reader["assignment_id"]),
-                                OfferingId = offeringId,
-                                Label = Text(reader["title"])
+                                OfferingId = rowOfferingId,
+                                Label = offeringId.HasValue ? title : courseCode + " - " + title
                             });
                         }
                     }
@@ -43,12 +60,16 @@ namespace src.services
         {
             var rows = new List<LecturerGradeRow>();
             if (user == null) return rows;
+            EnsureReviewColumns();
 
             // Every enrolled student in the assignment's offering, with their submission (if any)
             // and their current published course letter grade (if any).
             const string sql =
                 "SELECT s.student_id, s.student_name, s.student_email, " +
-                "sub.submission_id, sub.marks_obtained, sub.submitted_at, sub.file_url, ISNULL(sub.status, '') AS sub_status, " +
+                "a.due_date, " +
+                "sub.submission_id, sub.marks_obtained, sub.submitted_at, sub.file_url, " +
+                "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url, " +
+                "ISNULL(sub.status, '') AS sub_status, " +
                 "ISNULL(g.letter_grade, '') AS letter_grade " +
                 "FROM ASSIGNMENTS a " +
                 "JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
@@ -61,6 +82,7 @@ namespace src.services
             using (var conn = Db.OpenConnection())
             {
                 if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return rows;
+                EnsureMissingSubmissions(conn, assessmentId, null);
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@assignmentId", assessmentId);
@@ -72,18 +94,26 @@ namespace src.services
                             var letter = Text(reader["letter_grade"]);
                             var submissionId = IntValue(reader["submission_id"]);
                             var subStatus = Text(reader["sub_status"]);
+                            var dueDate = DateValue(reader["due_date"]);
+                            bool isMissing = string.Equals(subStatus, "MISSING", StringComparison.OrdinalIgnoreCase);
                             rows.Add(new LecturerGradeRow
                             {
                                 SubmissionId = submissionId,
                                 StudentId = Text(reader["student_id"]),
                                 FullName = Text(reader["student_name"]),
                                 StudentEmail = Text(reader["student_email"]),
-                                Marks = marks,
-                                HasMarks = marks.HasValue,
+                                Marks = isMissing ? 0m : marks,
+                                HasMarks = isMissing || marks.HasValue,
                                 SubmittedAt = DateValue(reader["submitted_at"]),
+                                DueDate = dueDate,
                                 FileUrl = Text(reader["file_url"]),
-                                Grade = string.IsNullOrWhiteSpace(letter) ? "N/A" : letter,
-                                SubmissionStatus = !string.IsNullOrWhiteSpace(subStatus)
+                                Feedback = Text(reader["feedback"]),
+                                AnnotatedFileUrl = Text(reader["annotated_file_url"]),
+                                Grade = isMissing ? "F" : (string.IsNullOrWhiteSpace(letter) ? "N/A" : letter),
+                                IsMissing = isMissing,
+                                SubmissionStatus = isMissing
+                                    ? "MISSING"
+                                    : !string.IsNullOrWhiteSpace(subStatus)
                                     ? subStatus
                                     : (marks.HasValue ? "GRADED" : (submissionId > 0 ? "SUBMITTED" : "PENDING"))
                             });
@@ -92,6 +122,81 @@ namespace src.services
                 }
             }
             return rows;
+        }
+
+        public static bool SaveReview(UserContext user, int submissionId, string feedback, string annotatedFileUrl)
+        {
+            if (user == null || submissionId <= 0) return false;
+            EnsureReviewColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return false;
+                const string sql =
+                    "UPDATE SUBMISSIONS SET feedback = @feedback, " +
+                    "annotated_file_url = CASE WHEN @annotatedFileUrl IS NULL THEN annotated_file_url ELSE @annotatedFileUrl END " +
+                    "WHERE submission_id = @submissionId";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@feedback", ServiceAccess.DbValue(feedback));
+                    cmd.Parameters.AddWithValue("@annotatedFileUrl",
+                        string.IsNullOrWhiteSpace(annotatedFileUrl) ? (object)DBNull.Value : annotatedFileUrl);
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        public static string GetAnnotationDraft(UserContext user, int submissionId)
+        {
+            if (user == null || submissionId <= 0) return "";
+            EnsureReviewColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return "";
+                using (var cmd = new SqlCommand(
+                    "SELECT ISNULL(annotation_draft_json, '') FROM SUBMISSIONS WHERE submission_id = @submissionId",
+                    conn))
+                {
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return Convert.ToString(cmd.ExecuteScalar()) ?? "";
+                }
+            }
+        }
+
+        public static bool SaveAnnotationDraft(UserContext user, int submissionId, string annotationsJson)
+        {
+            if (user == null || submissionId <= 0) return false;
+            EnsureReviewColumns();
+
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return false;
+                using (var cmd = new SqlCommand(
+                    "UPDATE SUBMISSIONS SET annotation_draft_json = @annotationsJson WHERE submission_id = @submissionId",
+                    conn))
+                {
+                    cmd.Parameters.AddWithValue("@annotationsJson",
+                        string.IsNullOrWhiteSpace(annotationsJson) ? (object)DBNull.Value : annotationsJson);
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        private static void EnsureReviewColumns()
+        {
+            const string sql =
+                "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD feedback varchar(2000) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'annotated_file_url') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD annotated_file_url varchar(255) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'annotation_draft_json') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD annotation_draft_json nvarchar(max) NULL;";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+                cmd.ExecuteNonQuery();
         }
 
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks)
@@ -144,6 +249,8 @@ namespace src.services
                     }
                 }
 
+                EnsureMissingSubmissions(conn, null, offerId);
+
                 var percentByStudent = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
                 var countByStudent = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 using (var cmd = new SqlCommand(
@@ -151,8 +258,10 @@ namespace src.services
                     "FROM ENROLLMENTS e " +
                     "JOIN STUDENTS s ON s.student_id = e.student_id " +
                     "JOIN ASSIGNMENTS a ON a.offer_id = e.offer_id " +
+                    "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                     "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id AND sub.student_id = s.student_id " +
-                    "WHERE e.offer_id = @offerId AND e.status = 'ENROLLED'", conn))
+                    "WHERE e.offer_id = @offerId AND e.status = 'ENROLLED' " +
+                    "AND mat.weight IS NOT NULL AND mat.weight > 0", conn))
                 {
                     cmd.Parameters.AddWithValue("@offerId", offerId);
                     using (var reader = cmd.ExecuteReader())
@@ -179,6 +288,33 @@ namespace src.services
                     var point = PointFor(letter);
                     UpsertGrade(conn, offerId, sid, point, letter, semester);
                 }
+            }
+        }
+
+        private static void EnsureMissingSubmissions(SqlConnection conn, int? assessmentId, int? offerId)
+        {
+            const string sql =
+                "INSERT INTO SUBMISSIONS (assignment_id, student_id, submitted_at, file_url, marks_obtained, status) " +
+                "SELECT a.assignment_id, e.student_id, NULL, NULL, 0, 'MISSING' " +
+                "FROM ASSIGNMENTS a " +
+                "JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
+                "WHERE a.due_date IS NOT NULL AND a.due_date < GETDATE() " +
+                "AND (@assignmentId IS NULL OR a.assignment_id = @assignmentId) " +
+                "AND (@offerId IS NULL OR a.offer_id = @offerId) " +
+                "AND (@offerId IS NULL OR EXISTS (" +
+                "SELECT 1 FROM MATERIALS mat WHERE mat.assignment_id = a.assignment_id " +
+                "AND mat.weight IS NOT NULL AND mat.weight > 0)) " +
+                "AND NOT EXISTS (" +
+                "SELECT 1 FROM SUBMISSIONS existing WITH (UPDLOCK, HOLDLOCK) " +
+                "WHERE existing.assignment_id = a.assignment_id AND existing.student_id = e.student_id);";
+
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@assignmentId",
+                    assessmentId.HasValue ? (object)assessmentId.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@offerId",
+                    offerId.HasValue ? (object)offerId.Value : DBNull.Value);
+                cmd.ExecuteNonQuery();
             }
         }
 

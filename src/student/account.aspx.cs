@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Web;
+using System.Web.Services;
 using src.services;
 
 namespace src.shared
@@ -8,6 +9,12 @@ namespace src.shared
     public partial class account : src.security.StudentPage
     {
         private StudentAccountProfile _student;
+
+        [WebMethod(EnableSession = true)]
+        public static object ChangePassword(string currentPassword, string newPassword)
+        {
+            return AccountWebMethods.ChangePassword(currentPassword, newPassword);
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -88,9 +95,9 @@ namespace src.shared
             {
                 if (_student == null) return "";
                 int n = Math.Max(1, _student.CurrentSemesterNo);
-                int year = (n + 2) / 3;
-                int semester = ((n - 1) % 3) + 1;
-                return "Year " + year + " &middot; Trimester " + semester;
+                int perYear = _student.SemestersPerYear > 0 ? _student.SemestersPerYear : 3;
+                int year = (n + perYear - 1) / perYear;
+                return "Year " + year + " &middot; Semester " + n;
             }
         }
 

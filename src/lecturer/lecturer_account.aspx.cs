@@ -1,5 +1,6 @@
 using System;
 using System.Web;
+using System.Web.Services;
 using System.Web.UI;
 using src.services;
 
@@ -8,6 +9,12 @@ namespace src.lecturer
     public partial class lecturer_account : src.security.LecturerPage
     {
         private LecturerProfile _lecturer;
+
+        [WebMethod(EnableSession = true)]
+        public static object ChangePassword(string currentPassword, string newPassword)
+        {
+            return AccountWebMethods.ChangePassword(currentPassword, newPassword);
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -79,7 +86,6 @@ namespace src.lecturer
             get { return (Session["role"] as string ?? "LECTURER").ToUpperInvariant(); }
         }
 
-        // App-resolved URL of the profile image, or "" when none is set.
         protected string IconUrl
         {
             get

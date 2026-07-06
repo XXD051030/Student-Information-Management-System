@@ -12,31 +12,29 @@
 
     <div class="ml-auto flex items-center gap-2">
 
-        <button type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                aria-label="Help">
+        <a href="<%= ResolveUrl("~/shared/help.aspx") %>"
+           class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+           aria-label="Help">
             <i data-lucide="help-circle" class="h-5 w-5"></i>
-        </button>
+        </a>
 
-        <%-- Notifications: styled to match the student topbar but not wired
-             (no admin unread-count source), so it is a plain non-navigating
-             button with no count badge for now. --%>
-        <button type="button"
+        <a href="<%= ResolveUrl("~/admin/admin_notifications.aspx") %>"
                 class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                 aria-label="Notifications">
             <i data-lucide="bell" class="h-4 w-4"></i>
-        </button>
+        </a>
 
-        <%-- Profile pill: same look as the student/lecturer topbars, but a plain
-             container because there is no admin account page to open. --%>
-        <div class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3">
+        <%-- Profile pill: opens the admin account page. --%>
+        <a href="<%= ResolveUrl("~/admin/admin_account.aspx") %>" class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 transition-colors hover:bg-slate-50">
 
             <% if (!string.IsNullOrEmpty(IconUrl)) { %>
                 <img src="<%= IconUrl %>"
                      alt="Profile picture"
-                     class="h-8 w-8 rounded-full object-cover" />
+                     class="h-8 w-8 rounded-full object-cover"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                <span class="h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="display:none;font-size:12px;font-weight:700">A</span>
             <% } else { %>
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:12px;font-weight:700"><%= Initials %></span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e0162b] to-[#a01020] text-white" style="font-size:12px;font-weight:700">A</span>
             <% } %>
 
             <div class="text-left leading-tight">
@@ -48,7 +46,7 @@
                     <%= RoleLabel %>
                 </div>
             </div>
-        </div>
+        </a>
 
     </div>
 </header>

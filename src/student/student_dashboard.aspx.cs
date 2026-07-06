@@ -35,7 +35,7 @@ namespace src.student
             }
 
             var user = UserContextFactory.FromSession(Session);
-            _dashboard = StudentPortalService.GetDashboard(user, ReadNotificationIds());
+            _dashboard = StudentPortalService.GetDashboard(user, NotificationReadService.GetReadIds(user));
             if (_dashboard == null)
             {
                 Response.Redirect("~/login/login.aspx");
@@ -51,7 +51,7 @@ namespace src.student
             assignmentsRepeater.DataSource = _dashboard.AssignmentsDueThisWeek;
             assignmentsRepeater.DataBind();
 
-            announcementsRepeater.DataSource = _dashboard.Announcements;
+            announcementsRepeater.DataSource = _dashboard.Announcements?.Take(3).ToList();
             announcementsRepeater.DataBind();
         }
 
@@ -200,12 +200,6 @@ namespace src.student
             if (days == 1) return "Yesterday";
             if (days < 7) return days + " days ago";
             return when.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
-        }
-
-        private System.Collections.Generic.ISet<int> ReadNotificationIds()
-        {
-            var ids = Session["student_notification_read_ids"] as System.Collections.Generic.ISet<int>;
-            return ids ?? new System.Collections.Generic.HashSet<int>();
         }
 
         private static string SafeColor(string color)

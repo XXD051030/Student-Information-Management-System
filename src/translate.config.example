@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Google Cloud Translation API key for the display-language feature.
+
+  Setup:
+    1. In Google Cloud, enable the "Cloud Translation API" on a project.
+    2. Create an API key (APIs & Services > Credentials). Restrict it to the
+       Cloud Translation API.
+    3. Copy this file to "translate.config" (same folder) and paste the key.
+
+  translate.config is gitignored so the key never gets committed. The app reads
+  the key directly from the file, so changes take effect without a rebuild.
+-->
+<appSettings>
+  <add key="GoogleTranslate:ApiKey" value="" />
+</appSettings>

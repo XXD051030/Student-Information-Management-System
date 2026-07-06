@@ -258,6 +258,7 @@ namespace src.student
                     total = c.TotalCount,
                     sessions = c.Sessions.Select(s => new
                     {
+                        dateIso = s.AttendanceDate.ToString("yyyy-MM-dd"),
                         date = SessionDateDisplay(s),
                         day = SessionDayDisplay(s),
                         time = SessionTimeDisplay(s),

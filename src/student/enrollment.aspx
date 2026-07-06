@@ -8,20 +8,20 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500"><%= Server.HtmlEncode(AcademicYearLabel) %></p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Course Enrollment</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Register for courses for <span class="text-slate-900 font-semibold"><%= Server.HtmlEncode(YearAndTrimesterLabel) %> &middot; <%= Server.HtmlEncode(TermLabel) %></span>.
+                Register for courses for <span class="text-slate-900 font-semibold"><%= Server.HtmlEncode(TermLabel) %></span>.
             </p>
         </div>
     </div>
 
     <%-- Phase banner --%>
-    <section class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 lg:p-6">
+    <section class="mt-6 rounded-2xl border <%= IsAddDropPhase ? "border-amber-200 bg-amber-50/60" : "border-emerald-200 bg-emerald-50/60" %> p-5 lg:p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white">
-                    <i data-lucide="check-circle-2" class="h-5 w-5"></i>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl <%= IsAddDropPhase ? "bg-amber-500" : "bg-emerald-600" %> text-white">
+                    <i data-lucide="<%= IsAddDropPhase ? "refresh-cw" : "check-circle-2" %>" class="h-5 w-5"></i>
                 </div>
                 <div>
-                    <p class="text-emerald-700" style="font-size:11.5px;font-weight:700;letter-spacing:0.04em"><%= RegistrationOpen ? "ENROLLMENT OPEN" : "ENROLLMENT CLOSED" %></p>
+                    <p class="<%= IsAddDropPhase ? "text-amber-700" : "text-emerald-700" %>" style="font-size:11.5px;font-weight:700;letter-spacing:0.04em"><%= IsAddDropPhase ? "ADD / DROP PERIOD OPEN" : RegistrationOpen ? "ENROLLMENT OPEN" : "ENROLLMENT CLOSED" %></p>
                     <p class="mt-0.5 text-slate-900" style="font-size:15px;font-weight:600">Registration period &middot; <%= Server.HtmlEncode(RegistrationDateRange) %></p>
                 </div>
             </div>
@@ -65,8 +65,8 @@
                     <i data-lucide="shield-check" class="h-4 w-4"></i>
                 </span>
             </div>
-            <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><span id="enroll-credits">0</span></p>
-            <p class="mt-1 text-slate-400" style="font-size:12px">Limit: 12&#8211;21</p>
+            <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><span id="enroll-credits" data-min-credits="<%= MinCredits %>" data-max-credits="<%= MaxCredits %>">0</span></p>
+            <p class="mt-1 text-slate-400" style="font-size:12px">Limit: <%= MinCredits %>&#8211;<%= MaxCredits %></p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-5">
             <div class="flex items-start justify-between">
@@ -95,6 +95,7 @@
         <asp:Repeater ID="offeringsRepeater" runat="server">
             <ItemTemplate>
                 <article data-course-row data-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>'
+                         data-name='<%# Server.HtmlEncode(Eval("CourseName").ToString()) %>'
                          data-credits='<%# Eval("CreditHours") %>' data-fee='<%# RowFee(Eval("CreditHours")).ToString(System.Globalization.CultureInfo.InvariantCulture) %>'
                          class="rounded-2xl border border-slate-200 bg-white p-5">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -126,17 +127,57 @@
                             </asp:Panel>
                         </div>
                         <div class="flex shrink-0 items-center gap-2">
+                            <%-- Phase 1: static "Registered" badge --%>
                             <asp:Panel runat="server" Visible='<%# RowRegistered(Eval("MyStatus")) %>' CssClass="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 h-10 text-emerald-700" style="font-size:13px;font-weight:600">
                                 <i data-lucide="check-circle-2" class="h-4 w-4"></i> Registered
                             </asp:Panel>
+                            <%-- Phase 2: enrolled course — show badge + Request Drop button --%>
+                            <asp:Panel runat="server" Visible='<%# RowDroppable(Eval("MyStatus")) %>' CssClass="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 h-10 text-emerald-700" style="font-size:13px;font-weight:600">
+                                    <i data-lucide="check-circle-2" class="h-4 w-4"></i> Enrolled
+                                </span>
+                                <button type="button" data-action="request-drop"
+                                        data-offering='<%# Eval("OfferingId") %>'
+                                        data-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>'
+                                        aria-label="Request to drop this course"
+                                        class="inline-flex items-center gap-1.5 rounded-xl px-3.5 h-10 bg-[#e0162b]/10 border border-[#e0162b]/20 text-[#a01020] hover:bg-[#e0162b]/20 transition-all" style="font-size:13px;font-weight:600">
+                                    <i data-lucide="x-circle" class="h-4 w-4"></i> Request Drop
+                                </button>
+                            </asp:Panel>
+                            <%-- Phase 2: pending request --%>
+                            <asp:Panel runat="server" Visible='<%# RowPending(Eval("MyStatus")) %>' CssClass="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3.5 h-10 text-amber-700" style="font-size:13px;font-weight:600">
+                                <i data-lucide="clock" class="h-4 w-4"></i> Pending Review
+                            </asp:Panel>
+                            <%-- Phase 2: rejected add request --%>
+                            <asp:Panel runat="server" Visible='<%# RowRejected(Eval("MyStatus")) %>' CssClass="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-3.5 h-10 text-red-700" style="font-size:13px;font-weight:600">
+                                <i data-lucide="x-circle" class="h-4 w-4"></i> Rejected
+                            </asp:Panel>
+                            <%-- Any phase: full seat --%>
                             <asp:Panel runat="server" Visible='<%# RowFull(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity")) %>'>
                                 <button disabled class="inline-flex items-center gap-1.5 rounded-xl px-3.5 h-10 bg-slate-100 text-slate-400 cursor-not-allowed" style="font-size:13px;font-weight:600">
                                     <i data-lucide="alert-circle" class="h-4 w-4"></i> Full
                                 </button>
                             </asp:Panel>
-                            <asp:Panel runat="server" Visible='<%# RowOpen(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity")) %>'>
+                            <%-- Any phase: prerequisite not yet passed --%>
+                            <asp:Panel runat="server" Visible='<%# RowLockedByPrerequisite(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity"), Eval("PrerequisiteMet")) %>'>
+                                <button disabled title='<%# "Requires " + Server.HtmlEncode((Eval("Prerequisites") as string) ?? "") %>' class="inline-flex items-center gap-1.5 rounded-xl px-3.5 h-10 bg-slate-100 text-slate-400 cursor-not-allowed" style="font-size:13px;font-weight:600">
+                                    <i data-lucide="lock" class="h-4 w-4"></i> Prerequisite Required
+                                </button>
+                            </asp:Panel>
+                            <%-- Phase 1: checkbox to add to basket --%>
+                            <asp:Panel runat="server" Visible='<%# RowOpen(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity"), Eval("PrerequisiteMet")) %>'>
                                 <input type="checkbox" data-action="toggle-enroll" data-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>' data-offering='<%# Eval("OfferingId") %>'
                                        class="h-5 w-5 rounded border-slate-300 text-[#e0162b] accent-[#e0162b] cursor-pointer" />
+                            </asp:Panel>
+                            <%-- Phase 2: Request Add button (available, not full) --%>
+                            <asp:Panel runat="server" Visible='<%# RowAddable(Eval("MyStatus"), Eval("EnrolledCount"), Eval("Capacity"), Eval("PrerequisiteMet")) %>'>
+                                <button type="button" data-action="request-add"
+                                        data-offering='<%# Eval("OfferingId") %>'
+                                        data-code='<%# Server.HtmlEncode(Eval("CourseCode").ToString()) %>'
+                                        aria-label="Request to add this course"
+                                        class="inline-flex items-center gap-1.5 rounded-xl px-3.5 h-10 bg-[#e0162b] text-white hover:bg-[#a01020] transition-all" style="font-size:13px;font-weight:600">
+                                    <i data-lucide="plus-circle" class="h-4 w-4"></i> Request Add
+                                </button>
                             </asp:Panel>
                         </div>
                     </div>
@@ -145,8 +186,8 @@
         </asp:Repeater>
     </section>
 
-    <%-- Submit / confirm enrollment --%>
-    <section class="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 lg:flex-row lg:items-center lg:justify-between">
+    <%-- Phase 1: Submit / confirm enrollment --%>
+    <section class="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 lg:flex-row lg:items-center lg:justify-between" style="<%= IsAddDropPhase ? "display:none" : "" %>">
         <div>
             <p class="text-slate-900" style="font-size:14.5px;font-weight:600">Confirm enrollment</p>
             <p class="mt-0.5 text-slate-500" style="font-size:12.5px">
@@ -165,6 +206,19 @@
                 <i data-lucide="check-circle-2" class="h-4 w-4"></i>
                 Proceed to Payment
             </button>
+        </div>
+    </section>
+
+    <%-- Phase 2: Add/Drop info footer --%>
+    <section class="mt-6 rounded-2xl border border-amber-200 bg-amber-50/60 p-5" style="<%= !IsAddDropPhase ? "display:none" : "" %>">
+        <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+                <i data-lucide="info" class="h-4 w-4"></i>
+            </span>
+            <div>
+                <p class="text-amber-800" style="font-size:14px;font-weight:600">Requests go to admin for review</p>
+                <p class="mt-0.5 text-slate-600" style="font-size:12.5px">The status of your requests will update on this page once admin takes action.</p>
+            </div>
         </div>
     </section>
 

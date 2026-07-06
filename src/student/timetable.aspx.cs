@@ -76,7 +76,7 @@ namespace src.student
                     daysOfWeek = new[] { ToFullCalendarDay(session.DayOfWeek) },
                     startTime = FormatCalendarTime(session.StartTime),
                     endTime = FormatCalendarTime(session.EndTime),
-                    startRecur = FormatDate(timetable.SemesterStartDate),
+                    startRecur = FormatDate(WeekStart(timetable.SemesterStartDate)),
                     endRecur = FormatDate(timetable.SemesterEndDate.AddDays(1)),
                     backgroundColor = color + "18",
                     borderColor = color + "40",
@@ -212,6 +212,14 @@ namespace src.student
         private static string FormatDate(DateTime date)
         {
             return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+
+        // Anchors recurring events to the Monday of the start week so days before
+        // a mid-week semester start date (e.g. Wednesday) still show in the first week.
+        private static DateTime WeekStart(DateTime date)
+        {
+            int diff = ((int)date.DayOfWeek + 6) % 7;
+            return date.AddDays(-diff);
         }
 
         private static string FormatCalendarTime(TimeSpan time)

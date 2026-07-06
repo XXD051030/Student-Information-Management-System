@@ -60,6 +60,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform">
@@ -78,17 +80,21 @@
     <Content Include="assistant\chat.aspx" />
     <Content Include="ai.config.example" />
     <Content Include="smtp.config" />
+    <Content Include="translate.config.example" />
     <Content Include="admin\AdminLayout.master" />
     <Content Include="admin\academic_calendar.aspx" />
     <Content Include="admin\academic_performance.aspx" />
     <Content Include="admin\add_drop_requests.aspx" />
+    <Content Include="admin\admin_account.aspx" />
     <Content Include="admin\admin_dashboard.aspx" />
+    <Content Include="admin\admin_notifications.aspx" />
     <Content Include="admin\course_attendance.aspx" />
     <Content Include="admin\course_passfail.aspx" />
     <Content Include="admin\programme_course.aspx" />
     <Content Include="admin\report_generator.aspx" />
     <Content Include="admin\student_detail.aspx" />
     <Content Include="admin\user_management.aspx" />
+    <Content Include="admin\templates\student_bulk_import_template.xlsx" />
     <Content Include="js\admin\course-attendance\attendance.js" />
     <Content Include="js\admin\course-passfail\passfail.js" />
     <Content Include="js\admin\shared\icons.js" />
@@ -99,9 +105,14 @@
     <Content Include="js\admin\student-detail\students.js" />
     <Content Include="js\core\icons-init.js" />
     <Content Include="js\lecturer\attendance.js" />
+    <Content Include="js\lecturer\attendance-export.js" />
     <Content Include="js\lecturer\courses.js" />
+    <Content Include="js\lecturer\course-dashboard.js" />
+    <Content Include="js\lecturer\grades.js" />
     <Content Include="js\lecturer\lecturer-portal.js" />
     <Content Include="js\login\login.js" />
+    <Content Include="js\login\forgot_password.js" />
+    <Content Include="js\login\reset_password.js" />
     <Content Include="js\shared\account.js" />
     <Content Include="js\shared\assistant\assistant.js" />
     <Content Include="js\shared\notifications.js" />
@@ -110,28 +121,45 @@
     <Content Include="js\student\courses.js" />
     <Content Include="js\student\enrollment.js" />
     <Content Include="js\student\timetable.js" />
+    <Content Include="js\student\payment.js" />
+    <Content Include="js\student\payment-history.js" />
     <Content Include="lecturer\lecturer_grades.aspx" />
     <Content Include="lecturer\lecturer_materials.aspx" />
+    <Content Include="icon_upload.ashx" />
+    <Content Include="translate.ashx" />
+    <Content Include="js\shared\translate.js" />
+    <Content Include="lecturer\material_publish.ashx" />
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
+    <Content Include="login\forgot_password.aspx" />
+    <Content Include="login\reset_password.aspx" />
     <Content Include="lecturer\lecturer_at_risk.aspx" />
     <Content Include="lecturer\lecturer_attendance.aspx" />
+    <Content Include="lecturer\lecturer_attendance_history.aspx" />
     <Content Include="lecturer\lecturer_course_dashboard.aspx" />
     <Content Include="lecturer\lecturer_course_people.aspx" />
     <Content Include="lecturer\lecturer_courses.aspx" />
     <Content Include="lecturer\lecturer_dashboard.aspx" />
     <Content Include="lecturer\lecturer_account.aspx" />
     <Content Include="lecturer\lecturer_announcement.aspx" />
+    <Content Include="lecturer\lecturer_notifications.aspx" />
+    <Content Include="devtools\ai_console.aspx" />
     <Content Include="shared\email_test.aspx" />
+    <Content Include="shared\help.aspx" />
+    <Content Include="shared\material_preview.aspx" />
     <Content Include="student\account.aspx" />
     <Content Include="student\notifications.aspx" />
     <Content Include="student\attendance.aspx" />
+    <Content Include="student\attendance-report.ashx" />
     <Content Include="student\courses.aspx" />
     <Content Include="student\course_detail.aspx" />
     <Content Include="student\enrollment.aspx" />
     <Content Include="student\grades.aspx" />
+    <Content Include="student\transcript.ashx" />
     <Content Include="student\student_dashboard.aspx" />
     <Content Include="student\timetable.aspx" />
+    <Content Include="student\payment.aspx" />
+    <Content Include="student\payment-history.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +180,7 @@
       <DependentUpon>assistant_widget.ascx</DependentUpon>
     </Compile>
     <Compile Include="services\AiConsoleService.cs" />
+    <Compile Include="services\TranslationService.cs" />
     <Compile Include="controls\sidebar.ascx.cs">
       <DependentUpon>sidebar.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -222,12 +251,26 @@
     <Compile Include="admin\add_drop_requests.aspx.designer.cs">
       <DependentUpon>add_drop_requests.aspx</DependentUpon>
     </Compile>
+    <Compile Include="admin\admin_account.aspx.cs">
+      <DependentUpon>admin_account.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="admin\admin_account.aspx.designer.cs">
+      <DependentUpon>admin_account.aspx</DependentUpon>
+    </Compile>
     <Compile Include="admin\admin_dashboard.aspx.cs">
       <DependentUpon>admin_dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="admin\admin_dashboard.aspx.designer.cs">
       <DependentUpon>admin_dashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="admin\admin_notifications.aspx.cs">
+      <DependentUpon>admin_notifications.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="admin\admin_notifications.aspx.designer.cs">
+      <DependentUpon>admin_notifications.aspx</DependentUpon>
     </Compile>
     <Compile Include="admin\course_attendance.aspx.cs">
       <DependentUpon>course_attendance.aspx</DependentUpon>
@@ -283,6 +326,15 @@
       <DependentUpon>lecturer_materials.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="icon_upload.ashx.cs">
+      <DependentUpon>icon_upload.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="translate.ashx.cs">
+      <DependentUpon>translate.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="lecturer\material_publish.ashx.cs">
+      <DependentUpon>material_publish.ashx</DependentUpon>
+    </Compile>
     <Compile Include="lecturer\lecturer_materials.aspx.designer.cs">
       <DependentUpon>lecturer_materials.aspx</DependentUpon>
     </Compile>
@@ -293,8 +345,24 @@
     <Compile Include="lecturer\lecturer_take_attendance.aspx.designer.cs">
       <DependentUpon>lecturer_take_attendance.aspx</DependentUpon>
     </Compile>
+    <Compile Include="lecturer\lecturer_timetable.aspx.cs">
+      <DependentUpon>lecturer_timetable.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_timetable.aspx.designer.cs">
+      <DependentUpon>lecturer_timetable.aspx</DependentUpon>
+    </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
+    <Compile Include="services\AcademicIntakeSchema.cs" />
+    <Compile Include="services\AccountPasswordService.cs" />
+    <Compile Include="services\PasswordResetService.cs" />
+    <Compile Include="services\AccountWebMethods.cs" />
+    <Compile Include="services\admin\AdminPortalService.cs" />
+    <Compile Include="services\admin\StudentBulkImportService.cs" />
+    <Compile Include="services\AdminNotificationService.cs" />
     <Compile Include="services\AssignmentService.cs" />
+    <Compile Include="services\AttendancePdfService.cs" />
+    <Compile Include="services\AtRiskWarningService.cs" />
     <Compile Include="services\CookieService.cs" />
     <Compile Include="services\email\EmailLayout.cs" />
     <Compile Include="services\email\EmailMessage.cs" />
@@ -304,6 +372,7 @@
     <Compile Include="services\ServiceMap.cs" />
     <Compile Include="services\StudentPortalService.cs" />
     <Compile Include="services\SubmissionService.cs" />
+    <Compile Include="services\TranscriptPdfService.cs" />
     <Compile Include="services\UserContext.cs" />
     <Compile Include="services\UserContextFactory.cs" />
     <Compile Include="services\student\StudentPortalFormat.cs" />
@@ -316,6 +385,7 @@
     <Compile Include="services\student\StudentAttendanceReader.cs" />
     <Compile Include="services\student\StudentTimetableReader.cs" />
     <Compile Include="services\student\StudentGradeReader.cs" />
+    <Compile Include="services\student\StudentPaymentReader.cs" />
     <Compile Include="services\student\StudentDashboardService.cs" />
     <Compile Include="services\lecturer\LecturerPortalModels.cs" />
     <Compile Include="services\lecturer\LecturerProfileReader.cs" />
@@ -328,6 +398,7 @@
     <Compile Include="services\lecturer\LecturerAtRiskReader.cs" />
     <Compile Include="services\lecturer\LecturerDashboardService.cs" />
     <Compile Include="services\LecturerPortalService.cs" />
+    <Compile Include="services\NotificationReadService.cs" />
     <Compile Include="security\AdminPage.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
@@ -351,6 +422,20 @@
     <Compile Include="login\login.aspx.designer.cs">
       <DependentUpon>login.aspx</DependentUpon>
     </Compile>
+    <Compile Include="login\forgot_password.aspx.cs">
+      <DependentUpon>forgot_password.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="login\forgot_password.aspx.designer.cs">
+      <DependentUpon>forgot_password.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="login\reset_password.aspx.cs">
+      <DependentUpon>reset_password.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="login\reset_password.aspx.designer.cs">
+      <DependentUpon>reset_password.aspx</DependentUpon>
+    </Compile>
     <Compile Include="login\LoginLayout.master.cs">
       <DependentUpon>LoginLayout.master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -370,6 +455,13 @@
     </Compile>
     <Compile Include="lecturer\lecturer_attendance.aspx.designer.cs">
       <DependentUpon>lecturer_attendance.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="lecturer\lecturer_attendance_history.aspx.cs">
+      <DependentUpon>lecturer_attendance_history.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_attendance_history.aspx.designer.cs">
+      <DependentUpon>lecturer_attendance_history.aspx</DependentUpon>
     </Compile>
     <Compile Include="lecturer\lecturer_course_dashboard.aspx.cs">
       <DependentUpon>lecturer_course_dashboard.aspx</DependentUpon>
@@ -413,6 +505,13 @@
     <Compile Include="lecturer\lecturer_announcement.aspx.designer.cs">
       <DependentUpon>lecturer_announcement.aspx</DependentUpon>
     </Compile>
+    <Compile Include="lecturer\lecturer_notifications.aspx.cs">
+      <DependentUpon>lecturer_notifications.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_notifications.aspx.designer.cs">
+      <DependentUpon>lecturer_notifications.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="student\account.aspx.cs">
       <DependentUpon>account.aspx</DependentUpon>
@@ -421,12 +520,33 @@
     <Compile Include="student\account.aspx.designer.cs">
       <DependentUpon>account.aspx</DependentUpon>
     </Compile>
+    <Compile Include="devtools\ai_console.aspx.cs">
+      <DependentUpon>ai_console.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="devtools\ai_console.aspx.designer.cs">
+      <DependentUpon>ai_console.aspx</DependentUpon>
+    </Compile>
     <Compile Include="shared\email_test.aspx.cs">
       <DependentUpon>email_test.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="shared\email_test.aspx.designer.cs">
       <DependentUpon>email_test.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\help.aspx.cs">
+      <DependentUpon>help.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\help.aspx.designer.cs">
+      <DependentUpon>help.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="shared\material_preview.aspx.cs">
+      <DependentUpon>material_preview.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="shared\material_preview.aspx.designer.cs">
+      <DependentUpon>material_preview.aspx</DependentUpon>
     </Compile>
     <Compile Include="student\StudentLayout.master.cs">
       <DependentUpon>StudentLayout.master</DependentUpon>
@@ -463,6 +583,9 @@
     <Compile Include="student\attendance.aspx.designer.cs">
       <DependentUpon>attendance.aspx</DependentUpon>
     </Compile>
+    <Compile Include="student\attendance-report.ashx.cs">
+      <DependentUpon>attendance-report.ashx</DependentUpon>
+    </Compile>
     <Compile Include="student\courses.aspx.cs">
       <DependentUpon>courses.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -491,6 +614,9 @@
     <Compile Include="student\grades.aspx.designer.cs">
       <DependentUpon>grades.aspx</DependentUpon>
     </Compile>
+    <Compile Include="student\transcript.ashx.cs">
+      <DependentUpon>transcript.ashx</DependentUpon>
+    </Compile>
     <Compile Include="student\student_dashboard.aspx.cs">
       <DependentUpon>student_dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -505,10 +631,25 @@
     <Compile Include="student\timetable.aspx.designer.cs">
       <DependentUpon>timetable.aspx</DependentUpon>
     </Compile>
+    <Compile Include="student\payment.aspx.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\payment.aspx.designer.cs">
+      <DependentUpon>payment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="student\payment-history.aspx.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="student\payment-history.aspx.designer.cs">
+      <DependentUpon>payment-history.aspx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="login\LoginLayout.master" />
     <None Include="packages.config" />
+    <None Include="scripts\build_student_import_template.mjs" />
     <Content Include="site.master" />
     <Content Include="student\StudentLayout.master" />
     <Content Include="lecturer\LecturerLayout.Master" />

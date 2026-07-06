@@ -25,7 +25,8 @@ namespace src.shared
             }
 
             var user = UserContextFactory.FromSession(Session);
-            Notifications = StudentPortalService.GetNotifications(user, ReadIds(Session));
+            ImportSessionReadIds(user);
+            Notifications = StudentPortalService.GetNotifications(user, NotificationReadService.GetReadIds(user));
 
             notificationsRepeater.DataSource = Notifications;
             notificationsRepeater.DataBind();
@@ -52,6 +53,8 @@ namespace src.shared
         protected string CourseLabel(StudentPortalNotification n)
         {
             if (n == null) return "";
+            if (string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                return "Registrar";
             return n.CourseCode + " - " + n.CourseName;
         }
 
@@ -74,6 +77,12 @@ namespace src.shared
             return ((bool)isPinned) ? "true" : "false";
         }
 
+        protected string AttachmentUrl(object fileUrl)
+        {
+            var url = fileUrl as string;
+            return string.IsNullOrEmpty(url) ? "" : ResolveUrl(url);
+        }
+
         private static UserContext CurrentUserOrReject()
         {
             HttpContext context = HttpContext.Current;
@@ -91,14 +100,12 @@ namespace src.shared
             return user;
         }
 
-        private static HashSet<int> ReadIds(HttpSessionState session)
+        private void ImportSessionReadIds(UserContext user)
         {
-            var existing = session[ReadNotificationIdsKey] as HashSet<int>;
-            if (existing != null) return existing;
-
-            existing = new HashSet<int>();
-            session[ReadNotificationIdsKey] = existing;
-            return existing;
+            var existing = Session[ReadNotificationIdsKey] as IEnumerable<int>;
+            if (existing == null) return;
+            NotificationReadService.Import(user, existing);
+            Session.Remove(ReadNotificationIdsKey);
         }
 
         private static string BadgeText(int unreadCount)
@@ -106,8 +113,9 @@ namespace src.shared
             return unreadCount > 9 ? "9+" : unreadCount.ToString();
         }
 
-        private static object CountResponse(UserContext user, HashSet<int> readIds)
+        private static object CountResponse(UserContext user)
         {
+            var readIds = NotificationReadService.GetReadIds(user);
             int unreadCount = StudentPortalService.GetNotifications(user, readIds).Count(n => !n.IsRead);
             return new
             {
@@ -117,26 +125,37 @@ namespace src.shared
             };
         }
 
-        [WebMethod(EnableSession = true)]
-        public static object MarkRead(int announcementId)
+        private static void SetReadState(UserContext user, string notificationType, int notificationId, bool read)
         {
-            var user = CurrentUserOrReject();
-            if (user == null) return new { ok = false };
+            if (string.Equals(notificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+            {
+                if (read) AdminNotificationService.MarkRead(user, notificationId);
+                else AdminNotificationService.MarkUnread(user, notificationId);
+                return;
+            }
 
-            var readIds = ReadIds(HttpContext.Current.Session);
-            readIds.Add(announcementId);
-            return CountResponse(user, readIds);
+            if (read) NotificationReadService.MarkRead(user, notificationId);
+            else NotificationReadService.MarkUnread(user, notificationId);
         }
 
         [WebMethod(EnableSession = true)]
-        public static object MarkUnread(int announcementId)
+        public static object MarkRead(string notificationType, int notificationId)
         {
             var user = CurrentUserOrReject();
             if (user == null) return new { ok = false };
 
-            var readIds = ReadIds(HttpContext.Current.Session);
-            readIds.Remove(announcementId);
-            return CountResponse(user, readIds);
+            SetReadState(user, notificationType, notificationId, true);
+            return CountResponse(user);
+        }
+
+        [WebMethod(EnableSession = true)]
+        public static object MarkUnread(string notificationType, int notificationId)
+        {
+            var user = CurrentUserOrReject();
+            if (user == null) return new { ok = false };
+
+            SetReadState(user, notificationType, notificationId, false);
+            return CountResponse(user);
         }
 
         [WebMethod(EnableSession = true)]
@@ -145,12 +164,19 @@ namespace src.shared
             var user = CurrentUserOrReject();
             if (user == null) return new { ok = false };
 
-            var readIds = ReadIds(HttpContext.Current.Session);
-            foreach (var notification in StudentPortalService.GetNotifications(user, readIds))
-            {
-                readIds.Add(notification.AnnouncementId);
-            }
-            return CountResponse(user, readIds);
+            var readIds = NotificationReadService.GetReadIds(user);
+            var notifications = StudentPortalService.GetNotifications(user, readIds);
+            NotificationReadService.MarkAllRead(
+                user,
+                notifications
+                    .Where(n => !string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Select(n => n.NotificationId));
+            AdminNotificationService.MarkAllRead(
+                user,
+                notifications
+                    .Where(n => string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Select(n => n.NotificationId));
+            return CountResponse(user);
         }
     }
 }

@@ -30,11 +30,6 @@ namespace src.student
             coursesRepeater.DataBind();
         }
 
-        protected int EnrolledCount
-        {
-            get { return _courses.Count; }
-        }
-
         protected bool IsCurrent(string semesterName)
         {
             return _courses.Any(c => c.IsCurrent
