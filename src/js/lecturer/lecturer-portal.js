@@ -22,6 +22,7 @@
 
     var activeMaterialType = "all";
     var MATERIAL_VIEW_KEY = "lecturer.materials.view";
+    var weightBackdropPointerDown = null;
 
     function normalized(value) {
         return String(value || "")
@@ -232,7 +233,10 @@
         var type = typeSelect.value;
         var lectureNotes = type === "Lecture Notes";
         var quiz = type === "Quiz";
-        var requiresAssessmentDetails = type === "Assignment" || type === "Test";
+        var viva = type === "Viva";
+        var requiresAssessmentDetails = type === "Assignment" || type === "Quiz" || type === "Test" || viva;
+        var modeField = document.querySelector("[data-assessment-mode-field]");
+        var modeSelect = document.querySelector("[data-assessment-mode]");
         var dueInput = document.querySelector("[data-due-date-field] input");
         var dueTimeInput = document.querySelector("[data-due-time-field] input");
         var weightInput = document.querySelector("[data-weight-field] input");
@@ -245,6 +249,16 @@
         var weightRequiredMark = document.querySelector("[data-weight-required]");
         var weekField = document.querySelector("[data-week-field]");
         var weekSelect = document.querySelector("[data-material-week-select]");
+
+        if (modeField) modeField.classList.toggle("hidden", !viva);
+        if (modeSelect) {
+            modeSelect.disabled = !viva;
+            modeSelect.required = viva;
+            if (modeSelect.getAttribute("data-for-type") !== type) {
+                modeSelect.value = viva ? "" : type === "Assignment" ? "FILE" : "MANUAL";
+                modeSelect.setAttribute("data-for-type", type);
+            }
+        }
 
         [dueInput, dueTimeInput, weightInput].forEach(function (input) {
             if (!input) return;
@@ -355,10 +369,12 @@
         var weight = document.querySelector("[data-material-weight]");
         var week = document.querySelector("[data-material-week-select]");
         var file = document.querySelector("[data-material-file]");
+        var submissionMode = document.querySelector("[data-assessment-mode]");
         var type = typeSelect ? typeSelect.value : "";
-        var requiresAssessment = type === "Assignment" || type === "Test";
+        var requiresAssessment = type === "Assignment" || type === "Quiz" || type === "Test" || type === "Viva";
         var lectureNotes = type === "Lecture Notes";
         var quiz = type === "Quiz";
+        var viva = type === "Viva";
 
         if (uploadYear && !uploadYear.value) {
             return showRequiredError("Choose an academic year first.", uploadYear);
@@ -378,19 +394,25 @@
             return showRequiredError("Week is required for lecture notes.", week);
         }
         if (week) week.setCustomValidity("");
+        if (viva && submissionMode && !submissionMode.value) {
+            return showRequiredError(
+                "Choose whether this Viva uses a Google Drive video link or lecturer-entered marks.",
+                submissionMode
+            );
+        }
         if (requiresAssessment && dueDate && !dueDate.value) {
-            return showRequiredError("Due date is required for assignments and tests.", dueDate);
+            return showRequiredError("Due date is required for assessments.", dueDate);
         }
         if (dueDate) dueDate.setCustomValidity("");
         if (requiresAssessment && dueTime && !dueTime.value) {
-            return showRequiredError("Due time is required for assignments and tests.", dueTime);
+            return showRequiredError("Due time is required for assessments.", dueTime);
         }
         if (dueTime) dueTime.setCustomValidity("");
         if (requiresAssessment && weight && !weight.value) {
-            return showRequiredError("Course weight is required for assignments and tests.", weight);
+            return showRequiredError("Course weight is required for assessments.", weight);
         }
         if (requiresAssessment && weight && Number(weight.value) <= 0) {
-            return showRequiredError("Course weight for assignments and tests must be greater than 0%.", weight);
+            return showRequiredError("Course weight for assessments must be greater than 0%.", weight);
         }
         if (weight) weight.setCustomValidity("");
         if (quiz && description && !description.value.trim()) {
@@ -433,12 +455,37 @@
         var documentCopy = new DOMParser().parseFromString(html, "text/html");
         var freshRow = documentCopy.querySelector('[data-material-id="' + materialId + '"]');
         var list = document.querySelector("[data-material-list]");
-        if (!freshRow || !list) return;
+        if (!freshRow || !list) return null;
         var imported = document.importNode(freshRow, true);
         imported.setAttribute("tabindex", "0");
         imported.setAttribute("role", "link");
         list.insertBefore(imported, list.firstChild);
         if (window.lucide) window.lucide.createIcons();
+        return imported;
+    }
+
+    function revealPublishedMaterial(row) {
+        if (!row) return;
+        var type = row.getAttribute("data-material-category") || "all";
+        var course = row.getAttribute("data-material-offering") || "all";
+        var year = row.getAttribute("data-material-year") || "all";
+        var semester = row.getAttribute("data-material-semester") || "all";
+        var search = document.querySelector("[data-filter-target='[data-material]']");
+        var courseSelect = document.querySelector("[data-material-course-filter]");
+        var yearSelect = document.querySelector("[data-material-year-filter]");
+        var semesterSelect = document.querySelector("[data-material-semester-filter]");
+
+        activeMaterialType = type;
+        document.querySelectorAll("[data-material-tab]").forEach(function (tab) {
+            tab.setAttribute("data-active",
+                tab.getAttribute("data-material-tab") === type ? "true" : "false");
+        });
+        if (search) search.value = "";
+        if (courseSelect) courseSelect.value = course;
+        if (yearSelect) yearSelect.value = year;
+        if (semesterSelect) semesterSelect.value = semester;
+        applyMaterialFilters();
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     async function publishMaterial(button) {
@@ -453,10 +500,12 @@
         var weight = document.querySelector("[data-material-weight]");
         var week = document.querySelector("[data-material-week-select]");
         var file = document.querySelector("[data-material-file]");
+        var submissionMode = document.querySelector("[data-assessment-mode]");
         var label = button.querySelector("[data-publish-label]");
         var formData = new FormData();
         formData.append("offeringId", course ? course.value : "");
         formData.append("materialType", type ? type.value : "");
+        formData.append("submissionMode", submissionMode ? submissionMode.value : "");
         formData.append("title", title ? title.value : "");
         formData.append("description", description ? description.value : "");
         formData.append("dueDate", dueDate ? dueDate.value : "");
@@ -483,14 +532,14 @@
                 throw new Error(result && result.message ? result.message : "Material could not be published.");
             }
 
-            await insertPublishedMaterial(result.materialId);
+            var publishedRow = await insertPublishedMaterial(result.materialId);
             if (title) title.value = "";
             if (description) description.value = "";
             if (dueDate) dueDate.value = "";
             if (dueTime) dueTime.value = "23:59";
             if (weight) weight.value = "";
             if (file) file.value = "";
-            applyMaterialFilters();
+            revealPublishedMaterial(publishedRow);
             showMaterialStatus(result.message, true);
         } catch (error) {
             showMaterialStatus(error.message || "Material could not be published.", false);
@@ -501,7 +550,150 @@
         }
     }
 
+    function showWeightUpdateStatus(message, success) {
+        var status = document.querySelector("[data-weight-update-status]");
+        if (!status) return;
+        status.textContent = message || "";
+        status.classList.remove(
+            "hidden", "border-emerald-200", "bg-emerald-50", "text-emerald-800",
+            "border-amber-200", "bg-amber-50", "text-amber-800"
+        );
+        status.classList.add(
+            success ? "border-emerald-200" : "border-amber-200",
+            success ? "bg-emerald-50" : "bg-amber-50",
+            success ? "text-emerald-800" : "text-amber-800"
+        );
+        window.setTimeout(function () { status.classList.add("hidden"); }, 4500);
+    }
+
+    function openWeightEditor(button) {
+        var dialog = document.querySelector("[data-weight-editor]");
+        if (!dialog || typeof dialog.showModal !== "function") return;
+        var input = dialog.querySelector("[data-weight-editor-input]");
+        var title = dialog.querySelector("[data-weight-editor-title]");
+        var error = dialog.querySelector("[data-weight-editor-error]");
+        dialog.setAttribute("data-material-id", button.getAttribute("data-edit-material-weight") || "");
+        if (title) title.textContent = button.getAttribute("data-material-title") || "Assessment";
+        if (input) input.value = button.getAttribute("data-current-weight") || "";
+        if (error) {
+            error.textContent = "";
+            error.classList.add("hidden");
+        }
+        dialog.showModal();
+        if (input) {
+            input.focus();
+            input.select();
+        }
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function closeWeightEditor(dialog) {
+        if (dialog && dialog.open) dialog.close();
+    }
+
+    async function saveMaterialWeight(button) {
+        var dialog = button.closest("[data-weight-editor]");
+        var input = dialog && dialog.querySelector("[data-weight-editor-input]");
+        var error = dialog && dialog.querySelector("[data-weight-editor-error]");
+        var materialId = dialog ? Number(dialog.getAttribute("data-material-id")) : 0;
+        var weight = input ? Number(input.value) : 0;
+
+        if (!materialId || !Number.isFinite(weight) || weight <= 0 || weight > 100) {
+            if (error) {
+                error.textContent = "Enter a course weight greater than 0% and no more than 100%.";
+                error.classList.remove("hidden");
+            }
+            if (input) input.focus();
+            return;
+        }
+
+        button.disabled = true;
+        button.classList.add("opacity-60");
+        if (error) error.classList.add("hidden");
+        try {
+            var response = await fetch(window.location.pathname + "/UpdateMaterialWeight", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+                body: JSON.stringify({ materialId: materialId, weight: weight })
+            });
+            if (!response.ok) throw new Error("The material server could not be reached.");
+            var body = await response.json();
+            var result = body && Object.prototype.hasOwnProperty.call(body, "d") ? body.d : body;
+            if (!result || !result.success)
+                throw new Error(result && result.message ? result.message : "Course weight could not be updated.");
+
+            var formatted = Number(result.weight).toFixed(2).replace(/\.?0+$/, "") + "%";
+            document.querySelectorAll('[data-material-weight-display="' + materialId + '"]').forEach(function (display) {
+                display.textContent = formatted;
+            });
+            document.querySelectorAll('[data-edit-material-weight="' + materialId + '"]').forEach(function (editor) {
+                editor.setAttribute("data-current-weight", String(result.weight));
+            });
+            closeWeightEditor(dialog);
+            showWeightUpdateStatus(result.message, true);
+        } catch (saveError) {
+            if (error) {
+                error.textContent = saveError.message || "Course weight could not be updated.";
+                error.classList.remove("hidden");
+            }
+        } finally {
+            button.disabled = false;
+            button.classList.remove("opacity-60");
+        }
+    }
+
+    document.addEventListener("pointerdown", function (event) {
+        if (event.target.matches("[data-weight-editor]")) {
+            weightBackdropPointerDown = { x: event.clientX, y: event.clientY };
+        } else if (event.target.closest("[data-weight-editor]")) {
+            weightBackdropPointerDown = null;
+        }
+    });
+
+    document.addEventListener("pointercancel", function () {
+        weightBackdropPointerDown = null;
+    });
+
     document.addEventListener("click", function (event) {
+        var weightEditorButton = event.target.closest("[data-edit-material-weight]");
+        if (weightEditorButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            openWeightEditor(weightEditorButton);
+            return;
+        }
+
+        var weightEditorClose = event.target.closest("[data-weight-editor-close]");
+        if (weightEditorClose) {
+            event.preventDefault();
+            closeWeightEditor(weightEditorClose.closest("[data-weight-editor]"));
+            return;
+        }
+
+        var weightSaveButton = event.target.closest("[data-save-material-weight]");
+        if (weightSaveButton) {
+            event.preventDefault();
+            saveMaterialWeight(weightSaveButton);
+            return;
+        }
+
+        if (event.target.matches("[data-weight-editor]")) {
+            var weightDialogRect = event.target.getBoundingClientRect();
+            var insideWeightDialog =
+                event.clientX >= weightDialogRect.left &&
+                event.clientX <= weightDialogRect.right &&
+                event.clientY >= weightDialogRect.top &&
+                event.clientY <= weightDialogRect.bottom;
+            var backdropPress = weightBackdropPointerDown;
+            weightBackdropPointerDown = null;
+            var barelyMoved = backdropPress &&
+                Math.abs(event.clientX - backdropPress.x) <= 5 &&
+                Math.abs(event.clientY - backdropPress.y) <= 5;
+            if (!insideWeightDialog && barelyMoved) closeWeightEditor(event.target);
+            return;
+        }
+
         var tab = event.target.closest("[data-material-tab]");
         if (tab) {
             event.preventDefault();

@@ -361,6 +361,9 @@
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\admin\StudentBulkImportService.cs" />
     <Compile Include="services\AdminNotificationService.cs" />
+    <Compile Include="services\ExtensionNotificationService.cs" />
+    <Compile Include="services\GradeNotificationService.cs" />
+    <Compile Include="services\SubmissionNotificationService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AttendancePdfService.cs" />
     <Compile Include="services\AtRiskWarningService.cs" />

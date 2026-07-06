@@ -1011,7 +1011,7 @@ namespace src.services.admin
                     }
                 }
                 using (var cmd = new SqlCommand(
-                    "SELECT SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END), COUNT(ar.attendance_id) " +
+                    "SELECT SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END), COUNT(ar.attendance_id) " +
                     "FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = @id", conn))
                 {
                     cmd.Parameters.AddWithValue("@id", summary.StudentId);
@@ -1059,7 +1059,7 @@ namespace src.services.admin
                 using (var cmd = new SqlCommand(
                     "SELECT co.semester AS semester_name, ISNULL(co.academic_year, '') AS academic_year, " +
                     "c.course_code, c.course_name, " +
-                    "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                    "SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) AS present_count, " +
                     "COUNT(ar.attendance_id) AS total_count " +
                     "FROM ENROLLMENTS e " +
                     "JOIN COURSE_OFFERINGS co ON co.offer_id = e.offer_id " +
@@ -1181,7 +1181,7 @@ namespace src.services.admin
                 "FROM STUDENTS s JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
                 "OUTER APPLY (SELECT TOP 1 c.course_code, c.course_name, g.letter_grade, g.grade_point FROM GRADES g JOIN COURSE_OFFERINGS co ON co.offer_id = g.offer_id JOIN COURSES c ON c.course_id = co.course_id WHERE g.student_id = s.student_id ORDER BY g.grade_id DESC) latest " +
                 "OUTER APPLY (SELECT AVG(CAST(g.grade_point AS decimal(5,2))) AS cgpa, SUM(CASE WHEN g.letter_grade = 'F' THEN 1 ELSE 0 END) AS failed_count FROM GRADES g WHERE g.student_id = s.student_id) grades " +
-                "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE 100.0 * SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) / COUNT(*) END AS rate FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = s.student_id) att " +
+                "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE 100.0 * SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) / COUNT(*) END AS rate FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = s.student_id) att " +
                 "ORDER BY s.student_name";
             var rows = new List<AdminStudentPerformanceRow>();
             using (var conn = Db.OpenConnection())
@@ -1219,6 +1219,7 @@ namespace src.services.admin
                 "COUNT(DISTINCT e.student_id) AS enrolled, " +
                 "COUNT(DISTINCT ats.session_id) AS sessions_held, " +
                 "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                "SUM(CASE WHEN ar.status = 'LATE' THEN 1 ELSE 0 END) AS late_count, " +
                 "SUM(CASE WHEN ar.status = 'ABSENT' THEN 1 ELSE 0 END) AS absent_count, " +
                 "AVG(CAST(sub.marks_obtained AS float)) AS avg_marks " +
                 "FROM COURSE_OFFERINGS co " +
@@ -1244,6 +1245,7 @@ namespace src.services.admin
                 while (reader.Read())
                 {
                     var present = Int(reader["present_count"]);
+                    var late = Int(reader["late_count"]);
                     var absent = Int(reader["absent_count"]);
                     var avgMarks = Decimal(reader["avg_marks"]);
                     var passRate = EstimatePassRate(avgMarks);
@@ -1263,7 +1265,7 @@ namespace src.services.admin
                         SessionsHeld = Int(reader["sessions_held"]),
                         Present = present,
                         Absent = absent,
-                        AverageAttendance = Percentage(present, present + absent),
+                        AverageAttendance = Percentage(present + late, present + late + absent),
                         AverageMarks = avgMarks,
                         PassRate = passRate,
                         Passed = 0,
@@ -1281,6 +1283,7 @@ namespace src.services.admin
             const string sql =
                 "SELECT s.student_id, s.student_name, p.programme_code, ISNULL(s.semester, 0) AS semester_no, " +
                 "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                "SUM(CASE WHEN ar.status = 'LATE' THEN 1 ELSE 0 END) AS late_count, " +
                 "SUM(CASE WHEN ar.status = 'ABSENT' THEN 1 ELSE 0 END) AS absent_count, " +
                 "AVG(CAST(sub.marks_obtained AS float)) AS avg_marks " +
                 "FROM COURSE_OFFERINGS co " +
@@ -1306,6 +1309,7 @@ namespace src.services.admin
                     while (reader.Read())
                     {
                         var present = Int(reader["present_count"]);
+                        var late = Int(reader["late_count"]);
                         var absent = Int(reader["absent_count"]);
                         var marks = Decimal(reader["avg_marks"]);
                         rows.Add(new AdminCourseStudentMetric
@@ -1316,7 +1320,7 @@ namespace src.services.admin
                             Semester = Int(reader["semester_no"]),
                             Present = present,
                             Absent = absent,
-                            AttendancePercentage = Percentage(present, present + absent),
+                            AttendancePercentage = Percentage(present + late, present + late + absent),
                             Marks = marks,
                             Grade = LetterGrade(marks)
                         });
@@ -1458,7 +1462,7 @@ namespace src.services.admin
             summary.AverageCgpa = DecimalScalar(conn, "SELECT AVG(CAST(grade_point AS float)) FROM GRADES");
             summary.AverageAttendance = DecimalScalar(conn,
                 "SELECT AVG(CASE WHEN x.total_count = 0 THEN NULL ELSE CAST(x.present_count AS float) * 100.0 / x.total_count END) " +
-                "FROM (SELECT ats.offer_id, SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) present_count, COUNT(ar.attendance_id) total_count " +
+                "FROM (SELECT ats.offer_id, SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) present_count, COUNT(ar.attendance_id) total_count " +
                 "FROM ATTENDANCE_SESSIONS ats LEFT JOIN ATTENDANCE_RECORDS ar ON ar.session_id = ats.session_id GROUP BY ats.offer_id) x");
 
             var passed = Count(conn, "SELECT COUNT(*) FROM GRADES WHERE letter_grade <> 'F'");

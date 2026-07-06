@@ -28,6 +28,12 @@ namespace src.controls
                 if (!notification.IsRead)
                     _unreadNotificationCount++;
             }
+
+            foreach (var notification in src.services.SubmissionNotificationService.GetForUser(user))
+            {
+                if (!notification.IsRead)
+                    _unreadNotificationCount++;
+            }
         }
 
         protected string NotificationBadgeText
