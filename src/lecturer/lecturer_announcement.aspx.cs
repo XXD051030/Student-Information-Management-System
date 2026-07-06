@@ -260,7 +260,9 @@ namespace student_information_management_system
             yearFilterSelect.Items.Add(new ListItem("All years", "all"));
             foreach (string year in sessions.Select(s => s.AcademicYear)
                 .Concat(courses.Select(c => c.AcademicYear))
-                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct()
+                .OrderBy(StudentPortalFormat.AcademicYearSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
                 yearFilterSelect.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
 
             semesterFilterSelect.Items.Clear();
@@ -269,7 +271,9 @@ namespace student_information_management_system
                 .Where(s => _yearFilter == "all" || s.AcademicYear == _yearFilter)
                 .Select(s => s.Semester)
                 .Concat(courses.Where(c => _yearFilter == "all" || c.AcademicYear == _yearFilter).Select(c => c.Semester))
-                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct()
+                .OrderBy(StudentPortalFormat.SemesterSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
                 semesterFilterSelect.Items.Add(new ListItem(StudentPortalFormat.SemesterLabel(semester), semester));
 
             if (_offeringFilter.HasValue)

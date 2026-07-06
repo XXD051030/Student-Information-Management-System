@@ -197,6 +197,13 @@
             courses.forEach(function (course) {
                 if (course.year === year && semesters.indexOf(course.semester) === -1) semesters.push(course.semester);
             });
+            semesters.sort(function (left, right) {
+                return semesterLabel(left).localeCompare(
+                    semesterLabel(right),
+                    undefined,
+                    { numeric: true, sensitivity: "base" }
+                );
+            });
             semesters.forEach(function (semester) {
                 var option = document.createElement("option");
                 option.value = semester;
@@ -579,6 +586,25 @@
     });
 
     document.addEventListener("DOMContentLoaded", function () {
+        var peopleSearch = document.querySelector(
+            "[data-filter-input][data-filter-target='[data-student-row]']"
+        );
+        if (peopleSearch) {
+            peopleSearch.addEventListener("input", function () {
+                var query = peopleSearch.value.trim().toLowerCase();
+                var visible = 0;
+                document.querySelectorAll("[data-student-row]").forEach(function (row) {
+                    var text = (row.getAttribute("data-filter-text") || row.textContent || "")
+                        .toLowerCase();
+                    var matches = !query || text.indexOf(query) !== -1;
+                    row.hidden = !matches;
+                    if (matches) visible++;
+                });
+                var noResults = document.querySelector("[data-people-no-results]");
+                if (noResults) noResults.hidden = !query || visible > 0;
+            });
+        }
+
         var search = document.querySelector("[data-filter-target='[data-material]']");
         var courseSelect = document.querySelector("[data-material-course-filter]");
         var yearFilter = document.querySelector("[data-material-year-filter]");

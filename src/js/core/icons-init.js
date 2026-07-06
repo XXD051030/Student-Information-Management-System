@@ -15,6 +15,10 @@
             'lecturer_grades.aspx',
             'lecturer_announcement.aspx'
         ];
+        var attendancePages = [
+            'lecturer_attendance_history.aspx',
+            'lecturer_take_attendance.aspx'
+        ];
         var activeTarget = page;
         var isDashboardGradeLink =
             page === 'lecturer_grades.aspx' &&
@@ -34,6 +38,8 @@
             activeTarget = 'lecturer_courses.aspx';
         } else if (isMaterialsManagerPreview) {
             activeTarget = 'lecturer_materials.aspx';
+        } else if (attendancePages.indexOf(page) !== -1) {
+            activeTarget = 'lecturer_attendance.aspx';
         } else if (coursePages.indexOf(page) !== -1 ||
             (params.has('offering') &&
                 scopedCoursePages.indexOf(page) !== -1 &&

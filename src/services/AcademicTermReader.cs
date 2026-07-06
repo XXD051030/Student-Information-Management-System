@@ -219,7 +219,8 @@ namespace src.services
             const string sql =
                 "SELECT academic_year, semester, MIN(start_date) AS start_date, MAX(end_date) AS end_date " +
                 "FROM ACADEMIC_SESSIONS GROUP BY academic_year, semester " +
-                "ORDER BY MIN(start_date), academic_year, semester";
+                "ORDER BY TRY_CONVERT(int, academic_year), academic_year, " +
+                "TRY_CONVERT(int, REPLACE(LOWER(semester), 'semester ', '')), semester";
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             using (var reader = cmd.ExecuteReader())

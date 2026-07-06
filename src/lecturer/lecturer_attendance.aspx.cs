@@ -87,7 +87,9 @@ namespace src.lecturer
             foreach (var year in _sessions.Select(s => s.AcademicYear)
                 .Concat(_allCourses.Select(c => c.AcademicYear))
                 .Where(HasValue)
-                .Distinct(StringComparer.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(AcademicYearSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
             {
                 academicYearFilter.Items.Add(new ListItem(AcademicYearLabel(year), year));
             }
@@ -120,6 +122,8 @@ namespace src.lecturer
                     .Select(c => c.Semester))
                 .Where(HasValue)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(SemesterSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             semesterFilter.Items.Clear();
