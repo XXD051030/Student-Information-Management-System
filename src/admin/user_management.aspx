@@ -225,8 +225,11 @@
             credentials: "same-origin",
             body: JSON.stringify(payload || {})
           }).then(function (r) {
-            if (!r.ok) throw new Error("Request failed");
-            return r.json();
+            return r.json().then(function (json) {
+              var data = json && json.d ? json.d : json;
+              if (!r.ok || (data && data.ok === false)) throw new Error((data && data.message) || "Request failed");
+              return data;
+            });
           });
         }
         function field(modal, name) {
@@ -356,8 +359,8 @@
               + '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Creating...';
             post("CreateUser", { request: request })
               .then(function () { reloadSuccess("User created"); })
-              .catch(function () {
-                if (window.toast) window.toast.error("Could not create user");
+              .catch(function (error) {
+                if (window.toast) window.toast.error(error && error.message ? error.message : "Could not create user");
                 create.disabled = false;
                 create.style.opacity = "";
                 create.style.cursor = "";
@@ -386,7 +389,7 @@
             };
             post("UpdateUser", { request: updateRequest })
               .then(function () { reloadSuccess("User updated"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not update user"); });
+              .catch(function (error) { if (window.toast) window.toast.error(error && error.message ? error.message : "Could not update user"); });
             return;
           }
 
@@ -414,7 +417,7 @@
             if (!confirm((next === "ACTIVE" ? "Activate " : "Deactivate ") + name + "?")) return;
             post("SetUserStatus", { userId: parseInt(status.getAttribute("data-user-id"), 10), status: next })
               .then(function () { reloadSuccess("User updated"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not update user"); });
+              .catch(function (error) { if (window.toast) window.toast.error(error && error.message ? error.message : "Could not update user"); });
           }
         }, true);
       })();

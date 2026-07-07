@@ -209,25 +209,42 @@ namespace src.admin
         [WebMethod(EnableSession = true)]
         public static object CreateUser(AdminUserSaveRequest request)
         {
-            EnsureAdmin();
-            var id = new AdminPortalService().CreateUser(request);
-            return new { ok = true, userId = id };
+            try
+            {
+                EnsureAdmin();
+                var id = new AdminPortalService().CreateUser(request);
+                return new { ok = true, userId = id };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         [WebMethod(EnableSession = true)]
         public static object SetUserStatus(int userId, string status)
         {
-            EnsureAdmin();
-            new AdminPortalService().SetUserStatus(userId, status);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SetUserStatus(userId, status));
         }
 
         [WebMethod(EnableSession = true)]
         public static object UpdateUser(AdminUserSaveRequest request)
         {
-            EnsureAdmin();
-            new AdminPortalService().UpdateUser(request);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().UpdateUser(request));
+        }
+
+        private static object RunAdminAction(Action action)
+        {
+            try
+            {
+                EnsureAdmin();
+                action();
+                return new { ok = true };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         // Emails the selected user a password reset link, reusing the same
