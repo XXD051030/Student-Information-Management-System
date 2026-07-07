@@ -115,9 +115,9 @@
                 <div class="overflow-x-auto">
                     <table class="min-w-full">
                         <thead class="border-y border-slate-100 bg-slate-50/60 text-slate-500"><tr>
-                            <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Programme</th>
-                            <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Semester</th>
                             <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Code</th>
+                            <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Semester</th>
+                            <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Programme</th>
                             <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Title</th>
                             <th class="px-6 py-3 text-right uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Credit</th>
                             <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Lecturer</th>
@@ -155,6 +155,7 @@
         <div class="flex-1 overflow-y-auto px-6 py-5">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Code</span><div class="mt-1.5"><input data-field="code" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
+                <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Department</span><div class="mt-1.5"><select data-field="department" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= DepartmentOptionsHtml %></select></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Name</span><div class="mt-1.5"><input data-field="name" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Level</span><div class="mt-1.5"><select data-field="level" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= EducationLevelOptionsHtml %></select></div></label>
                 <label class="block"><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Duration</span><div class="mt-1.5"><input data-field="duration" value="3 yrs" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></div></label>
@@ -244,6 +245,16 @@
     <script src="<%= ResolveUrl("~/js/admin/shared/ui.js") %>"></script>
     <script>
         (function () {
+            var tabKey = "admin.programme_course.activeTab";
+            function currentTab() {
+                var active = document.querySelector("[data-tab][data-active='true']");
+                return active ? active.getAttribute("data-tab") : (sessionStorage.getItem(tabKey) || "programmes");
+            }
+            function restoreTab() {
+                var tab = (location.hash || "").replace("#", "") || sessionStorage.getItem(tabKey);
+                var button = tab && document.querySelector('[data-tab="' + tab + '"]');
+                if (button) button.click();
+            }
             function post(method, payload) {
                 return fetch("programme_course.aspx/" + method, {
                     method: "POST",
@@ -251,8 +262,13 @@
                     credentials: "same-origin",
                     body: JSON.stringify(payload || {})
                 }).then(function (r) {
-                    if (!r.ok) throw new Error("Request failed");
-                    return r.json();
+                    return r.json().then(function (json) {
+                        var data = json && json.d ? json.d : json;
+                        if (!r.ok || (data && data.ok === false)) {
+                            throw new Error((data && data.message) || "Request failed");
+                        }
+                        return data;
+                    });
                 });
             }
             function field(modal, name) {
@@ -270,7 +286,11 @@
             }
             function done(message) {
                 if (window.toast) window.toast.success(message);
+                sessionStorage.setItem(tabKey, currentTab());
                 setTimeout(function () { location.reload(); }, 450);
+            }
+            function fail(error, fallback) {
+                if (window.toast) window.toast.error(error && error.message ? error.message : fallback);
             }
             function filterPrerequisiteItems(modal, currentCode, checkedCodes) {
                 var programme = (modal.querySelector('[data-field="programme"]') || {}).value || "";
@@ -337,6 +357,7 @@
                     var programmeRow = editProgramme.closest("tr");
                     var programmeModal = document.getElementById("prog-modal");
                     setField(programmeModal, "code", programmeRow && programmeRow.dataset.code);
+                    setField(programmeModal, "department", programmeRow && programmeRow.dataset.department);
                     setField(programmeModal, "name", programmeRow && programmeRow.dataset.name);
                     setField(programmeModal, "level", programmeRow && programmeRow.dataset.level);
                     setField(programmeModal, "duration", programmeRow && programmeRow.dataset.duration);
@@ -377,6 +398,7 @@
                 if (newProgramme) {
                     var freshProgramme = document.getElementById("prog-modal");
                     setField(freshProgramme, "code", "");
+                    setField(freshProgramme, "department", "");
                     setField(freshProgramme, "name", "");
                     setField(freshProgramme, "level", "Undergraduate");
                     setField(freshProgramme, "duration", "3 yrs");
@@ -421,6 +443,7 @@
                     post("SaveProgramme", {
                         request: {
                             code: field(pm, "code"),
+                            department: field(pm, "department"),
                             name: field(pm, "name"),
                             level: field(pm, "level"),
                             duration: field(pm, "duration"),
@@ -428,7 +451,7 @@
                             status: field(pm, "status")
                         }
                     }).then(function () { done("Programme saved"); })
-                        .catch(function () { if (window.toast) window.toast.error("Could not save programme"); });
+                        .catch(function (error) { fail(error, "Could not save programme"); });
                     return;
                 }
 
@@ -439,7 +462,7 @@
                     var dm = document.getElementById("department-modal");
                     post("SaveDepartment", { request: { id: field(dm, "id"), name: field(dm, "name"), status: field(dm, "status") } })
                         .then(function () { done("Department saved"); })
-                        .catch(function () { if (window.toast) window.toast.error("Could not save department"); });
+                        .catch(function (error) { fail(error, "Could not save department"); });
                     return;
                 }
 
@@ -458,7 +481,7 @@
                             status: field(cm, "status")
                         }
                     }).then(function () { done("Course saved"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not save course"); });
+              .catch(function (error) { fail(error, "Could not save course"); });
             return;
           }
 
@@ -476,7 +499,7 @@
                 status: "Active"
               }
             }).then(function () { done("Assignment saved"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not save assignment"); });
+              .catch(function (error) { fail(error, "Could not save assignment"); });
             return;
           }
 
@@ -487,7 +510,7 @@
             if (!confirm("Delete this programme? Existing linked records will be marked inactive instead.")) return;
             post("DeleteProgramme", { code: deleteProgramme.getAttribute("data-code") })
               .then(function () { done("Programme deleted"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not delete programme"); });
+              .catch(function (error) { fail(error, "Could not delete programme"); });
             return;
           }
 
@@ -498,7 +521,7 @@
             if (!confirm("Delete this department? Linked records will be marked inactive instead.")) return;
             post("DeleteDepartment", { id: deleteDepartment.getAttribute("data-id") })
               .then(function () { done("Department deleted"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not delete department"); });
+              .catch(function (error) { fail(error, "Could not delete department"); });
             return;
           }
 
@@ -509,7 +532,7 @@
             if (!confirm("Delete this course? Existing linked records will be marked inactive instead.")) return;
             post("DeleteCourse", { code: deleteCourse.getAttribute("data-code") })
               .then(function () { done("Course deleted"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not delete course"); });
+              .catch(function (error) { fail(error, "Could not delete course"); });
             return;
           }
 
@@ -520,9 +543,13 @@
             if (!confirm("Delete this assignment? Existing linked records will be marked inactive instead.")) return;
             post("DeleteCourseAssignment", { offerId: parseInt(deleteAssignment.getAttribute("data-offer-id"), 10) })
               .then(function () { done("Assignment deleted"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not delete assignment"); });
+              .catch(function (error) { fail(error, "Could not delete assignment"); });
           }
         }, true);
+        document.addEventListener("click", function (e) {
+          var tab = e.target.closest("[data-tab]");
+          if (tab) sessionStorage.setItem(tabKey, tab.getAttribute("data-tab"));
+        });
         document.addEventListener("change", function (e) {
           var am = document.getElementById("assign-modal");
           if (am && am.contains(e.target)) {
@@ -535,6 +562,7 @@
             filterPrerequisiteItems(cm, currentCode);
           }
         });
+        setTimeout(restoreTab, 0);
       })();
     </script>
 </asp:Content>
