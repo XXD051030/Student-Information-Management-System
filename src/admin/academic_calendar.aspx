@@ -89,6 +89,8 @@
       function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
       function field(n){return document.querySelector("#semester-modal [data-field='"+n+"']")}
       function set(n,v){if(field(n))field(n).value=v||""}
+      // Flags the first empty required field (toast + focus) and returns false so save can stop before posting.
+      function requireFields(specs){for(var i=0;i<specs.length;i++){var el=field(specs[i].name),val=el?String(el.value).trim():"";if(!val){if(window.toast)window.toast.error(specs[i].label+" is required");if(el&&el.focus)el.focus();return false}}return true}
       function selected(name){var x=document.querySelector("[data-table-filter='"+name+"']");return x?x.value:""}
       function sync(name,value){document.querySelectorAll("[data-table-filter='"+name+"']").forEach(function(x){x.value=value})}
       function fail(error,message){if(window.toast)window.toast.error(error&&error.message?error.message:message)}

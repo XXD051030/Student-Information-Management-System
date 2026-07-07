@@ -236,6 +236,20 @@
           var el = modal.querySelector('[data-field="' + name + '"]');
           return el ? el.value.trim() : "";
         }
+        // Returns true when every listed field has a value; otherwise flags the
+        // first empty one and returns false so the caller can stop before posting.
+        function requireFields(modal, specs) {
+          for (var i = 0; i < specs.length; i++) {
+            var el = modal.querySelector('[data-field="' + specs[i].name + '"]');
+            var value = el ? String(el.value).trim() : "";
+            if (!value) {
+              if (window.toast) window.toast.error(specs[i].label + " is required");
+              if (el && el.focus) el.focus();
+              return false;
+            }
+          }
+          return true;
+        }
         function setField(modal, name, value) {
           var el = modal.querySelector('[data-field="' + name + '"]');
           if (!el) return;
@@ -322,6 +336,10 @@
             e.stopImmediatePropagation();
             if (create.disabled) return;
             var modal = document.getElementById("create-user");
+            if (!requireFields(modal, [
+              { name: "fullName", label: "Full name" },
+              { name: "email", label: "Email" }
+            ])) return;
             var request = {
               fullName: field(modal, "fullName"),
               email: field(modal, "email"),
@@ -356,6 +374,10 @@
             e.preventDefault();
             e.stopImmediatePropagation();
             var updateModal = document.getElementById("edit-user");
+            if (!requireFields(updateModal, [
+              { name: "fullName", label: "Full name" },
+              { name: "email", label: "Email" }
+            ])) return;
             var updateRequest = {
               userId: parseInt(field(updateModal, "userId"), 10),
               fullName: field(updateModal, "fullName"),
@@ -368,6 +390,21 @@
             post("UpdateUser", { request: updateRequest })
               .then(function () { reloadSuccess("User updated"); })
               .catch(function (error) { if (window.toast) window.toast.error(error && error.message ? error.message : "Could not update user"); });
+            return;
+          }
+
+          var reset = e.target.closest("[data-admin-reset-password]");
+          if (reset) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            var resetRow = reset.closest("tr");
+            var resetEmail = resetRow && resetRow.dataset.email;
+            var resetName = (resetRow && resetRow.dataset.fullName) || "this user";
+            if (!resetEmail) { if (window.toast) window.toast.error("No email on file for this user"); return; }
+            if (!confirm("Send a password reset email to " + resetName + " (" + resetEmail + ")?")) return;
+            post("ResetUserPassword", { email: resetEmail })
+              .then(function () { if (window.toast) window.toast.success("Password reset email sent"); })
+              .catch(function () { if (window.toast) window.toast.error("Could not send reset email"); });
             return;
           }
 

@@ -232,6 +232,7 @@ namespace src.services.admin
                         Duration = Text(reader["duration"]),
                         Semesters = Int(reader["semester_count"]),
                         Status = Title(Text(reader["status"])),
+                        DepartmentId = Text(reader["department_id"]),
                         CourseCount = Int(reader["course_count"]),
                         StudentCount = Int(reader["student_count"])
                     });
@@ -500,6 +501,7 @@ namespace src.services.admin
             var code = CleanCode(request.Code);
             if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Programme code is required.");
             if (string.IsNullOrWhiteSpace(request.Name)) throw new ArgumentException("Programme name is required.");
+            if (string.IsNullOrWhiteSpace(request.Department)) throw new ArgumentException("Department is required.");
 
             using (var conn = Db.OpenConnection())
             {
@@ -1840,6 +1842,7 @@ namespace src.services.admin
         public string Duration { get; set; }
         public int Semesters { get; set; }
         public string Status { get; set; }
+        public string Department { get; set; }
     }
 
     public class AdminDepartmentSaveRequest
@@ -2070,6 +2073,7 @@ namespace src.services.admin
         public string Duration { get; set; }
         public int Semesters { get; set; }
         public string Status { get; set; }
+        public string DepartmentId { get; set; }
         public int CourseCount { get; set; }
         public int StudentCount { get; set; }
     }
