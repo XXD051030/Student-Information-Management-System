@@ -10,7 +10,7 @@
             <div class="max-w-xl">
                 <div class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur" style="font-size:12px;font-weight:500">
                     <i data-lucide="sparkles" class="h-3.5 w-3.5 text-amber-200"></i>
-                    <%= CurrentDateLabel %> &middot; Week <%= SemesterWeek %> of semester <%= SemesterNumber %>
+                    <%= CurrentDateLabel %> 
                 </div>
                 <h1 class="mt-4 text-white" style="font-size:32px;font-weight:700;letter-spacing:-0.015em;line-height:1.15">
                     <%= Greeting %>, <%=GetUserName%> <span role="img" aria-label="waving hand">&#128075;</span>
