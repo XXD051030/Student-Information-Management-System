@@ -197,6 +197,13 @@
             courses.forEach(function (course) {
                 if (course.year === year && semesters.indexOf(course.semester) === -1) semesters.push(course.semester);
             });
+            semesters.sort(function (left, right) {
+                return semesterLabel(left).localeCompare(
+                    semesterLabel(right),
+                    undefined,
+                    { numeric: true, sensitivity: "base" }
+                );
+            });
             semesters.forEach(function (semester) {
                 var option = document.createElement("option");
                 option.value = semester;
@@ -232,7 +239,10 @@
         var type = typeSelect.value;
         var lectureNotes = type === "Lecture Notes";
         var quiz = type === "Quiz";
-        var requiresAssessmentDetails = type === "Assignment" || type === "Test";
+        var viva = type === "Viva";
+        var requiresAssessmentDetails = type === "Assignment" || type === "Quiz" || type === "Test" || viva;
+        var modeField = document.querySelector("[data-assessment-mode-field]");
+        var modeSelect = document.querySelector("[data-assessment-mode]");
         var dueInput = document.querySelector("[data-due-date-field] input");
         var dueTimeInput = document.querySelector("[data-due-time-field] input");
         var weightInput = document.querySelector("[data-weight-field] input");
@@ -245,6 +255,16 @@
         var weightRequiredMark = document.querySelector("[data-weight-required]");
         var weekField = document.querySelector("[data-week-field]");
         var weekSelect = document.querySelector("[data-material-week-select]");
+
+        if (modeField) modeField.classList.toggle("hidden", !viva);
+        if (modeSelect) {
+            modeSelect.disabled = !viva;
+            modeSelect.required = viva;
+            if (modeSelect.getAttribute("data-for-type") !== type) {
+                modeSelect.value = viva ? "" : type === "Assignment" ? "FILE" : "MANUAL";
+                modeSelect.setAttribute("data-for-type", type);
+            }
+        }
 
         [dueInput, dueTimeInput, weightInput].forEach(function (input) {
             if (!input) return;
@@ -355,10 +375,12 @@
         var weight = document.querySelector("[data-material-weight]");
         var week = document.querySelector("[data-material-week-select]");
         var file = document.querySelector("[data-material-file]");
+        var submissionMode = document.querySelector("[data-assessment-mode]");
         var type = typeSelect ? typeSelect.value : "";
-        var requiresAssessment = type === "Assignment" || type === "Test";
+        var requiresAssessment = type === "Assignment" || type === "Quiz" || type === "Test" || type === "Viva";
         var lectureNotes = type === "Lecture Notes";
         var quiz = type === "Quiz";
+        var viva = type === "Viva";
 
         if (uploadYear && !uploadYear.value) {
             return showRequiredError("Choose an academic year first.", uploadYear);
@@ -378,19 +400,25 @@
             return showRequiredError("Week is required for lecture notes.", week);
         }
         if (week) week.setCustomValidity("");
+        if (viva && submissionMode && !submissionMode.value) {
+            return showRequiredError(
+                "Choose whether this Viva uses a Google Drive video link or lecturer-entered marks.",
+                submissionMode
+            );
+        }
         if (requiresAssessment && dueDate && !dueDate.value) {
-            return showRequiredError("Due date is required for assignments and tests.", dueDate);
+            return showRequiredError("Due date is required for assessments.", dueDate);
         }
         if (dueDate) dueDate.setCustomValidity("");
         if (requiresAssessment && dueTime && !dueTime.value) {
-            return showRequiredError("Due time is required for assignments and tests.", dueTime);
+            return showRequiredError("Due time is required for assessments.", dueTime);
         }
         if (dueTime) dueTime.setCustomValidity("");
         if (requiresAssessment && weight && !weight.value) {
-            return showRequiredError("Course weight is required for assignments and tests.", weight);
+            return showRequiredError("Course weight is required for assessments.", weight);
         }
         if (requiresAssessment && weight && Number(weight.value) <= 0) {
-            return showRequiredError("Course weight for assignments and tests must be greater than 0%.", weight);
+            return showRequiredError("Course weight for assessments must be greater than 0%.", weight);
         }
         if (weight) weight.setCustomValidity("");
         if (quiz && description && !description.value.trim()) {
@@ -433,12 +461,37 @@
         var documentCopy = new DOMParser().parseFromString(html, "text/html");
         var freshRow = documentCopy.querySelector('[data-material-id="' + materialId + '"]');
         var list = document.querySelector("[data-material-list]");
-        if (!freshRow || !list) return;
+        if (!freshRow || !list) return null;
         var imported = document.importNode(freshRow, true);
         imported.setAttribute("tabindex", "0");
         imported.setAttribute("role", "link");
         list.insertBefore(imported, list.firstChild);
         if (window.lucide) window.lucide.createIcons();
+        return imported;
+    }
+
+    function revealPublishedMaterial(row) {
+        if (!row) return;
+        var type = row.getAttribute("data-material-category") || "all";
+        var course = row.getAttribute("data-material-offering") || "all";
+        var year = row.getAttribute("data-material-year") || "all";
+        var semester = row.getAttribute("data-material-semester") || "all";
+        var search = document.querySelector("[data-filter-target='[data-material]']");
+        var courseSelect = document.querySelector("[data-material-course-filter]");
+        var yearSelect = document.querySelector("[data-material-year-filter]");
+        var semesterSelect = document.querySelector("[data-material-semester-filter]");
+
+        activeMaterialType = type;
+        document.querySelectorAll("[data-material-tab]").forEach(function (tab) {
+            tab.setAttribute("data-active",
+                tab.getAttribute("data-material-tab") === type ? "true" : "false");
+        });
+        if (search) search.value = "";
+        if (courseSelect) courseSelect.value = course;
+        if (yearSelect) yearSelect.value = year;
+        if (semesterSelect) semesterSelect.value = semester;
+        applyMaterialFilters();
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     async function publishMaterial(button) {
@@ -453,10 +506,12 @@
         var weight = document.querySelector("[data-material-weight]");
         var week = document.querySelector("[data-material-week-select]");
         var file = document.querySelector("[data-material-file]");
+        var submissionMode = document.querySelector("[data-assessment-mode]");
         var label = button.querySelector("[data-publish-label]");
         var formData = new FormData();
         formData.append("offeringId", course ? course.value : "");
         formData.append("materialType", type ? type.value : "");
+        formData.append("submissionMode", submissionMode ? submissionMode.value : "");
         formData.append("title", title ? title.value : "");
         formData.append("description", description ? description.value : "");
         formData.append("dueDate", dueDate ? dueDate.value : "");
@@ -483,14 +538,14 @@
                 throw new Error(result && result.message ? result.message : "Material could not be published.");
             }
 
-            await insertPublishedMaterial(result.materialId);
+            var publishedRow = await insertPublishedMaterial(result.materialId);
             if (title) title.value = "";
             if (description) description.value = "";
             if (dueDate) dueDate.value = "";
             if (dueTime) dueTime.value = "23:59";
             if (weight) weight.value = "";
             if (file) file.value = "";
-            applyMaterialFilters();
+            revealPublishedMaterial(publishedRow);
             showMaterialStatus(result.message, true);
         } catch (error) {
             showMaterialStatus(error.message || "Material could not be published.", false);
@@ -531,6 +586,25 @@
     });
 
     document.addEventListener("DOMContentLoaded", function () {
+        var peopleSearch = document.querySelector(
+            "[data-filter-input][data-filter-target='[data-student-row]']"
+        );
+        if (peopleSearch) {
+            peopleSearch.addEventListener("input", function () {
+                var query = peopleSearch.value.trim().toLowerCase();
+                var visible = 0;
+                document.querySelectorAll("[data-student-row]").forEach(function (row) {
+                    var text = (row.getAttribute("data-filter-text") || row.textContent || "")
+                        .toLowerCase();
+                    var matches = !query || text.indexOf(query) !== -1;
+                    row.hidden = !matches;
+                    if (matches) visible++;
+                });
+                var noResults = document.querySelector("[data-people-no-results]");
+                if (noResults) noResults.hidden = !query || visible > 0;
+            });
+        }
+
         var search = document.querySelector("[data-filter-target='[data-material]']");
         var courseSelect = document.querySelector("[data-material-course-filter]");
         var yearFilter = document.querySelector("[data-material-year-filter]");

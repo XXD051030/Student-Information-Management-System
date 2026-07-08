@@ -31,7 +31,11 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:800">Post announcement</h2>
                     <p class="mt-0.5 text-slate-500" style="font-size:12.5px">Attach PDF, DOCX, images, spreadsheets, or ZIP files.</p>
                 </div>
-                <asp:Button ID="closeComposeButton" runat="server" OnClick="CloseComposeButton_Click" Text="x" CssClass="inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer" ToolTip="Close" style="font-size:22px;font-weight:600;line-height:1" UseSubmitBehavior="true" CausesValidation="false" />
+                <asp:LinkButton ID="closeComposeButton" runat="server" OnClick="CloseComposeButton_Click"
+                    CssClass="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                    ToolTip="Close" aria-label="Close" CausesValidation="false">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                </asp:LinkButton>
             </div>
             <div class="grid gap-4 p-6 lg:grid-cols-[260px_1fr]">
                 <label class="block">
@@ -39,11 +43,11 @@
                     <asp:DropDownList ID="courseSelect" runat="server" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" />
                 </label>
                 <label class="block">
-                    <span class="text-slate-500" style="font-size:12px;font-weight:800">TITLE</span>
+                    <span class="text-slate-500" style="font-size:12px;font-weight:800">TITLE <span class="text-[#e0162b]">*</span></span>
                     <asp:TextBox ID="titleInput" runat="server" CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" placeholder="Announcement title" style="font-size:13px" />
                 </label>
                 <label class="block lg:col-span-2">
-                    <span class="text-slate-500" style="font-size:12px;font-weight:800">MESSAGE</span>
+                    <span class="text-slate-500" style="font-size:12px;font-weight:800">MESSAGE <span class="text-[#e0162b]">*</span></span>
                     <asp:TextBox ID="messageInput" runat="server" TextMode="MultiLine" CssClass="mt-1.5 min-h-[120px] w-full rounded-md border border-slate-200 px-3 py-2 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" placeholder="Write the announcement content" style="font-size:13px;line-height:1.55" />
                 </label>
                 <label class="block">

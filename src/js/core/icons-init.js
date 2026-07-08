@@ -15,11 +15,32 @@
             'lecturer_grades.aspx',
             'lecturer_announcement.aspx'
         ];
+        var attendancePages = [
+            'lecturer_attendance_history.aspx',
+            'lecturer_take_attendance.aspx'
+        ];
         var activeTarget = page;
+        var isDashboardGradeLink =
+            page === 'lecturer_grades.aspx' &&
+            params.get('source') === 'dashboard';
+        var isCourseMaterialPreview =
+            page === 'material_preview.aspx' &&
+            params.get('source') === 'course';
+        var isMaterialsManagerPreview =
+            page === 'material_preview.aspx' &&
+            params.get('source') === 'materials';
         var isCourseScopedAnnouncement =
             page === 'lecturer_announcement.aspx' &&
             params.get('context') === 'course';
-        if (coursePages.indexOf(page) !== -1 ||
+        if (isDashboardGradeLink) {
+            activeTarget = 'lecturer_dashboard.aspx';
+        } else if (isCourseMaterialPreview) {
+            activeTarget = 'lecturer_courses.aspx';
+        } else if (isMaterialsManagerPreview) {
+            activeTarget = 'lecturer_materials.aspx';
+        } else if (attendancePages.indexOf(page) !== -1) {
+            activeTarget = 'lecturer_attendance.aspx';
+        } else if (coursePages.indexOf(page) !== -1 ||
             (params.has('offering') &&
                 scopedCoursePages.indexOf(page) !== -1 &&
                 (page !== 'lecturer_announcement.aspx' || isCourseScopedAnnouncement))) {

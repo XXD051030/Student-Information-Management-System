@@ -68,7 +68,7 @@ namespace src.student
         {
             var course = dataItem as StudentAttendanceCourse;
             if (course == null) return "0 / 0";
-            return course.PresentCount + " / " + course.TotalCount;
+            return (course.PresentCount + course.LateCount) + " / " + course.TotalCount;
         }
 
         protected string CourseBarStyle(object dataItem)
@@ -179,7 +179,7 @@ namespace src.student
             int hLate = currentCourses.Sum(c => c.LateCount);
             int hAbsent = currentCourses.Sum(c => c.AbsentCount);
             int hTotal = currentCourses.Sum(c => c.TotalCount);
-            decimal? hRate = hTotal == 0 ? (decimal?)null : Math.Round((decimal)hPresent / hTotal, 4);
+            decimal? hRate = hTotal == 0 ? (decimal?)null : Math.Round((decimal)(hPresent + hLate) / hTotal, 4);
 
             OverallRateDisplay = FormatRate(hRate);
             PresentCountDisplay = hPresent.ToString();
@@ -187,7 +187,7 @@ namespace src.student
             AbsentCountDisplay = hAbsent.ToString();
             OverallSubtext = hTotal == 0
                 ? "No attendance records yet"
-                : hPresent + " present / " + hTotal + " recorded across " + currentCourses.Count + " " + Pluralize("course", currentCourses.Count);
+                : (hPresent + hLate) + " present / " + hTotal + " recorded across " + currentCourses.Count + " " + Pluralize("course", currentCourses.Count);
 
             // Default selected course: first current-semester course, else first overall.
             var selectedCourse = currentCourses.FirstOrDefault() ?? attendance.Courses.FirstOrDefault();
@@ -217,6 +217,9 @@ namespace src.student
             var semesters = courses
                 .GroupBy(c => c.SemesterId)
                 .Select(g => new { Id = g.Key, Name = g.First().SemesterName, IsCurrent = g.First().IsCurrent })
+                .OrderBy(sem => StudentPortalFormat.AcademicYearSortOrder(sem.Name))
+                .ThenBy(sem => StudentPortalFormat.SemesterSortOrder(sem.Name))
+                .ThenBy(sem => sem.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             var sb = new StringBuilder();

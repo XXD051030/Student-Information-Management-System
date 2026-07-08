@@ -98,8 +98,8 @@ namespace src.lecturer
         {
             var user = UserContextFactory.FromSession(Session);
             offeringList.DataSource = LecturerPortalService.GetCourses(user)
-                .OrderByDescending(x => x.AcademicYear)
-                .ThenBy(x => x.Semester)
+                .OrderBy(x => StudentPortalFormat.AcademicYearSortOrder(x.AcademicYear))
+                .ThenBy(x => StudentPortalFormat.SemesterSortOrder(x.Semester))
                 .ThenBy(x => x.CourseCode)
                 .Select(x => new
                 {

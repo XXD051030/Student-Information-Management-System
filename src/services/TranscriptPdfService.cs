@@ -16,8 +16,9 @@ namespace src.services
         private const float PageHeight = 842f;
         private const float Left = 48f;
         private const float Right = 547f;
-        private const float TableRight = 540f;
-        private const float GpaColumnRight = 526f;
+        private const float TableRight = 547f;
+        private const float GpaHeaderColumnRight = 526f;
+        private const float GpaColumnRight = 532f;
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
         public static byte[] Create(StudentAccountProfile account, StudentGradePage grades, string logoPath, DateTime generatedAt)
@@ -27,7 +28,7 @@ namespace src.services
             DrawFirstHeader(page, account, logoPath, generatedAt);
             var y = 580f;
             DrawTableHeader(page, y);
-            y -= 22f;
+            y -= 24f;
 
             var hasRows = false;
             foreach (var semester in grades.Semesters.OrderBy(s => s.StartDate))
@@ -36,19 +37,14 @@ namespace src.services
                 if (courses.Count == 0) continue;
                 hasRows = true;
 
-                var semesterHeight = 20f + courses.Count * 18f;
+                var semesterHeight = courses.Count * 18f;
                 if (y - semesterHeight < 92f)
                 {
                     page = NewPage(pages, true);
                     y = 748f;
                     DrawTableHeader(page, y);
-                    y -= 22f;
+                    y -= 24f;
                 }
-
-                FillRect(page, Left, y - 2f, TableRight - Left, 18f, 0.95f, 0.95f, 0.95f);
-                Text(page, Left + 5f, y + 3f, "F2", 9.5f, SemesterLabel(semester));
-                TextRight(page, TableRight - 5f, y + 3f, "F2", 9f, "Semester GPA " + Gpa(semester.Gpa));
-                y -= 20f;
 
                 foreach (var course in courses)
                 {
@@ -57,16 +53,17 @@ namespace src.services
                         page = NewPage(pages, true);
                         y = 748f;
                         DrawTableHeader(page, y);
-                        y -= 22f;
+                        y -= 24f;
                     }
 
-                    Text(page, 53f, y, "F1", 8.5f, Shorten(semester.SemesterName, 16));
-                    Text(page, 143f, y, "F2", 8.5f, Shorten(course.CourseCode, 12));
-                    Text(page, 208f, y, "F1", 8.5f, Shorten(course.CourseName, 34));
-                    TextRight(page, 445f, y, "F1", 8.5f, course.CreditHours.ToString(Invariant));
-                    TextRight(page, 490f, y, "F2", 8.5f, course.LetterGrade);
-                    TextRight(page, GpaColumnRight, y, "F1", 8.5f, Gpa(course.Gpa));
-                    Line(page, Left, y - 5f, TableRight, y - 5f, 0.85f, 0.85f, 0.85f, 0.35f);
+                    var rowBaseline = y - 1f;
+                    Text(page, 53f, rowBaseline, "F1", 8.5f, Shorten(semester.SemesterName, 16));
+                    Text(page, 143f, rowBaseline, "F2", 8.5f, Shorten(course.CourseCode, 12));
+                    Text(page, 208f, rowBaseline, "F1", 8.5f, Shorten(course.CourseName, 34));
+                    TextRight(page, 445f, rowBaseline, "F1", 8.5f, course.CreditHours.ToString(Invariant));
+                    TextRight(page, 490f, rowBaseline, "F2", 8.5f, course.LetterGrade);
+                    TextRight(page, GpaColumnRight, rowBaseline, "F1", 8.5f, Gpa(course.Gpa));
+                    Line(page, Left, y - 7f, TableRight, y - 7f, 0.85f, 0.85f, 0.85f, 0.35f);
                     y -= 18f;
                 }
             }
@@ -132,7 +129,7 @@ namespace src.services
             Text(page, 208f, y + 2f, "F2", 8f, "COURSE TITLE");
             TextRight(page, 445f, y + 2f, "F2", 8f, "CREDITS");
             TextRight(page, 490f, y + 2f, "F2", 8f, "GRADE");
-            TextRight(page, GpaColumnRight, y + 2f, "F2", 8f, "GPA");
+            TextRight(page, GpaHeaderColumnRight, y + 2f, "F2", 8f, "GPA");
             page.Content.Append("0 0 0 rg\n");
         }
 
@@ -155,11 +152,6 @@ namespace src.services
             Line(page, Left, 48f, Right, 48f, 0.75f, 0.75f, 0.75f, 0.5f);
             Text(page, Left, 32f, "F1", 7.5f, "INTI International University & Colleges");
             TextRight(page, Right, 32f, "F1", 7.5f, "Generated " + generatedAt.ToString("dd MMM yyyy HH:mm", Invariant) + "  |  Page " + pageNumber + " of " + pageCount);
-        }
-
-        private static string SemesterLabel(StudentGradeSemester semester)
-        {
-            return semester.SemesterName + "  |  " + semester.Courses.Count(c => c.GradePublished) + " graded courses";
         }
 
         private static string Gpa(decimal? value) { return value.HasValue ? value.Value.ToString("0.00", Invariant) : "-"; }

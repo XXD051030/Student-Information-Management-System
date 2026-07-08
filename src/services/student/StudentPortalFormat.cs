@@ -15,6 +15,12 @@ namespace src.services
             return !string.IsNullOrWhiteSpace(grade) && !string.Equals(grade, "N/A", StringComparison.OrdinalIgnoreCase);
         }
 
+        public static bool IsAttendedStatus(string status)
+        {
+            return string.Equals(status, "PRESENT", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(status, "LATE", StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string TermLabel(StudentRegistrationTerm term)
         {
             return term == null ? "" : term.AcademicYear + " " + term.Name;
@@ -31,6 +37,37 @@ namespace src.services
             var trimmed = value.Trim();
             int semester;
             return int.TryParse(trimmed, out semester) ? "Semester " + semester : trimmed;
+        }
+
+        public static int AcademicYearSortOrder(string value)
+        {
+            return FirstNumber(value);
+        }
+
+        public static int SemesterSortOrder(string value)
+        {
+            string text = value ?? "";
+            int semesterIndex = text.IndexOf("semester", StringComparison.OrdinalIgnoreCase);
+            return FirstNumber(semesterIndex >= 0 ? text.Substring(semesterIndex) : text);
+        }
+
+        private static int FirstNumber(string value)
+        {
+            int number = 0;
+            bool found = false;
+            foreach (char character in value ?? "")
+            {
+                if (char.IsDigit(character))
+                {
+                    found = true;
+                    number = checked(number * 10 + (character - '0'));
+                }
+                else if (found)
+                {
+                    break;
+                }
+            }
+            return found ? number : int.MaxValue;
         }
 
         public static bool IsSameTerm(string left, string right)

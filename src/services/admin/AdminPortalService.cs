@@ -20,20 +20,26 @@ namespace src.services.admin
             using (var conn = Db.OpenConnection())
             {
                 data.Programmes = QueryOptions(conn,
-                    "SELECT programme_code, programme_code + ' - ' + programme_name FROM PROGRAMMES ORDER BY programme_code");
+                    "SELECT programme_code, programme_code + ' - ' + programme_name FROM PROGRAMMES WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY programme_code");
                 data.Departments = QueryOptions(conn,
-                    "SELECT department_id, department_id + ' - ' + department_name FROM DEPARTMENTS ORDER BY department_name");
+                    "SELECT department_id, department_id + ' - ' + department_name FROM DEPARTMENTS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY department_name");
                 data.Lecturers = QueryOptions(conn,
                     "SELECT lecturer_id, lecturer_name + ' (' + lecturer_id + ')' FROM LECTURERS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY lecturer_name");
                 data.AcademicSessions = QueryOptions(conn,
                     "SELECT s.session_id, i.intake_name + ' - ' + s.semester " +
-                    "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id ORDER BY s.start_date DESC");
+                    "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
+                    "ORDER BY TRY_CONVERT(int, s.academic_year), s.academic_year, " +
+                    "TRY_CONVERT(int, REPLACE(LOWER(s.semester), 'semester ', '')), s.semester");
                 data.AcademicYears = QuerySingleColumnOptions(conn,
-                    "SELECT academic_year FROM (SELECT academic_year FROM ACADEMIC_SESSIONS UNION SELECT academic_year FROM COURSE_OFFERINGS) y ORDER BY academic_year DESC");
+                    "SELECT academic_year FROM (SELECT academic_year FROM ACADEMIC_SESSIONS UNION SELECT academic_year FROM COURSE_OFFERINGS) y " +
+                    "ORDER BY TRY_CONVERT(int, academic_year), academic_year");
                 data.Semesters = QuerySingleColumnOptions(conn,
-                    "SELECT semester FROM (SELECT semester FROM ACADEMIC_SESSIONS UNION SELECT semester FROM COURSE_OFFERINGS) s ORDER BY semester");
+                    "SELECT semester FROM (SELECT semester FROM ACADEMIC_SESSIONS UNION SELECT semester FROM COURSE_OFFERINGS) s " +
+                    "ORDER BY TRY_CONVERT(int, REPLACE(LOWER(semester), 'semester ', '')), semester");
                 data.StudentSemesters = QuerySingleColumnOptions(conn,
-                    "SELECT DISTINCT CONVERT(varchar(10), semester) FROM STUDENTS WHERE semester IS NOT NULL ORDER BY CONVERT(varchar(10), semester)");
+                    "SELECT semester FROM (SELECT DISTINCT CONVERT(varchar(10), semester) AS semester " +
+                    "FROM STUDENTS WHERE semester IS NOT NULL) s " +
+                    "ORDER BY TRY_CONVERT(int, semester), semester");
                 data.EducationLevels = QuerySingleColumnOptions(conn,
                     "SELECT DISTINCT education_level FROM PROGRAMMES WHERE education_level IS NOT NULL AND LTRIM(RTRIM(education_level)) <> '' ORDER BY education_level");
                 data.ProgrammeStatuses = QuerySingleColumnOptions(conn,
@@ -208,12 +214,12 @@ namespace src.services.admin
         public List<AdminProgrammeRow> GetProgrammes()
         {
             const string sql =
-                "SELECT p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, " +
+                "SELECT p.programme_id, p.department_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, " +
                 "COUNT(DISTINCT c.course_id) AS course_count, COUNT(DISTINCT s.student_id) AS student_count " +
                 "FROM PROGRAMMES p " +
                 "LEFT JOIN COURSES c ON c.programme_id = p.programme_id " +
                 "LEFT JOIN STUDENTS s ON s.programme_id = p.programme_id " +
-                "GROUP BY p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status " +
+                "GROUP BY p.programme_id, p.department_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status " +
                 "ORDER BY p.programme_code";
             var rows = new List<AdminProgrammeRow>();
             using (var conn = Db.OpenConnection())
@@ -225,6 +231,7 @@ namespace src.services.admin
                     rows.Add(new AdminProgrammeRow
                     {
                         Id = Text(reader["programme_id"]),
+                        DepartmentId = Text(reader["department_id"]),
                         Code = Text(reader["programme_code"]),
                         Name = Text(reader["programme_name"]),
                         Level = Text(reader["education_level"]),
@@ -499,13 +506,17 @@ namespace src.services.admin
             var code = CleanCode(request.Code);
             if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Programme code is required.");
             if (string.IsNullOrWhiteSpace(request.Name)) throw new ArgumentException("Programme name is required.");
+            if (string.IsNullOrWhiteSpace(request.Department)) throw new ArgumentException("Department is required.");
 
             using (var conn = Db.OpenConnection())
             {
-                var departmentId = ResolveDepartment(conn, null, code);
+                var status = NormalizeStatus(request.Status);
+                var departmentId = ResolveDepartment(conn, null, request.Department);
+                if (status == "ACTIVE" && !IsDepartmentActive(conn, null, departmentId))
+                    throw new ArgumentException("Programme cannot be active because the selected department is inactive.");
                 var exists = Exists(conn, "SELECT 1 FROM PROGRAMMES WHERE programme_id = @id OR programme_code = @id", cmd => cmd.Parameters.AddWithValue("@id", code));
                 var sql = exists
-                    ? "UPDATE PROGRAMMES SET programme_code = @code, programme_name = @name, education_level = @level, duration = @duration, semester_count = @semesters, status = @status WHERE programme_id = @id OR programme_code = @id"
+                    ? "UPDATE PROGRAMMES SET department_id = @department, programme_code = @code, programme_name = @name, education_level = @level, duration = @duration, semester_count = @semesters, status = @status WHERE programme_id = @id OR programme_code = @id"
                     : "INSERT INTO PROGRAMMES (programme_id, department_id, programme_code, programme_name, education_level, duration, semester_count, status) VALUES (@id, @department, @code, @name, @level, @duration, @semesters, @status)";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
@@ -516,9 +527,10 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@level", (object)(request.Level ?? "") ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@duration", (object)(request.Duration ?? "") ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@semesters", request.Semesters <= 0 ? 1 : request.Semesters);
-                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
+                if (status == "INACTIVE") SetCoursesInactiveForProgramme(conn, null, code);
             }
         }
 
@@ -532,15 +544,17 @@ namespace src.services.admin
             using (var conn = Db.OpenConnection())
             {
                 var exists = Exists(conn, "SELECT 1 FROM DEPARTMENTS WHERE department_id = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+                var status = NormalizeStatus(request.Status);
                 using (var cmd = new SqlCommand(exists
                     ? "UPDATE DEPARTMENTS SET department_name = @name, status = @status WHERE department_id = @id"
                     : "INSERT INTO DEPARTMENTS (department_id, department_name, status) VALUES (@id, @name, @status)", conn))
                 {
                     cmd.Parameters.AddWithValue("@id", id);
                     cmd.Parameters.AddWithValue("@name", request.Name.Trim());
-                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
+                if (status == "INACTIVE") SetProgrammesAndCoursesInactiveForDepartment(conn, null, id);
             }
         }
 
@@ -553,7 +567,10 @@ namespace src.services.admin
 
             using (var conn = Db.OpenConnection())
             {
+                var status = NormalizeStatus(request.Status);
                 var programmeId = ResolveProgramme(conn, null, CleanCode(request.Programme));
+                if (status == "ACTIVE" && !CanProgrammeHaveActiveCourses(conn, null, programmeId))
+                    throw new ArgumentException("Course cannot be active because its programme or department is inactive.");
                 var exists = Exists(conn, "SELECT 1 FROM COURSES WHERE course_id = @id OR course_code = @id", cmd => cmd.Parameters.AddWithValue("@id", code));
                 var sql = exists
                     ? "UPDATE COURSES SET programme_id = @programme, course_code = @code, course_name = @name, credit_hour = @credits, prerequisites = @prereq, status = @status WHERE course_id = @id OR course_code = @id"
@@ -566,7 +583,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@name", request.Name.Trim());
                     cmd.Parameters.AddWithValue("@credits", request.CreditHours <= 0 ? 1 : request.CreditHours);
                     cmd.Parameters.AddWithValue("@prereq", (object)(request.Prerequisites ?? "") ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -589,6 +606,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@id", code);
                     cmd.ExecuteNonQuery();
                 }
+                if (hasDependencies) SetCoursesInactiveForProgramme(conn, null, code);
             }
         }
 
@@ -608,6 +626,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@id", id);
                     cmd.ExecuteNonQuery();
                 }
+                if (linked) SetProgrammesAndCoursesInactiveForDepartment(conn, null, id);
             }
         }
 
@@ -658,6 +677,8 @@ namespace src.services.admin
                     }
                 }
                 var status = NormalizeStatus(request.Status);
+                if (status == "ACTIVE" && !CanCourseBeActive(conn, null, courseId))
+                    throw new ArgumentException("Assignment cannot be active because its course, programme, or department is inactive.");
 
                 if (request.OfferId > 0 && Exists(conn, "SELECT 1 FROM COURSE_OFFERINGS WHERE offer_id = @id", cmd => cmd.Parameters.AddWithValue("@id", request.OfferId)))
                 {
@@ -853,7 +874,7 @@ namespace src.services.admin
             if (request == null) throw new ArgumentException("Missing calendar event details.");
             if (!DateTime.TryParse(request.StartDate, out var startDate)) throw new ArgumentException("Start date is required.");
             if (!DateTime.TryParse(request.EndDate, out var endDate)) throw new ArgumentException("End date is required.");
-            if (endDate < startDate) throw new ArgumentException("End date cannot be earlier than start date.");
+            if (endDate <= startDate) throw new ArgumentException("Semester end date must be after the classes begin date.");
 
             var intakeId = (request.IntakeId ?? "").Trim().ToUpperInvariant();
             var intakeName = (request.IntakeName ?? "").Trim().ToUpperInvariant();
@@ -1011,7 +1032,7 @@ namespace src.services.admin
                     }
                 }
                 using (var cmd = new SqlCommand(
-                    "SELECT SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END), COUNT(ar.attendance_id) " +
+                    "SELECT SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END), COUNT(ar.attendance_id) " +
                     "FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = @id", conn))
                 {
                     cmd.Parameters.AddWithValue("@id", summary.StudentId);
@@ -1059,7 +1080,7 @@ namespace src.services.admin
                 using (var cmd = new SqlCommand(
                     "SELECT co.semester AS semester_name, ISNULL(co.academic_year, '') AS academic_year, " +
                     "c.course_code, c.course_name, " +
-                    "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                    "SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) AS present_count, " +
                     "COUNT(ar.attendance_id) AS total_count " +
                     "FROM ENROLLMENTS e " +
                     "JOIN COURSE_OFFERINGS co ON co.offer_id = e.offer_id " +
@@ -1181,7 +1202,7 @@ namespace src.services.admin
                 "FROM STUDENTS s JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
                 "OUTER APPLY (SELECT TOP 1 c.course_code, c.course_name, g.letter_grade, g.grade_point FROM GRADES g JOIN COURSE_OFFERINGS co ON co.offer_id = g.offer_id JOIN COURSES c ON c.course_id = co.course_id WHERE g.student_id = s.student_id ORDER BY g.grade_id DESC) latest " +
                 "OUTER APPLY (SELECT AVG(CAST(g.grade_point AS decimal(5,2))) AS cgpa, SUM(CASE WHEN g.letter_grade = 'F' THEN 1 ELSE 0 END) AS failed_count FROM GRADES g WHERE g.student_id = s.student_id) grades " +
-                "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE 100.0 * SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) / COUNT(*) END AS rate FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = s.student_id) att " +
+                "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE 100.0 * SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) / COUNT(*) END AS rate FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = s.student_id) att " +
                 "ORDER BY s.student_name";
             var rows = new List<AdminStudentPerformanceRow>();
             using (var conn = Db.OpenConnection())
@@ -1219,6 +1240,7 @@ namespace src.services.admin
                 "COUNT(DISTINCT e.student_id) AS enrolled, " +
                 "COUNT(DISTINCT ats.session_id) AS sessions_held, " +
                 "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                "SUM(CASE WHEN ar.status = 'LATE' THEN 1 ELSE 0 END) AS late_count, " +
                 "SUM(CASE WHEN ar.status = 'ABSENT' THEN 1 ELSE 0 END) AS absent_count, " +
                 "AVG(CAST(sub.marks_obtained AS float)) AS avg_marks " +
                 "FROM COURSE_OFFERINGS co " +
@@ -1244,6 +1266,7 @@ namespace src.services.admin
                 while (reader.Read())
                 {
                     var present = Int(reader["present_count"]);
+                    var late = Int(reader["late_count"]);
                     var absent = Int(reader["absent_count"]);
                     var avgMarks = Decimal(reader["avg_marks"]);
                     var passRate = EstimatePassRate(avgMarks);
@@ -1263,7 +1286,7 @@ namespace src.services.admin
                         SessionsHeld = Int(reader["sessions_held"]),
                         Present = present,
                         Absent = absent,
-                        AverageAttendance = Percentage(present, present + absent),
+                        AverageAttendance = Percentage(present + late, present + late + absent),
                         AverageMarks = avgMarks,
                         PassRate = passRate,
                         Passed = 0,
@@ -1281,6 +1304,7 @@ namespace src.services.admin
             const string sql =
                 "SELECT s.student_id, s.student_name, p.programme_code, ISNULL(s.semester, 0) AS semester_no, " +
                 "SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) AS present_count, " +
+                "SUM(CASE WHEN ar.status = 'LATE' THEN 1 ELSE 0 END) AS late_count, " +
                 "SUM(CASE WHEN ar.status = 'ABSENT' THEN 1 ELSE 0 END) AS absent_count, " +
                 "AVG(CAST(sub.marks_obtained AS float)) AS avg_marks " +
                 "FROM COURSE_OFFERINGS co " +
@@ -1306,6 +1330,7 @@ namespace src.services.admin
                     while (reader.Read())
                     {
                         var present = Int(reader["present_count"]);
+                        var late = Int(reader["late_count"]);
                         var absent = Int(reader["absent_count"]);
                         var marks = Decimal(reader["avg_marks"]);
                         rows.Add(new AdminCourseStudentMetric
@@ -1316,7 +1341,7 @@ namespace src.services.admin
                             Semester = Int(reader["semester_no"]),
                             Present = present,
                             Absent = absent,
-                            AttendancePercentage = Percentage(present, present + absent),
+                            AttendancePercentage = Percentage(present + late, present + late + absent),
                             Marks = marks,
                             Grade = LetterGrade(marks)
                         });
@@ -1458,7 +1483,7 @@ namespace src.services.admin
             summary.AverageCgpa = DecimalScalar(conn, "SELECT AVG(CAST(grade_point AS float)) FROM GRADES");
             summary.AverageAttendance = DecimalScalar(conn,
                 "SELECT AVG(CASE WHEN x.total_count = 0 THEN NULL ELSE CAST(x.present_count AS float) * 100.0 / x.total_count END) " +
-                "FROM (SELECT ats.offer_id, SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) present_count, COUNT(ar.attendance_id) total_count " +
+                "FROM (SELECT ats.offer_id, SUM(CASE WHEN ar.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) present_count, COUNT(ar.attendance_id) total_count " +
                 "FROM ATTENDANCE_SESSIONS ats LEFT JOIN ATTENDANCE_RECORDS ar ON ar.session_id = ats.session_id GROUP BY ats.offer_id) x");
 
             var passed = Count(conn, "SELECT COUNT(*) FROM GRADES WHERE letter_grade <> 'F'");
@@ -1568,6 +1593,62 @@ namespace src.services.admin
             using (var cmd = new SqlCommand("SELECT TOP 1 department_id FROM DEPARTMENTS ORDER BY department_id", conn, tx))
             {
                 return Convert.ToString(cmd.ExecuteScalar());
+            }
+        }
+
+        private static bool IsDepartmentActive(SqlConnection conn, SqlTransaction tx, string departmentId)
+        {
+            using (var cmd = new SqlCommand("SELECT 1 FROM DEPARTMENTS WHERE department_id=@id AND (status IS NULL OR UPPER(status) <> 'INACTIVE')", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", departmentId ?? "");
+                return cmd.ExecuteScalar() != null;
+            }
+        }
+
+        private static bool CanProgrammeHaveActiveCourses(SqlConnection conn, SqlTransaction tx, string programmeId)
+        {
+            using (var cmd = new SqlCommand(
+                "SELECT 1 FROM PROGRAMMES p JOIN DEPARTMENTS d ON d.department_id=p.department_id " +
+                "WHERE p.programme_id=@id AND (p.status IS NULL OR UPPER(p.status) <> 'INACTIVE') " +
+                "AND (d.status IS NULL OR UPPER(d.status) <> 'INACTIVE')", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", programmeId ?? "");
+                return cmd.ExecuteScalar() != null;
+            }
+        }
+
+        private static bool CanCourseBeActive(SqlConnection conn, SqlTransaction tx, string courseId)
+        {
+            using (var cmd = new SqlCommand(
+                "SELECT 1 FROM COURSES c JOIN PROGRAMMES p ON p.programme_id=c.programme_id JOIN DEPARTMENTS d ON d.department_id=p.department_id " +
+                "WHERE c.course_id=@id AND (c.status IS NULL OR UPPER(c.status) <> 'INACTIVE') " +
+                "AND (p.status IS NULL OR UPPER(p.status) <> 'INACTIVE') " +
+                "AND (d.status IS NULL OR UPPER(d.status) <> 'INACTIVE')", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", courseId ?? "");
+                return cmd.ExecuteScalar() != null;
+            }
+        }
+
+        private static void SetCoursesInactiveForProgramme(SqlConnection conn, SqlTransaction tx, string programmeIdOrCode)
+        {
+            using (var cmd = new SqlCommand(
+                "UPDATE COURSES SET status='INACTIVE' WHERE programme_id IN " +
+                "(SELECT programme_id FROM PROGRAMMES WHERE programme_id=@id OR programme_code=@id)", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", programmeIdOrCode ?? "");
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private static void SetProgrammesAndCoursesInactiveForDepartment(SqlConnection conn, SqlTransaction tx, string departmentId)
+        {
+            using (var cmd = new SqlCommand(
+                "UPDATE PROGRAMMES SET status='INACTIVE' WHERE department_id=@id; " +
+                "UPDATE c SET c.status='INACTIVE' FROM COURSES c JOIN PROGRAMMES p ON p.programme_id=c.programme_id WHERE p.department_id=@id", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", departmentId ?? "");
+                cmd.ExecuteNonQuery();
             }
         }
 
@@ -1764,6 +1845,7 @@ namespace src.services.admin
     public class AdminProgrammeSaveRequest
     {
         public string Code { get; set; }
+        public string Department { get; set; }
         public string Name { get; set; }
         public string Level { get; set; }
         public string Duration { get; set; }
@@ -1992,6 +2074,7 @@ namespace src.services.admin
     public class AdminProgrammeRow
     {
         public string Id { get; set; }
+        public string DepartmentId { get; set; }
         public string Code { get; set; }
         public string Name { get; set; }
         public string Level { get; set; }

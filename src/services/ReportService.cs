@@ -23,7 +23,9 @@ namespace src.services
                            UPPER(DATENAME(MONTH, start_date)) + ' ' +
                            CONVERT(varchar(4), YEAR(start_date)) + ' ' + semester AS name
                     FROM ACADEMIC_SESSIONS
-                    ORDER BY start_date DESC, session_id DESC";
+                    ORDER BY TRY_CONVERT(int, academic_year), academic_year,
+                             TRY_CONVERT(int, REPLACE(LOWER(semester), 'semester ', '')), semester,
+                             session_id";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -476,7 +478,7 @@ namespace src.services
                         CAST(
                             CASE
                                 WHEN SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END) = 0 THEN NULL
-                                ELSE SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'PRESENT' THEN 1 ELSE 0 END) * 100.0
+                                ELSE SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) IN ('PRESENT', 'LATE') THEN 1 ELSE 0 END) * 100.0
                                    / SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END)
                             END
                         AS DECIMAL(5,1)) AS AttendancePercentage
@@ -605,7 +607,7 @@ namespace src.services
                     (
                         SELECT
                             se.student_id,
-                            SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'PRESENT' THEN 1 ELSE 0 END) AS PresentCount,
+                            SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) IN ('PRESENT', 'LATE') THEN 1 ELSE 0 END) AS PresentCount,
                             SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END) AS RecordedCount
                         FROM scoped_enrolments se
                         LEFT JOIN ATTENDANCE_SESSIONS ats

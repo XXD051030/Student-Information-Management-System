@@ -50,7 +50,7 @@
     </form>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="<%= ResolveUrl("~/js/core/icons-init.js") %>?v=3"></script>
+    <script src="<%= ResolveUrl("~/js/core/icons-init.js") %>?v=6"></script>
     <script>window.PORTAL_TRANSLATE_URL = '<%= ResolveUrl("~/translate.ashx") %>';</script>
     <script src="<%= ResolveUrl("~/js/shared/translate.js") %>?v=2"></script>
     <asp:ContentPlaceHolder ID="ScriptsPlaceholder" runat="server" />

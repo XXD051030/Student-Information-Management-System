@@ -78,23 +78,37 @@ namespace src.lecturer
 
         private void InitializeFilters()
         {
+            int requestedOfferingId;
+            LecturerCourseCard requestedCourse = null;
+            if (int.TryParse(Request.QueryString["offering"], out requestedOfferingId) && requestedOfferingId > 0)
+                requestedCourse = _allCourses.FirstOrDefault(c => c.OfferingId == requestedOfferingId);
+
             academicYearFilter.Items.Clear();
             foreach (var year in _sessions.Select(s => s.AcademicYear)
                 .Concat(_allCourses.Select(c => c.AcademicYear))
                 .Where(HasValue)
-                .Distinct(StringComparer.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(AcademicYearSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
             {
                 academicYearFilter.Items.Add(new ListItem(AcademicYearLabel(year), year));
             }
 
             var current = AcademicTermReader.GetCurrentTerm();
-            if (current != null && academicYearFilter.Items.FindByValue(current.AcademicYear) != null)
+            if (requestedCourse != null &&
+                academicYearFilter.Items.FindByValue(requestedCourse.AcademicYear) != null)
+                academicYearFilter.SelectedValue = requestedCourse.AcademicYear;
+            else if (current != null && academicYearFilter.Items.FindByValue(current.AcademicYear) != null)
                 academicYearFilter.SelectedValue = current.AcademicYear;
             else if (academicYearFilter.Items.Count > 0)
                 academicYearFilter.SelectedIndex = 0;
 
-            PopulateSemesterFilter(current == null ? null : current.Name);
-            PopulateCourseFilter("all");
+            PopulateSemesterFilter(requestedCourse != null
+                ? requestedCourse.Semester
+                : (current == null ? null : current.Name));
+            PopulateCourseFilter(requestedCourse == null
+                ? "all"
+                : requestedCourse.OfferingId.ToString(CultureInfo.InvariantCulture));
         }
 
         private void PopulateSemesterFilter(string preferredValue)
@@ -108,6 +122,8 @@ namespace src.lecturer
                     .Select(c => c.Semester))
                 .Where(HasValue)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(SemesterSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             semesterFilter.Items.Clear();
