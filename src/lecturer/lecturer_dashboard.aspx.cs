@@ -154,12 +154,6 @@ namespace student_information_management_system
             return now >= start && now < end;
         }
 
-        protected string AttendanceUrl(object offeringId)
-        {
-            return ResolveUrl("~/lecturer/lecturer_attendance.aspx?offering=" +
-                Convert.ToString(offeringId, CultureInfo.InvariantCulture));
-        }
-
         protected int ToGradeCount
         {
             get { return _data != null ? _data.ToGrade.Count : 0; }
@@ -224,8 +218,7 @@ namespace student_information_management_system
         {
             return ResolveUrl("~/lecturer/lecturer_grades.aspx?offering=" +
                 Convert.ToString(offeringId, CultureInfo.InvariantCulture) + "&assessment=" +
-                Convert.ToString(assessmentId, CultureInfo.InvariantCulture) +
-                "&source=dashboard");
+                Convert.ToString(assessmentId, CultureInfo.InvariantCulture) + "#submissions");
         }
 
         protected int AnnouncementCount

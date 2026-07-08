@@ -73,17 +73,13 @@ namespace src.lecturer
             yearFilter.Items.Clear();
             yearFilter.Items.Add(new ListItem("All years", "all"));
             foreach (var year in sessions.Select(s => s.AcademicYear)
-                .Concat(courses.Select(c => c.AcademicYear)).Where(HasValue).Distinct()
-                .OrderBy(StudentPortalFormat.AcademicYearSortOrder)
-                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
+                .Concat(courses.Select(c => c.AcademicYear)).Where(HasValue).Distinct())
                 yearFilter.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
 
             semesterFilter.Items.Clear();
             semesterFilter.Items.Add(new ListItem("All semesters", "all"));
             foreach (var semester in sessions.Select(s => s.Semester)
-                .Concat(courses.Select(c => c.Semester)).Where(HasValue).Distinct()
-                .OrderBy(StudentPortalFormat.SemesterSortOrder)
-                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
+                .Concat(courses.Select(c => c.Semester)).Where(HasValue).Distinct())
                 semesterFilter.Items.Add(new ListItem(StudentPortalFormat.SemesterLabel(semester), semester));
 
             courseFilter.Items.Clear();

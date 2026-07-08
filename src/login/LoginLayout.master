@@ -44,8 +44,8 @@
                 <div class="relative z-10 flex items-center justify-between text-white/60" style="font-size:12px">
                     <span>&copy; 2026 INTI Education Group</span>
                     <div class="flex gap-5">
-                        <a href="<%= ResolveUrl("~/login/privacy.aspx") %>" class="hover:text-white transition-colors">Privacy</a>
-                        <a href="<%= ResolveUrl("~/login/help_center.aspx") %>" class="hover:text-white transition-colors">Help Center</a>
+                        <a href="#" class="hover:text-white transition-colors">Privacy</a>
+                        <a href="#" class="hover:text-white transition-colors">Help Center</a>
                     </div>
                 </div>
             </div>

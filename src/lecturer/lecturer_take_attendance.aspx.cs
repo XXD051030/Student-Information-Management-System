@@ -12,52 +12,34 @@ namespace src.lecturer
     {
         private AttendanceOffering _offering;
         private List<RosterEntry> _roster = new List<RosterEntry>();
-        private List<LecturerCourseCard> _courses = new List<LecturerCourseCard>();
-        protected bool IsReadOnly { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             var user = UserContextFactory.FromSession(Session);
-            IsReadOnly = string.Equals(
-                Request.QueryString["mode"], "view", StringComparison.OrdinalIgnoreCase);
             if (LecturerPortalService.GetProfile(user) == null)
             {
                 Response.Redirect("~/shared/login.aspx");
                 return;
             }
 
-            _courses = LecturerPortalService.GetCourses(user);
             if (!IsPostBack)
             {
                 int requestedOffering;
                 int.TryParse(Request.QueryString["offering"], out requestedOffering);
-                var requestedCourse = _courses.FirstOrDefault(c => c.OfferingId == requestedOffering);
-                BindAcademicYears(requestedCourse == null ? null : requestedCourse.AcademicYear);
-                BindSemesters(requestedCourse == null ? null : requestedCourse.Semester);
-                BindCourses(requestedCourse == null ? 0 : requestedCourse.OfferingId);
+                BindCourses(user, requestedOffering);
                 dateInput.Text = ParseDate(Request.QueryString["date"]).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 startTimeInput.Text = ParseTime(Request.QueryString["start"], new TimeSpan(9, 0, 0)).ToString(@"hh\:mm");
                 endTimeInput.Text = ParseTime(Request.QueryString["end"], new TimeSpan(10, 0, 0)).ToString(@"hh\:mm");
+
+                if (requestedOffering > 0 &&
+                    courseSelect.Items.FindByValue(requestedOffering.ToString(CultureInfo.InvariantCulture)) != null)
+                {
+                    courseSelect.SelectedValue = requestedOffering.ToString(CultureInfo.InvariantCulture);
+                }
             }
 
-            ApplyReadOnlyState();
             LoadOffering(user);
             if (!IsPostBack) LoadRoster();
-        }
-
-        protected void AcademicYearSelect_Changed(object sender, EventArgs e)
-        {
-            BindSemesters(null);
-            BindCourses(0);
-            LoadOffering(UserContextFactory.FromSession(Session));
-            LoadRoster();
-        }
-
-        protected void SemesterSelect_Changed(object sender, EventArgs e)
-        {
-            BindCourses(0);
-            LoadOffering(UserContextFactory.FromSession(Session));
-            LoadRoster();
         }
 
         protected void CourseSelect_Changed(object sender, EventArgs e)
@@ -68,22 +50,6 @@ namespace src.lecturer
 
         protected void SaveAttendance_Click(object sender, EventArgs e)
         {
-            if (IsReadOnly)
-            {
-                ShowStatus("Attendance history is view-only.", false);
-                LoadOffering(UserContextFactory.FromSession(Session));
-                LoadRoster();
-                return;
-            }
-
-            if (SelectedOfferingId <= 0)
-            {
-                ShowStatus("Please choose an academic year, semester, and course.", false);
-                LoadOffering(UserContextFactory.FromSession(Session));
-                LoadRoster();
-                return;
-            }
-
             DateTime date;
             TimeSpan startTime;
             TimeSpan endTime;
@@ -112,83 +78,24 @@ namespace src.lecturer
                 true);
         }
 
-        private void BindAcademicYears(string preferredValue)
+        private void BindCourses(UserContext user, int requestedOfferingId)
         {
-            academicYearSelect.Items.Clear();
-            academicYearSelect.Items.Add(new ListItem("Choose academic year", ""));
-            foreach (var year in _courses
-                .Select(c => c.AcademicYear)
-                .Where(HasValue)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(StudentPortalFormat.AcademicYearSortOrder)
-                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
+            var allCourses = LecturerPortalService.GetCourses(user);
+            var courses = allCourses
+                .Where(c => string.Equals(c.Status, "In progress", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (requestedOfferingId > 0)
             {
-                academicYearSelect.Items.Add(new ListItem(
-                    StudentPortalFormat.AcademicYearLabel(year), year));
+                var requested = allCourses.FirstOrDefault(c => c.OfferingId == requestedOfferingId);
+                if (requested != null && courses.All(c => c.OfferingId != requestedOfferingId))
+                    courses.Add(requested);
             }
+            if (courses.Count == 0) courses = allCourses;
 
-            if (academicYearSelect.Items.FindByValue(preferredValue ?? "") != null)
-                academicYearSelect.SelectedValue = preferredValue;
-        }
-
-        private void BindSemesters(string preferredValue)
-        {
-            string year = academicYearSelect.SelectedValue;
-            semesterSelect.Items.Clear();
-            semesterSelect.Items.Add(new ListItem(
-                HasValue(year) ? "Choose semester" : "Choose academic year first", ""));
-            semesterSelect.Enabled = HasValue(year);
-            if (!semesterSelect.Enabled)
-            {
-                BindCourses(0);
-                return;
-            }
-
-            foreach (var semester in _courses
-                .Where(c => string.Equals(c.AcademicYear, year, StringComparison.OrdinalIgnoreCase))
-                .Select(c => c.Semester)
-                .Where(HasValue)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(StudentPortalFormat.SemesterSortOrder)
-                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
-            {
-                semesterSelect.Items.Add(new ListItem(
-                    StudentPortalFormat.SemesterLabel(semester), semester));
-            }
-
-            if (semesterSelect.Items.FindByValue(preferredValue ?? "") != null)
-                semesterSelect.SelectedValue = preferredValue;
-        }
-
-        private void BindCourses(int preferredOfferingId)
-        {
-            string year = academicYearSelect.SelectedValue;
-            string semester = semesterSelect.SelectedValue;
-            courseSelect.Items.Clear();
-            courseSelect.Items.Add(new ListItem(
-                HasValue(semester) ? "Choose course" : "Choose semester first", ""));
-            courseSelect.Enabled = HasValue(year) && HasValue(semester);
-            if (!courseSelect.Enabled) return;
-
-            foreach (var course in _courses
-                .Where(c => string.Equals(c.AcademicYear, year, StringComparison.OrdinalIgnoreCase))
-                .Where(c => string.Equals(c.Semester, semester, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(c => c.CourseCode)
-                .ThenBy(c => c.CourseName))
-            {
-                courseSelect.Items.Add(new ListItem(
-                    course.CourseCode + " - " + course.CourseName,
-                    course.OfferingId.ToString(CultureInfo.InvariantCulture)));
-            }
-
-            string preferredValue = preferredOfferingId.ToString(CultureInfo.InvariantCulture);
-            if (preferredOfferingId > 0 && courseSelect.Items.FindByValue(preferredValue) != null)
-                courseSelect.SelectedValue = preferredValue;
-        }
-
-        private static bool HasValue(string value)
-        {
-            return !string.IsNullOrWhiteSpace(value);
+            courseSelect.DataSource = courses;
+            courseSelect.DataTextField = "CourseCode";
+            courseSelect.DataValueField = "OfferingId";
+            courseSelect.DataBind();
         }
 
         private void LoadOffering(UserContext user)
@@ -220,21 +127,8 @@ namespace src.lecturer
             attendanceData.Value = BuildInitialJson(_roster);
             emptyPanel.Visible = _roster.Count == 0;
             rosterPanel.Visible = _offering != null;
-            saveBtn.Visible = !IsReadOnly && _offering != null && _roster.Count > 0;
-            markAllPresent.Visible = !IsReadOnly && _offering != null && _roster.Count > 0;
-        }
-
-        private void ApplyReadOnlyState()
-        {
-            editableCourseFilters.Visible = !IsReadOnly;
-            readOnlyCourseFilters.Visible = IsReadOnly;
-            if (!IsReadOnly) return;
-            academicYearSelect.Enabled = false;
-            semesterSelect.Enabled = false;
-            courseSelect.Enabled = false;
-            dateInput.Enabled = false;
-            startTimeInput.Enabled = false;
-            endTimeInput.Enabled = false;
+            saveBtn.Visible = _offering != null && _roster.Count > 0;
+            markAllPresent.Visible = _offering != null && _roster.Count > 0;
         }
 
         private bool TryGetSessionDetails(out DateTime date, out TimeSpan startTime, out TimeSpan endTime)
@@ -272,18 +166,6 @@ namespace src.lecturer
 
         protected string CourseCode { get { return _offering != null ? _offering.CourseCode : "Select a course"; } }
         protected string CourseName { get { return _offering != null ? _offering.CourseName : ""; } }
-        protected string SelectedAcademicYearDisplay
-        {
-            get { return StudentPortalFormat.AcademicYearLabel(academicYearSelect.SelectedValue); }
-        }
-        protected string SelectedSemesterDisplay
-        {
-            get { return StudentPortalFormat.SemesterLabel(semesterSelect.SelectedValue); }
-        }
-        protected string SelectedCourseDisplay
-        {
-            get { return courseSelect.SelectedItem == null ? "" : courseSelect.SelectedItem.Text; }
-        }
         protected string EnrolledCountDisplay
         {
             get
@@ -305,15 +187,7 @@ namespace src.lecturer
             }
         }
 
-        protected string BackUrl
-        {
-            get
-            {
-                return ResolveUrl(IsReadOnly
-                    ? "~/lecturer/lecturer_attendance_history.aspx"
-                    : "~/lecturer/lecturer_attendance.aspx");
-            }
-        }
+        protected string BackUrl { get { return ResolveUrl("~/lecturer/lecturer_attendance.aspx"); } }
 
         protected string SegActive(object rowStatus, string target)
         {

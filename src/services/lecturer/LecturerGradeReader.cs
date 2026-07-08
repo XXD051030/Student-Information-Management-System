@@ -316,10 +316,9 @@ namespace src.services
 
                 // Detect changed marks before replacing the previous student-visible
                 // snapshot, then commit the alert and new snapshot atomically.
-                var gradeEmailNotifications = new List<GradeNotificationService.GradeEmailNotification>();
                 using (var transaction = conn.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    gradeEmailNotifications = GradeNotificationService.InsertChangedMarks(conn, transaction, assessmentId);
+                    GradeNotificationService.InsertChangedMarks(conn, transaction, assessmentId);
                     using (var cmd = new SqlCommand(
                         "UPDATE SUBMISSIONS SET " +
                         "published_marks_obtained = marks_obtained, " +
@@ -334,7 +333,6 @@ namespace src.services
                     }
                     transaction.Commit();
                 }
-                GradeNotificationService.SendPublishedGradeEmails(gradeEmailNotifications);
 
                 var percentByStudent = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
                 var countByStudent = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);

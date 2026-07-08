@@ -155,13 +155,6 @@
         distinctCardValues("data-academic-year").forEach(function (year) {
             if (years.indexOf(year) === -1) years.push(year);
         });
-        years.sort(function (left, right) {
-            return String(left).localeCompare(
-                String(right),
-                undefined,
-                { numeric: true, sensitivity: "base" }
-            );
-        });
         years.forEach(function (year) {
             var option = document.createElement("option");
             option.value = year;
@@ -183,13 +176,6 @@
         var semesters = sessionValues("semester", year);
         distinctCardValues("data-semester", year).forEach(function (semester) {
             if (semesters.indexOf(semester) === -1) semesters.push(semester);
-        });
-        semesters.sort(function (left, right) {
-            return semesterLabel(left).localeCompare(
-                semesterLabel(right),
-                undefined,
-                { numeric: true, sensitivity: "base" }
-            );
         });
         semesters.forEach(function (semester) {
             var option = document.createElement("option");

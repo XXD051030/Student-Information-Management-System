@@ -7,7 +7,7 @@
                 <i data-lucide="arrow-left" class="h-4 w-4"></i> Back to Attendance
             </a>
             <h1 class="mt-4 text-slate-900" style="font-size:28px;font-weight:700">Attendance history</h1>
-            <p class="mt-1 text-slate-500" style="font-size:14px">Review attendance sessions previously recorded for your courses.</p>
+            <p class="mt-1 text-slate-500" style="font-size:14px">Review or correct attendance sessions previously recorded for your courses.</p>
         </div>
         <a href="<%= ResolveUrl("~/lecturer/lecturer_take_attendance.aspx") %>" class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#e0162b] px-4 text-white transition-colors hover:bg-[#a01020]" style="font-size:13px;font-weight:600">
             <i data-lucide="plus" class="h-4 w-4"></i> New attendance
