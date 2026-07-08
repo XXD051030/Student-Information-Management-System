@@ -92,8 +92,8 @@
         </div>
 
         <div class="mt-8 flex items-center justify-between px-1 text-gray-500" style="font-size:13px">
-            <a href="#" class="hover:text-indigo-600 transition-colors">Need help signing in?</a>
-            <a href="#" class="hover:text-indigo-600 transition-colors">Contact IT Support</a>
+            <a href="<%= ResolveUrl("~/login/signin_help.aspx") %>" class="hover:text-indigo-600 transition-colors">Need help signing in?</a>
+            <a href="<%= ResolveUrl("~/login/help_center.aspx") %>" class="hover:text-indigo-600 transition-colors">Contact IT Support</a>
         </div>
     </div>
 

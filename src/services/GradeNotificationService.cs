@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using src.db;
+using src.services.email;
 using static src.services.ServiceMap;
 
 namespace src.services
@@ -42,21 +43,83 @@ namespace src.services
                 cmd.ExecuteNonQuery();
         }
 
-        public static int InsertChangedMarks(SqlConnection conn, SqlTransaction transaction, int assignmentId)
+        public static List<GradeEmailNotification> InsertChangedMarks(SqlConnection conn, SqlTransaction transaction, int assignmentId)
         {
+            var notifications = new List<GradeEmailNotification>();
             const string sql =
+                "DECLARE @created TABLE (" +
+                "notification_id int NOT NULL, student_id varchar(20) NOT NULL, assignment_id int NOT NULL, " +
+                "offer_id int NOT NULL, previous_marks decimal(5,2) NULL, published_marks decimal(5,2) NOT NULL); " +
                 "INSERT INTO GRADE_NOTIFICATIONS " +
                 "(student_id, assignment_id, offer_id, previous_marks, published_marks, created_at) " +
+                "OUTPUT inserted.notification_id, inserted.student_id, inserted.assignment_id, inserted.offer_id, " +
+                "inserted.previous_marks, inserted.published_marks INTO @created " +
                 "SELECT sub.student_id, sub.assignment_id, a.offer_id, " +
                 "sub.published_marks_obtained, sub.marks_obtained, SYSDATETIME() " +
                 "FROM SUBMISSIONS sub WITH (UPDLOCK, HOLDLOCK) JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
                 "WHERE sub.assignment_id = @assignmentId AND sub.marks_obtained IS NOT NULL " +
                 "AND (sub.published_at IS NULL OR sub.published_marks_obtained IS NULL " +
-                "OR sub.published_marks_obtained <> sub.marks_obtained);";
+                "OR sub.published_marks_obtained <> sub.marks_obtained); " +
+                "SELECT created.notification_id, created.student_id, s.student_name, s.student_email, " +
+                "created.previous_marks, created.published_marks, a.title AS assessment_title, " +
+                "c.course_code, c.course_name, ISNULL(l.lecturer_name, 'Lecturer') AS lecturer_name " +
+                "FROM @created created " +
+                "JOIN STUDENTS s ON s.student_id = created.student_id " +
+                "JOIN ASSIGNMENTS a ON a.assignment_id = created.assignment_id " +
+                "JOIN COURSE_OFFERINGS co ON co.offer_id = created.offer_id " +
+                "JOIN COURSES c ON c.course_id = co.course_id " +
+                "LEFT JOIN LECTURERS l ON l.lecturer_id = co.lecturer_id " +
+                "ORDER BY created.notification_id;";
             using (var cmd = new SqlCommand(sql, conn, transaction))
             {
                 cmd.Parameters.Add("@assignmentId", SqlDbType.Int).Value = assignmentId;
-                return cmd.ExecuteNonQuery();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        notifications.Add(new GradeEmailNotification
+                        {
+                            NotificationId = IntValue(reader["notification_id"]),
+                            StudentId = Text(reader["student_id"]),
+                            StudentName = Text(reader["student_name"]),
+                            StudentEmail = Text(reader["student_email"]),
+                            PreviousMarks = DecimalValue(reader["previous_marks"]),
+                            PublishedMarks = DecimalValue(reader["published_marks"]).GetValueOrDefault(),
+                            AssessmentTitle = Text(reader["assessment_title"]),
+                            CourseCode = Text(reader["course_code"]),
+                            CourseName = Text(reader["course_name"]),
+                            LecturerName = Text(reader["lecturer_name"])
+                        });
+                    }
+                }
+            }
+            return notifications;
+        }
+
+        public static void SendPublishedGradeEmails(IEnumerable<GradeEmailNotification> notifications)
+        {
+            if (notifications == null) return;
+
+            foreach (var notification in notifications)
+            {
+                if (notification == null || string.IsNullOrWhiteSpace(notification.StudentEmail))
+                    continue;
+
+                string subject = "Grade published: " + notification.AssessmentTitle;
+                string markLine = notification.PreviousMarks.HasValue
+                    ? "Your mark has changed from " + FormatMark(notification.PreviousMarks.Value) +
+                      "/100 to " + FormatMark(notification.PublishedMarks) + "/100."
+                    : "Your mark is " + FormatMark(notification.PublishedMarks) + "/100.";
+
+                string detail =
+                    "Hi " + notification.StudentName + ",\n\n" +
+                    markLine + "\n\n" +
+                    "Assessment: " + notification.AssessmentTitle + "\n" +
+                    "Course: " + notification.CourseCode + " - " + notification.CourseName + "\n" +
+                    "Lecturer: " + notification.LecturerName + "\n\n" +
+                    "You can sign in to the student portal to view the full grade details and feedback.";
+
+                EmailService.SendNotification(notification.StudentEmail, subject, detail);
             }
         }
 
@@ -242,6 +305,20 @@ namespace src.services
         private static string FormatMark(decimal mark)
         {
             return mark.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        public class GradeEmailNotification
+        {
+            public int NotificationId { get; set; }
+            public string StudentId { get; set; }
+            public string StudentName { get; set; }
+            public string StudentEmail { get; set; }
+            public decimal? PreviousMarks { get; set; }
+            public decimal PublishedMarks { get; set; }
+            public string AssessmentTitle { get; set; }
+            public string CourseCode { get; set; }
+            public string CourseName { get; set; }
+            public string LecturerName { get; set; }
         }
     }
 }

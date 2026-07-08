@@ -132,7 +132,10 @@
     <Content Include="lecturer\lecturer_take_attendance.aspx" />
     <Content Include="login\login.aspx" />
     <Content Include="login\forgot_password.aspx" />
+    <Content Include="login\help_center.aspx" />
+    <Content Include="login\privacy.aspx" />
     <Content Include="login\reset_password.aspx" />
+    <Content Include="login\signin_help.aspx" />
     <Content Include="lecturer\lecturer_at_risk.aspx" />
     <Content Include="lecturer\lecturer_attendance.aspx" />
     <Content Include="lecturer\lecturer_attendance_history.aspx" />
