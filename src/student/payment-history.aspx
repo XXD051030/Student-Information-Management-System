@@ -99,9 +99,9 @@
                     <select class="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-7 pr-8 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
                             style="font-size:12.5px;font-weight:500">
                         <option value="all">All years</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
                         <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
                     </select>
                     <i data-lucide="chevron-down" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
                 </div>

@@ -11,11 +11,7 @@ namespace src.lecturer
         protected global::System.Web.UI.WebControls.Panel statusBanner;
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl statusIcon;
         protected global::System.Web.UI.WebControls.Label statusMessage;
-        protected global::System.Web.UI.WebControls.Panel editableCourseFilters;
-        protected global::System.Web.UI.WebControls.DropDownList academicYearSelect;
-        protected global::System.Web.UI.WebControls.DropDownList semesterSelect;
         protected global::System.Web.UI.WebControls.DropDownList courseSelect;
-        protected global::System.Web.UI.WebControls.Panel readOnlyCourseFilters;
         protected global::System.Web.UI.WebControls.TextBox dateInput;
         protected global::System.Web.UI.WebControls.TextBox startTimeInput;
         protected global::System.Web.UI.WebControls.TextBox endTimeInput;

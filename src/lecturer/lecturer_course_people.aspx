@@ -58,11 +58,6 @@
                             </tr>
                         </ItemTemplate>
                     </asp:Repeater>
-                    <tr data-people-no-results hidden>
-                        <td colspan="5" class="px-6 py-10 text-center text-slate-500" style="font-size:13px">
-                            No students match your search.
-                        </td>
-                    </tr>
                 </tbody>
             </table>
         </div>
@@ -70,5 +65,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=24"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>"></script>
 </asp:Content>

@@ -2,7 +2,7 @@
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <a href="<%= BackUrl %>" class="inline-flex items-center gap-1.5 text-slate-600 transition-colors hover:text-[#a01020]" style="font-size:13px;font-weight:600">
-        <i data-lucide="arrow-left" class="h-4 w-4"></i> <%= IsReadOnly ? "Back to Attendance History" : "Back to Attendance" %>
+        <i data-lucide="arrow-left" class="h-4 w-4"></i> Back to Attendance
     </a>
 
     <asp:Panel ID="statusBanner" runat="server" Visible="false" style="font-size:13px;font-weight:600">
@@ -12,45 +12,17 @@
 
     <section class="mt-4 rounded-lg border border-slate-200 bg-white">
         <div class="border-b border-slate-100 px-6 py-4">
-            <h1 class="text-slate-900" style="font-size:18px;font-weight:700"><%= IsReadOnly ? "Attendance session details" : "Attendance session" %></h1>
-            <p class="mt-0.5 text-slate-500" style="font-size:12.5px"><%= IsReadOnly ? "This recorded attendance session is view-only." : "Choose any assigned course, date, and time for regular, replacement, or additional classes." %></p>
+            <h1 class="text-slate-900" style="font-size:18px;font-weight:700">Attendance session</h1>
+            <p class="mt-0.5 text-slate-500" style="font-size:12.5px">Choose any assigned course, date, and time for regular, replacement, or additional classes.</p>
         </div>
 
-        <div class="grid gap-4 px-6 py-5 md:grid-cols-2 xl:grid-cols-3 xl:items-end">
-            <asp:Panel ID="editableCourseFilters" runat="server" CssClass="contents">
-            <label class="block">
-                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">ACADEMIC YEAR</span>
-                <asp:DropDownList ID="academicYearSelect" runat="server" AutoPostBack="true" OnSelectedIndexChanged="AcademicYearSelect_Changed"
-                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
-                    style="font-size:13px" />
-            </label>
-            <label class="block">
-                <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">SEMESTER</span>
-                <asp:DropDownList ID="semesterSelect" runat="server" AutoPostBack="true" OnSelectedIndexChanged="SemesterSelect_Changed"
-                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                    style="font-size:13px" />
-            </label>
+        <div class="grid gap-4 px-6 py-5 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr] xl:items-end">
             <label class="block">
                 <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">COURSE</span>
                 <asp:DropDownList ID="courseSelect" runat="server" AutoPostBack="true" OnSelectedIndexChanged="CourseSelect_Changed"
-                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    CssClass="mt-1.5 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-slate-800 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
                     style="font-size:13px" />
             </label>
-            </asp:Panel>
-            <asp:Panel ID="readOnlyCourseFilters" runat="server" CssClass="contents" Visible="false">
-                <div>
-                    <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">ACADEMIC YEAR</span>
-                    <div class="mt-1.5 flex h-10 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-slate-700" style="font-size:13px"><%: SelectedAcademicYearDisplay %></div>
-                </div>
-                <div>
-                    <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">SEMESTER</span>
-                    <div class="mt-1.5 flex h-10 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-slate-700" style="font-size:13px"><%: SelectedSemesterDisplay %></div>
-                </div>
-                <div>
-                    <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">COURSE</span>
-                    <div class="mt-1.5 flex h-10 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-slate-700" style="font-size:13px"><%: SelectedCourseDisplay %></div>
-                </div>
-            </asp:Panel>
             <label class="block">
                 <span class="text-slate-500" style="font-size:11px;font-weight:700;letter-spacing:0.05em">DATE</span>
                 <asp:TextBox ID="dateInput" runat="server" TextMode="Date" required="required"
@@ -124,11 +96,11 @@
                                 <td class="px-6 py-3">
                                     <div class="flex justify-end">
                                         <div class="inline-flex divide-x divide-slate-200 overflow-hidden rounded-lg border border-slate-200">
-                                            <button runat="server" disabled='<%# IsReadOnly %>' type="button" data-status="PRESENT" data-enrolment-id='<%# Eval("EnrolmentId") %>' data-active='<%# SegActive(Eval("Status"), "PRESENT") %>'
+                                            <button type="button" data-status="PRESENT" data-enrolment-id='<%# Eval("EnrolmentId") %>' data-active='<%# SegActive(Eval("Status"), "PRESENT") %>'
                                                 class="px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-50 data-[active=true]:bg-emerald-500 data-[active=true]:text-white" style="font-size:12px;font-weight:600">Present</button>
-                                            <button runat="server" disabled='<%# IsReadOnly %>' type="button" data-status="LATE" data-enrolment-id='<%# Eval("EnrolmentId") %>' data-active='<%# SegActive(Eval("Status"), "LATE") %>'
+                                            <button type="button" data-status="LATE" data-enrolment-id='<%# Eval("EnrolmentId") %>' data-active='<%# SegActive(Eval("Status"), "LATE") %>'
                                                 class="px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-50 data-[active=true]:bg-amber-500 data-[active=true]:text-white" style="font-size:12px;font-weight:600">Late</button>
-                                            <button runat="server" disabled='<%# IsReadOnly %>' type="button" data-status="ABSENT" data-enrolment-id='<%# Eval("EnrolmentId") %>' data-active='<%# SegActive(Eval("Status"), "ABSENT") %>'
+                                            <button type="button" data-status="ABSENT" data-enrolment-id='<%# Eval("EnrolmentId") %>' data-active='<%# SegActive(Eval("Status"), "ABSENT") %>'
                                                 class="px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-50 data-[active=true]:bg-[#e0162b] data-[active=true]:text-white" style="font-size:12px;font-weight:600">Absent</button>
                                         </div>
                                     </div>

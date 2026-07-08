@@ -27,12 +27,6 @@ namespace src.controls
                 if (!notification.IsRead)
                     _unreadNotificationCount++;
             }
-
-            foreach (var notification in SubmissionNotificationService.GetForUser(user))
-            {
-                if (!notification.IsRead)
-                    _unreadNotificationCount++;
-            }
         }
 
         protected string FullName

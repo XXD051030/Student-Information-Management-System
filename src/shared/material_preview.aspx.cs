@@ -35,20 +35,9 @@ namespace src.shared
                 return;
             }
 
-            if (user.IsLecturer)
-            {
-                bool fromCourse = string.Equals(
-                    Request.QueryString["source"], "course", StringComparison.OrdinalIgnoreCase);
-                BackUrl = fromCourse
-                    ? ResolveUrl("~/lecturer/lecturer_materials.aspx?offering=" +
-                        Material.OfferingId.ToString(CultureInfo.InvariantCulture))
-                    : ResolveUrl("~/lecturer/lecturer_materials.aspx");
-            }
-            else
-            {
-                BackUrl = ResolveUrl("~/student/course_detail.aspx?offering=" +
-                    Material.OfferingId.ToString(CultureInfo.InvariantCulture));
-            }
+            BackUrl = user.IsLecturer
+                ? ResolveUrl("~/lecturer/lecturer_materials.aspx")
+                : ResolveUrl("~/student/course_detail.aspx?offering=" + Material.OfferingId.ToString(CultureInfo.InvariantCulture));
 
             bool isQuiz = string.Equals(Material.MaterialType, "Quiz", StringComparison.OrdinalIgnoreCase);
             bool isTest = string.Equals(Material.MaterialType, "Test", StringComparison.OrdinalIgnoreCase);

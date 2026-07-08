@@ -39,37 +39,6 @@ namespace src.services
             return int.TryParse(trimmed, out semester) ? "Semester " + semester : trimmed;
         }
 
-        public static int AcademicYearSortOrder(string value)
-        {
-            return FirstNumber(value);
-        }
-
-        public static int SemesterSortOrder(string value)
-        {
-            string text = value ?? "";
-            int semesterIndex = text.IndexOf("semester", StringComparison.OrdinalIgnoreCase);
-            return FirstNumber(semesterIndex >= 0 ? text.Substring(semesterIndex) : text);
-        }
-
-        private static int FirstNumber(string value)
-        {
-            int number = 0;
-            bool found = false;
-            foreach (char character in value ?? "")
-            {
-                if (char.IsDigit(character))
-                {
-                    found = true;
-                    number = checked(number * 10 + (character - '0'));
-                }
-                else if (found)
-                {
-                    break;
-                }
-            }
-            return found ? number : int.MaxValue;
-        }
-
         public static bool IsSameTerm(string left, string right)
         {
             return !string.IsNullOrWhiteSpace(left)
