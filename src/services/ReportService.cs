@@ -19,11 +19,12 @@ namespace src.services
                 conn.Open();
 
                 string sql = @"
-                    SELECT session_id AS semester_id,
-                           UPPER(DATENAME(MONTH, start_date)) + ' ' +
-                           CONVERT(varchar(4), YEAR(start_date)) + ' ' + semester AS name
+                    SELECT academic_year + '|' + semester AS semester_id,
+                           UPPER(DATENAME(MONTH, MIN(start_date))) + ' ' +
+                           CONVERT(varchar(4), YEAR(MIN(start_date))) + ' ' + semester AS name
                     FROM ACADEMIC_SESSIONS
-                    ORDER BY start_date DESC, session_id DESC";
+                    GROUP BY academic_year, semester
+                    ORDER BY MIN(start_date) DESC, academic_year DESC, semester DESC";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -122,7 +123,7 @@ namespace src.services
                         LEFT JOIN GRADES g
                             ON g.student_id = e.student_id AND g.offer_id = e.offer_id
                         WHERE e.status = 'ENROLLED'
-                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                           AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                           AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
                           AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
@@ -228,7 +229,7 @@ namespace src.services
                             ON sem.session_id = co.session_id
                         LEFT JOIN GRADES g
                             ON g.student_id = e.student_id AND g.offer_id = e.offer_id
-                        WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                        WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                           AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                           AND (@DateFrom IS NULL OR sem.end_date IS NULL OR sem.end_date >= @DateFrom)
                           AND (@DateTo IS NULL OR sem.start_date IS NULL OR sem.start_date <= @DateTo)
@@ -408,7 +409,7 @@ namespace src.services
                         ON e.offer_id = co.offer_id AND e.status = 'ENROLLED'
                     LEFT JOIN GRADES g
                         ON g.student_id = e.student_id AND g.offer_id = e.offer_id
-                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                       AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                       AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
                       AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
@@ -495,7 +496,7 @@ namespace src.services
                        AND (@DateTo IS NULL OR ats.session_date <= @DateTo)
                     LEFT JOIN ATTENDANCE_RECORDS ar
                         ON ar.session_id = ats.session_id AND ar.student_id = e.student_id
-                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                       AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                     GROUP BY
                         p.programme_code,
@@ -574,7 +575,7 @@ namespace src.services
                         INNER JOIN ACADEMIC_SESSIONS sem
                             ON sem.session_id = co.session_id
                         WHERE s.status = 'ACTIVE'
-                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                           AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                           AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
                           AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
@@ -738,7 +739,7 @@ namespace src.services
                         LEFT JOIN GRADES g
                             ON g.student_id = e.student_id AND g.offer_id = e.offer_id
                         WHERE s.status = 'ACTIVE'
-                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                           AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                           AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
                           AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
@@ -820,7 +821,7 @@ namespace src.services
                         ON p.programme_id = c.programme_id
                     LEFT JOIN ENROLLMENTS e
                         ON e.offer_id = co.offer_id
-                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId OR sem.academic_year + '|' + sem.semester = @SemesterId)
                       AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
                       AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
                       AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
