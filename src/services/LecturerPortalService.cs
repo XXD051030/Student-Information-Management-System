@@ -37,7 +37,7 @@ namespace src.services
 
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks) => LecturerGradeReader.SaveGradeMarks(user, assessmentId, marks);
 
-        public static void PublishGrades(UserContext user, int assessmentId) => LecturerGradeReader.PublishGrades(user, assessmentId);
+        public static GradeNotificationService.GradeEmailSendResult PublishGrades(UserContext user, int assessmentId) => LecturerGradeReader.PublishGrades(user, assessmentId);
         public static bool GrantSubmissionExtension(UserContext user, int submissionId, DateTime deadline) => LecturerGradeReader.GrantExtension(user, submissionId, deadline);
         public static bool ExpireSubmissionExtension(UserContext user, int submissionId) => LecturerGradeReader.ExpireExtension(user, submissionId);
 

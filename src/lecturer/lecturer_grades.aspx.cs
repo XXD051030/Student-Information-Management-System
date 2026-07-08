@@ -101,8 +101,18 @@ namespace student_information_management_system
 
             var user = UserContextFactory.FromSession(Session);
             LecturerPortalService.SaveGradeMarks(user, _assessmentId, marksBySubmission);
-            LecturerPortalService.PublishGrades(user, _assessmentId);
-            ShowStatus("Marks, feedback, and final course grades published to students.", true);
+            var emailResult = LecturerPortalService.PublishGrades(user, _assessmentId);
+            if (!emailResult.Success)
+            {
+                ShowStatus("Marks, feedback, and final course grades were published, but one or more grade emails could not be sent. Please try again later.", false);
+                LoadRows();
+                return;
+            }
+
+            string emailMessage = emailResult.SentCount > 0
+                ? " Grade email sent to " + emailResult.SentCount.ToString(CultureInfo.InvariantCulture) + " student" + (emailResult.SentCount == 1 ? "." : "s.")
+                : "";
+            ShowStatus("Marks, feedback, and final course grades published to students." + emailMessage, true);
             LoadRows();
         }
 

@@ -60,11 +60,13 @@ namespace src.services
                 "WHERE sub.assignment_id = @assignmentId AND sub.marks_obtained IS NOT NULL " +
                 "AND (sub.published_at IS NULL OR sub.published_marks_obtained IS NULL " +
                 "OR sub.published_marks_obtained <> sub.marks_obtained); " +
-                "SELECT created.notification_id, created.student_id, s.student_name, s.student_email, " +
+                "SELECT created.notification_id, created.student_id, s.student_name, " +
+                "COALESCE(NULLIF(u.email, ''), NULLIF(s.student_email, '')) AS student_email, " +
                 "created.previous_marks, created.published_marks, a.title AS assessment_title, " +
                 "c.course_code, c.course_name, ISNULL(l.lecturer_name, 'Lecturer') AS lecturer_name " +
                 "FROM @created created " +
                 "JOIN STUDENTS s ON s.student_id = created.student_id " +
+                "LEFT JOIN USERS u ON u.user_id = s.user_id " +
                 "JOIN ASSIGNMENTS a ON a.assignment_id = created.assignment_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = created.offer_id " +
                 "JOIN COURSES c ON c.course_id = co.course_id " +
@@ -96,14 +98,18 @@ namespace src.services
             return notifications;
         }
 
-        public static void SendPublishedGradeEmails(IEnumerable<GradeEmailNotification> notifications)
+        public static GradeEmailSendResult SendPublishedGradeEmails(IEnumerable<GradeEmailNotification> notifications)
         {
-            if (notifications == null) return;
+            var result = new GradeEmailSendResult();
+            if (notifications == null) return result;
 
             foreach (var notification in notifications)
             {
                 if (notification == null || string.IsNullOrWhiteSpace(notification.StudentEmail))
+                {
+                    result.SkippedCount++;
                     continue;
+                }
 
                 string subject = "Grade published: " + notification.AssessmentTitle;
                 string markLine = notification.PreviousMarks.HasValue
@@ -119,8 +125,20 @@ namespace src.services
                     "Lecturer: " + notification.LecturerName + "\n\n" +
                     "You can sign in to the student portal to view the full grade details and feedback.";
 
-                EmailService.SendNotification(notification.StudentEmail, subject, detail);
+                var sent = EmailService.SendNotification(notification.StudentEmail, subject, detail);
+                if (sent.Success)
+                {
+                    result.SentCount++;
+                }
+                else
+                {
+                    result.FailedCount++;
+                    if (string.IsNullOrWhiteSpace(result.Error))
+                        result.Error = sent.Error;
+                }
             }
+
+            return result;
         }
 
         public static List<StudentPortalNotification> GetForUser(UserContext user)
@@ -319,6 +337,15 @@ namespace src.services
             public string CourseCode { get; set; }
             public string CourseName { get; set; }
             public string LecturerName { get; set; }
+        }
+
+        public class GradeEmailSendResult
+        {
+            public int SentCount { get; set; }
+            public int FailedCount { get; set; }
+            public int SkippedCount { get; set; }
+            public string Error { get; set; }
+            public bool Success { get { return FailedCount == 0; } }
         }
     }
 }

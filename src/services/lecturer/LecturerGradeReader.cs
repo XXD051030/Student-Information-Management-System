@@ -286,15 +286,16 @@ namespace src.services
 
         // Computes each enrolled student's average submission percentage across the
         // offering, maps to a letter + grade point, and UPSERTs into GRADES.
-        public static void PublishGrades(UserContext user, int assessmentId)
+        public static GradeNotificationService.GradeEmailSendResult PublishGrades(UserContext user, int assessmentId)
         {
-            if (user == null) return;
+            var emailResult = new GradeNotificationService.GradeEmailSendResult();
+            if (user == null) return emailResult;
             EnsureReviewColumns();
             GradeNotificationService.EnsureTables();
 
             using (var conn = Db.OpenConnection())
             {
-                if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return;
+                if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return emailResult;
 
                 int offerId;
                 string semester;
@@ -306,7 +307,7 @@ namespace src.services
                     cmd.Parameters.AddWithValue("@id", assessmentId);
                     using (var reader = cmd.ExecuteReader())
                     {
-                        if (!reader.Read()) return;
+                        if (!reader.Read()) return emailResult;
                         offerId = IntValue(reader["offer_id"]);
                         semester = Text(reader["sem"]);
                     }
@@ -334,7 +335,7 @@ namespace src.services
                     }
                     transaction.Commit();
                 }
-                GradeNotificationService.SendPublishedGradeEmails(gradeEmailNotifications);
+                emailResult = GradeNotificationService.SendPublishedGradeEmails(gradeEmailNotifications);
 
                 var percentByStudent = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
                 var countByStudent = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -375,6 +376,8 @@ namespace src.services
                     var point = PointFor(letter);
                     UpsertGrade(conn, offerId, sid, point, letter, semester);
                 }
+
+                return emailResult;
             }
         }
 
