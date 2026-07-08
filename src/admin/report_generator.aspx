@@ -149,8 +149,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litPreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnStudentPrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="student:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnStudentNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="student:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyPreviewPanel" runat="server" Visible="false">
@@ -194,8 +198,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litProgrammePreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnProgrammePrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="programme:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnProgrammeNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="programme:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyProgrammePreviewPanel" runat="server" Visible="false">
@@ -245,8 +253,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litCoursePreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnCoursePrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="course:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnCourseNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="course:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyCoursePreviewPanel" runat="server" Visible="false">
@@ -292,8 +304,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litAttendancePreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnAttendancePrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="attendance:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnAttendanceNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="attendance:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyAttendancePreviewPanel" runat="server" Visible="false">
@@ -337,8 +353,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litAtRiskPreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnAtRiskPrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="atrisk:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnAtRiskNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="atrisk:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyAtRiskPreviewPanel" runat="server" Visible="false">

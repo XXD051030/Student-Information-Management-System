@@ -7,6 +7,7 @@ namespace src.admin
 {
     public partial class report_generator : src.security.AdminPage
     {
+        private const int PageSize = 10;
         private readonly ReportService reportService = new ReportService();
 
         protected void Page_Load(object sender, EventArgs e)
@@ -42,6 +43,20 @@ namespace src.admin
 
         protected void Filter_Changed(object sender, EventArgs e)
         {
+            ResetPageIndexes();
+            BindPreview();
+        }
+
+        protected void PreviewPage_Command(object sender, CommandEventArgs e)
+        {
+            var parts = (e.CommandArgument ?? "").ToString().Split(':');
+            if (parts.Length != 2) return;
+
+            string reportKey = parts[0];
+            int pageIndex = GetPageIndex(reportKey);
+            SetPageIndex(reportKey, parts[1] == "next" ? pageIndex + 1 : pageIndex - 1);
+            hdnReportType.Value = reportKey;
+
             BindPreview();
         }
 
@@ -62,10 +77,12 @@ namespace src.admin
                 dateTo
             );
 
-            rptPreview.DataSource = studentReportData.Take(10).ToList();
+            int studentPageIndex = NormalizePageIndex("student", studentReportData.Count);
+            rptPreview.DataSource = studentReportData.Skip(studentPageIndex * PageSize).Take(PageSize).ToList();
             rptPreview.DataBind();
 
-            litPreviewCount.Text = "Showing " + Math.Min(10, studentReportData.Count) + " of " + studentReportData.Count + " record(s).";
+            litPreviewCount.Text = BuildPageSummary(studentPageIndex, studentReportData.Count, "record(s)");
+            SetPagerState(btnStudentPrev, btnStudentNext, studentPageIndex, studentReportData.Count);
 
             emptyPreviewPanel.Visible = studentReportData.Count == 0;
 
@@ -77,10 +94,12 @@ namespace src.admin
                 dateTo
             );
 
-            rptProgrammePreview.DataSource = programmeReportData.Take(10).ToList();
+            int programmePageIndex = NormalizePageIndex("programme", programmeReportData.Count);
+            rptProgrammePreview.DataSource = programmeReportData.Skip(programmePageIndex * PageSize).Take(PageSize).ToList();
             rptProgrammePreview.DataBind();
 
-            litProgrammePreviewCount.Text = "Showing " + Math.Min(10, programmeReportData.Count) + " of " + programmeReportData.Count + " programme performance record(s).";
+            litProgrammePreviewCount.Text = BuildPageSummary(programmePageIndex, programmeReportData.Count, "programme performance record(s)");
+            SetPagerState(btnProgrammePrev, btnProgrammeNext, programmePageIndex, programmeReportData.Count);
 
             emptyProgrammePreviewPanel.Visible = programmeReportData.Count == 0;
 
@@ -91,10 +110,12 @@ namespace src.admin
                 dateTo
             );
 
-            rptCoursePreview.DataSource = courseReportData.Take(10).ToList();
+            int coursePageIndex = NormalizePageIndex("course", courseReportData.Count);
+            rptCoursePreview.DataSource = courseReportData.Skip(coursePageIndex * PageSize).Take(PageSize).ToList();
             rptCoursePreview.DataBind();
 
-            litCoursePreviewCount.Text = "Showing " + Math.Min(10, courseReportData.Count) + " of " + courseReportData.Count + " course performance record(s).";
+            litCoursePreviewCount.Text = BuildPageSummary(coursePageIndex, courseReportData.Count, "course performance record(s)");
+            SetPagerState(btnCoursePrev, btnCourseNext, coursePageIndex, courseReportData.Count);
 
             emptyCoursePreviewPanel.Visible = courseReportData.Count == 0;
 
@@ -105,10 +126,12 @@ namespace src.admin
                 dateTo
             );
 
-            rptAttendancePreview.DataSource = attendanceReportData.Take(10).ToList();
+            int attendancePageIndex = NormalizePageIndex("attendance", attendanceReportData.Count);
+            rptAttendancePreview.DataSource = attendanceReportData.Skip(attendancePageIndex * PageSize).Take(PageSize).ToList();
             rptAttendancePreview.DataBind();
 
-            litAttendancePreviewCount.Text = "Showing " + Math.Min(10, attendanceReportData.Count) + " of " + attendanceReportData.Count + " course attendance record(s).";
+            litAttendancePreviewCount.Text = BuildPageSummary(attendancePageIndex, attendanceReportData.Count, "course attendance record(s)");
+            SetPagerState(btnAttendancePrev, btnAttendanceNext, attendancePageIndex, attendanceReportData.Count);
 
             emptyAttendancePreviewPanel.Visible = attendanceReportData.Count == 0;
 
@@ -119,13 +142,61 @@ namespace src.admin
                 dateTo
             );
 
-            rptAtRiskPreview.DataSource = atRiskReportData.Take(10).ToList();
+            int atRiskPageIndex = NormalizePageIndex("atrisk", atRiskReportData.Count);
+            rptAtRiskPreview.DataSource = atRiskReportData.Skip(atRiskPageIndex * PageSize).Take(PageSize).ToList();
             rptAtRiskPreview.DataBind();
 
-            litAtRiskPreviewCount.Text = "Showing " + Math.Min(10, atRiskReportData.Count) + " of " + atRiskReportData.Count + " at-risk student(s).";
+            litAtRiskPreviewCount.Text = BuildPageSummary(atRiskPageIndex, atRiskReportData.Count, "at-risk student(s)");
+            SetPagerState(btnAtRiskPrev, btnAtRiskNext, atRiskPageIndex, atRiskReportData.Count);
 
             emptyAtRiskPreviewPanel.Visible = atRiskReportData.Count == 0;
 
+        }
+
+        private int NormalizePageIndex(string reportKey, int totalCount)
+        {
+            int lastPageIndex = Math.Max(0, (int)Math.Ceiling(totalCount / (decimal)PageSize) - 1);
+            int pageIndex = Math.Max(0, Math.Min(GetPageIndex(reportKey), lastPageIndex));
+            SetPageIndex(reportKey, pageIndex);
+            return pageIndex;
+        }
+
+        private int GetPageIndex(string reportKey)
+        {
+            object value = ViewState["PageIndex_" + reportKey];
+            return value == null ? 0 : Convert.ToInt32(value);
+        }
+
+        private void SetPageIndex(string reportKey, int pageIndex)
+        {
+            ViewState["PageIndex_" + reportKey] = Math.Max(0, pageIndex);
+        }
+
+        private void ResetPageIndexes()
+        {
+            SetPageIndex("student", 0);
+            SetPageIndex("programme", 0);
+            SetPageIndex("course", 0);
+            SetPageIndex("attendance", 0);
+            SetPageIndex("atrisk", 0);
+        }
+
+        private static string BuildPageSummary(int pageIndex, int totalCount, string label)
+        {
+            if (totalCount == 0) return "Showing 0 of 0 " + label + ".";
+
+            int start = pageIndex * PageSize + 1;
+            int end = Math.Min(start + PageSize - 1, totalCount);
+            return "Showing " + start + "-" + end + " of " + totalCount + " " + label + ".";
+        }
+
+        private static void SetPagerState(LinkButton previousButton, LinkButton nextButton, int pageIndex, int totalCount)
+        {
+            bool hasMultiplePages = totalCount > PageSize;
+            previousButton.Visible = hasMultiplePages;
+            nextButton.Visible = hasMultiplePages;
+            previousButton.Enabled = pageIndex > 0;
+            nextButton.Enabled = (pageIndex + 1) * PageSize < totalCount;
         }
 
         private static string EmptyToNull(string value)
