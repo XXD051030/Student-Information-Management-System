@@ -20,9 +20,9 @@ namespace src.services.admin
             using (var conn = Db.OpenConnection())
             {
                 data.Programmes = QueryOptions(conn,
-                    "SELECT programme_code, programme_code + ' - ' + programme_name FROM PROGRAMMES ORDER BY programme_code");
+                    "SELECT programme_code, programme_code + ' - ' + programme_name FROM PROGRAMMES WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY programme_code");
                 data.Departments = QueryOptions(conn,
-                    "SELECT department_id, department_id + ' - ' + department_name FROM DEPARTMENTS ORDER BY department_name");
+                    "SELECT department_id, department_id + ' - ' + department_name FROM DEPARTMENTS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY department_name");
                 data.Lecturers = QueryOptions(conn,
                     "SELECT lecturer_id, lecturer_name + ' (' + lecturer_id + ')' FROM LECTURERS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY lecturer_name");
                 data.AcademicSessions = QueryOptions(conn,
@@ -214,12 +214,12 @@ namespace src.services.admin
         public List<AdminProgrammeRow> GetProgrammes()
         {
             const string sql =
-                "SELECT p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, " +
+                "SELECT p.programme_id, p.department_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status, " +
                 "COUNT(DISTINCT c.course_id) AS course_count, COUNT(DISTINCT s.student_id) AS student_count " +
                 "FROM PROGRAMMES p " +
                 "LEFT JOIN COURSES c ON c.programme_id = p.programme_id " +
                 "LEFT JOIN STUDENTS s ON s.programme_id = p.programme_id " +
-                "GROUP BY p.programme_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status " +
+                "GROUP BY p.programme_id, p.department_id, p.programme_code, p.programme_name, p.education_level, p.duration, p.semester_count, p.status " +
                 "ORDER BY p.programme_code";
             var rows = new List<AdminProgrammeRow>();
             using (var conn = Db.OpenConnection())
@@ -231,6 +231,7 @@ namespace src.services.admin
                     rows.Add(new AdminProgrammeRow
                     {
                         Id = Text(reader["programme_id"]),
+                        DepartmentId = Text(reader["department_id"]),
                         Code = Text(reader["programme_code"]),
                         Name = Text(reader["programme_name"]),
                         Level = Text(reader["education_level"]),
@@ -505,13 +506,17 @@ namespace src.services.admin
             var code = CleanCode(request.Code);
             if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Programme code is required.");
             if (string.IsNullOrWhiteSpace(request.Name)) throw new ArgumentException("Programme name is required.");
+            if (string.IsNullOrWhiteSpace(request.Department)) throw new ArgumentException("Department is required.");
 
             using (var conn = Db.OpenConnection())
             {
-                var departmentId = ResolveDepartment(conn, null, code);
+                var status = NormalizeStatus(request.Status);
+                var departmentId = ResolveDepartment(conn, null, request.Department);
+                if (status == "ACTIVE" && !IsDepartmentActive(conn, null, departmentId))
+                    throw new ArgumentException("Programme cannot be active because the selected department is inactive.");
                 var exists = Exists(conn, "SELECT 1 FROM PROGRAMMES WHERE programme_id = @id OR programme_code = @id", cmd => cmd.Parameters.AddWithValue("@id", code));
                 var sql = exists
-                    ? "UPDATE PROGRAMMES SET programme_code = @code, programme_name = @name, education_level = @level, duration = @duration, semester_count = @semesters, status = @status WHERE programme_id = @id OR programme_code = @id"
+                    ? "UPDATE PROGRAMMES SET department_id = @department, programme_code = @code, programme_name = @name, education_level = @level, duration = @duration, semester_count = @semesters, status = @status WHERE programme_id = @id OR programme_code = @id"
                     : "INSERT INTO PROGRAMMES (programme_id, department_id, programme_code, programme_name, education_level, duration, semester_count, status) VALUES (@id, @department, @code, @name, @level, @duration, @semesters, @status)";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
@@ -522,9 +527,10 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@level", (object)(request.Level ?? "") ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@duration", (object)(request.Duration ?? "") ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@semesters", request.Semesters <= 0 ? 1 : request.Semesters);
-                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
+                if (status == "INACTIVE") SetCoursesInactiveForProgramme(conn, null, code);
             }
         }
 
@@ -538,15 +544,17 @@ namespace src.services.admin
             using (var conn = Db.OpenConnection())
             {
                 var exists = Exists(conn, "SELECT 1 FROM DEPARTMENTS WHERE department_id = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+                var status = NormalizeStatus(request.Status);
                 using (var cmd = new SqlCommand(exists
                     ? "UPDATE DEPARTMENTS SET department_name = @name, status = @status WHERE department_id = @id"
                     : "INSERT INTO DEPARTMENTS (department_id, department_name, status) VALUES (@id, @name, @status)", conn))
                 {
                     cmd.Parameters.AddWithValue("@id", id);
                     cmd.Parameters.AddWithValue("@name", request.Name.Trim());
-                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
+                if (status == "INACTIVE") SetProgrammesAndCoursesInactiveForDepartment(conn, null, id);
             }
         }
 
@@ -559,7 +567,10 @@ namespace src.services.admin
 
             using (var conn = Db.OpenConnection())
             {
+                var status = NormalizeStatus(request.Status);
                 var programmeId = ResolveProgramme(conn, null, CleanCode(request.Programme));
+                if (status == "ACTIVE" && !CanProgrammeHaveActiveCourses(conn, null, programmeId))
+                    throw new ArgumentException("Course cannot be active because its programme or department is inactive.");
                 var exists = Exists(conn, "SELECT 1 FROM COURSES WHERE course_id = @id OR course_code = @id", cmd => cmd.Parameters.AddWithValue("@id", code));
                 var sql = exists
                     ? "UPDATE COURSES SET programme_id = @programme, course_code = @code, course_name = @name, credit_hour = @credits, prerequisites = @prereq, status = @status WHERE course_id = @id OR course_code = @id"
@@ -572,7 +583,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@name", request.Name.Trim());
                     cmd.Parameters.AddWithValue("@credits", request.CreditHours <= 0 ? 1 : request.CreditHours);
                     cmd.Parameters.AddWithValue("@prereq", (object)(request.Prerequisites ?? "") ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.Parameters.AddWithValue("@status", status);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -595,6 +606,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@id", code);
                     cmd.ExecuteNonQuery();
                 }
+                if (hasDependencies) SetCoursesInactiveForProgramme(conn, null, code);
             }
         }
 
@@ -614,6 +626,7 @@ namespace src.services.admin
                     cmd.Parameters.AddWithValue("@id", id);
                     cmd.ExecuteNonQuery();
                 }
+                if (linked) SetProgrammesAndCoursesInactiveForDepartment(conn, null, id);
             }
         }
 
@@ -664,6 +677,8 @@ namespace src.services.admin
                     }
                 }
                 var status = NormalizeStatus(request.Status);
+                if (status == "ACTIVE" && !CanCourseBeActive(conn, null, courseId))
+                    throw new ArgumentException("Assignment cannot be active because its course, programme, or department is inactive.");
 
                 if (request.OfferId > 0 && Exists(conn, "SELECT 1 FROM COURSE_OFFERINGS WHERE offer_id = @id", cmd => cmd.Parameters.AddWithValue("@id", request.OfferId)))
                 {
@@ -859,7 +874,7 @@ namespace src.services.admin
             if (request == null) throw new ArgumentException("Missing calendar event details.");
             if (!DateTime.TryParse(request.StartDate, out var startDate)) throw new ArgumentException("Start date is required.");
             if (!DateTime.TryParse(request.EndDate, out var endDate)) throw new ArgumentException("End date is required.");
-            if (endDate < startDate) throw new ArgumentException("End date cannot be earlier than start date.");
+            if (endDate <= startDate) throw new ArgumentException("Semester end date must be after the classes begin date.");
 
             var intakeId = (request.IntakeId ?? "").Trim().ToUpperInvariant();
             var intakeName = (request.IntakeName ?? "").Trim().ToUpperInvariant();
@@ -1581,6 +1596,62 @@ namespace src.services.admin
             }
         }
 
+        private static bool IsDepartmentActive(SqlConnection conn, SqlTransaction tx, string departmentId)
+        {
+            using (var cmd = new SqlCommand("SELECT 1 FROM DEPARTMENTS WHERE department_id=@id AND (status IS NULL OR UPPER(status) <> 'INACTIVE')", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", departmentId ?? "");
+                return cmd.ExecuteScalar() != null;
+            }
+        }
+
+        private static bool CanProgrammeHaveActiveCourses(SqlConnection conn, SqlTransaction tx, string programmeId)
+        {
+            using (var cmd = new SqlCommand(
+                "SELECT 1 FROM PROGRAMMES p JOIN DEPARTMENTS d ON d.department_id=p.department_id " +
+                "WHERE p.programme_id=@id AND (p.status IS NULL OR UPPER(p.status) <> 'INACTIVE') " +
+                "AND (d.status IS NULL OR UPPER(d.status) <> 'INACTIVE')", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", programmeId ?? "");
+                return cmd.ExecuteScalar() != null;
+            }
+        }
+
+        private static bool CanCourseBeActive(SqlConnection conn, SqlTransaction tx, string courseId)
+        {
+            using (var cmd = new SqlCommand(
+                "SELECT 1 FROM COURSES c JOIN PROGRAMMES p ON p.programme_id=c.programme_id JOIN DEPARTMENTS d ON d.department_id=p.department_id " +
+                "WHERE c.course_id=@id AND (c.status IS NULL OR UPPER(c.status) <> 'INACTIVE') " +
+                "AND (p.status IS NULL OR UPPER(p.status) <> 'INACTIVE') " +
+                "AND (d.status IS NULL OR UPPER(d.status) <> 'INACTIVE')", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", courseId ?? "");
+                return cmd.ExecuteScalar() != null;
+            }
+        }
+
+        private static void SetCoursesInactiveForProgramme(SqlConnection conn, SqlTransaction tx, string programmeIdOrCode)
+        {
+            using (var cmd = new SqlCommand(
+                "UPDATE COURSES SET status='INACTIVE' WHERE programme_id IN " +
+                "(SELECT programme_id FROM PROGRAMMES WHERE programme_id=@id OR programme_code=@id)", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", programmeIdOrCode ?? "");
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private static void SetProgrammesAndCoursesInactiveForDepartment(SqlConnection conn, SqlTransaction tx, string departmentId)
+        {
+            using (var cmd = new SqlCommand(
+                "UPDATE PROGRAMMES SET status='INACTIVE' WHERE department_id=@id; " +
+                "UPDATE c SET c.status='INACTIVE' FROM COURSES c JOIN PROGRAMMES p ON p.programme_id=c.programme_id WHERE p.department_id=@id", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", departmentId ?? "");
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         /// <summary>Opens its own connection; only called from the background email task
         /// after CreateUser's transaction has already committed and closed.</summary>
         private static string ProgrammeNameStandalone(string programmeId)
@@ -1774,6 +1845,7 @@ namespace src.services.admin
     public class AdminProgrammeSaveRequest
     {
         public string Code { get; set; }
+        public string Department { get; set; }
         public string Name { get; set; }
         public string Level { get; set; }
         public string Duration { get; set; }
@@ -2002,6 +2074,7 @@ namespace src.services.admin
     public class AdminProgrammeRow
     {
         public string Id { get; set; }
+        public string DepartmentId { get; set; }
         public string Code { get; set; }
         public string Name { get; set; }
         public string Level { get; set; }
