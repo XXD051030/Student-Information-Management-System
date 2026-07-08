@@ -21,7 +21,7 @@ namespace src.services
             if (account == null) return null;
 
             var semesterCount = account.ProgrammeSemesterCount;
-            var isGraduated = semesterCount > 0 && account.CurrentSemesterNo >= semesterCount;
+            var isGraduated = semesterCount > 0 && account.CurrentSemesterNo > semesterCount;
             var term = AcademicTermReader.GetRegistrationTerm(user);
             var alreadyRegisteredCount = term == null ? 0 : GetRegisteredCount(account.StudentId, term);
             return new StudentEnrollmentPage

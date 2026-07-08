@@ -31,11 +31,11 @@
     <%-- Stat cards --%>
     <section class="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
 
-        <%-- Current GPA --%>
+        <%-- Current CGPA --%>
         <div class="group rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition-all">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Current GPA</p>
+                    <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Current CGPA</p>
                     <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= CgpaDisplay %></p>
                 </div>
             </div>
