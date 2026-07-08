@@ -54,7 +54,9 @@ namespace student_information_management_system
             academicYearFilter.Items.Clear();
             academicYearFilter.Items.Add(new ListItem("All academic years", "all"));
             foreach (var year in sessions.Select(s => s.AcademicYear)
-                .Concat(courses.Select(r => r.AcademicYear)).Where(HasValue).Distinct().OrderBy(v => v))
+                .Concat(courses.Select(r => r.AcademicYear)).Where(HasValue).Distinct()
+                .OrderBy(StudentPortalFormat.AcademicYearSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase))
                 academicYearFilter.Items.Add(new ListItem(StudentPortalFormat.AcademicYearLabel(year), year));
 
             PopulateSemesterFilter(courses, "all");
@@ -72,7 +74,8 @@ namespace student_information_management_system
                 .Select(r => r.Semester))
                 .Where(HasValue)
                 .Distinct()
-                .OrderBy(SemesterOrder)
+                .OrderBy(StudentPortalFormat.SemesterSortOrder)
+                .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             semesterFilter.Items.Clear();
@@ -175,13 +178,6 @@ namespace student_information_management_system
             return value != null && value.ToString() == "High"
                 ? "bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20"
                 : "bg-amber-50 text-amber-700 border-amber-100";
-        }
-
-        private static int SemesterOrder(string value)
-        {
-            int number;
-            var digits = new string((value ?? "").Where(char.IsDigit).ToArray());
-            return int.TryParse(digits, out number) ? number : Int32.MaxValue;
         }
 
         private static bool HasValue(string value) { return !String.IsNullOrWhiteSpace(value); }

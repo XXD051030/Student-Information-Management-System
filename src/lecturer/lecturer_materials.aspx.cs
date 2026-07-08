@@ -80,12 +80,18 @@ namespace student_information_management_system
 
                 var filterYears = sessions.Select(term => term.AcademicYear)
                     .Concat(courses.Select(course => course.AcademicYear))
-                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct()
+                    .OrderBy(StudentPortalFormat.AcademicYearSortOrder)
+                    .ThenBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
                 var uploadYears = courses.Select(course => course.AcademicYear)
-                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct()
+                    .OrderBy(StudentPortalFormat.AcademicYearSortOrder)
+                    .ThenBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
                 var semesters = sessions.Select(term => term.Semester)
                     .Concat(courses.Select(course => course.Semester))
-                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct()
+                    .OrderBy(StudentPortalFormat.SemesterSortOrder)
+                    .ThenBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
 
                 yearFilterSelect.Items.Clear();
                 yearFilterSelect.Items.Add(new ListItem("All years", "all"));

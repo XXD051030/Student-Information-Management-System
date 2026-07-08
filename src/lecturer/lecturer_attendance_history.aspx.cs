@@ -54,7 +54,8 @@ namespace src.lecturer
                 "~/lecturer/lecturer_take_attendance.aspx?offering=" + row.OfferingId.ToString(CultureInfo.InvariantCulture) +
                 "&date=" + row.SessionDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) +
                 "&start=" + row.StartTime.ToString(@"hh\:mm") +
-                "&end=" + row.EndTime.ToString(@"hh\:mm"));
+                "&end=" + row.EndTime.ToString(@"hh\:mm") +
+                "&mode=view");
         }
 
         private static string FormatTime(TimeSpan value)

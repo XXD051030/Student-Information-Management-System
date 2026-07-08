@@ -23,7 +23,9 @@ namespace src.services
                            UPPER(DATENAME(MONTH, start_date)) + ' ' +
                            CONVERT(varchar(4), YEAR(start_date)) + ' ' + semester AS name
                     FROM ACADEMIC_SESSIONS
-                    ORDER BY start_date DESC, session_id DESC";
+                    ORDER BY TRY_CONVERT(int, academic_year), academic_year,
+                             TRY_CONVERT(int, REPLACE(LOWER(semester), 'semester ', '')), semester,
+                             session_id";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())

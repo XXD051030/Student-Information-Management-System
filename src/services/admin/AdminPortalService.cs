@@ -27,13 +27,19 @@ namespace src.services.admin
                     "SELECT lecturer_id, lecturer_name + ' (' + lecturer_id + ')' FROM LECTURERS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY lecturer_name");
                 data.AcademicSessions = QueryOptions(conn,
                     "SELECT s.session_id, i.intake_name + ' - ' + s.semester " +
-                    "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id ORDER BY s.start_date DESC");
+                    "FROM ACADEMIC_SESSIONS s LEFT JOIN INTAKES i ON i.intake_id=s.intake_id " +
+                    "ORDER BY TRY_CONVERT(int, s.academic_year), s.academic_year, " +
+                    "TRY_CONVERT(int, REPLACE(LOWER(s.semester), 'semester ', '')), s.semester");
                 data.AcademicYears = QuerySingleColumnOptions(conn,
-                    "SELECT academic_year FROM (SELECT academic_year FROM ACADEMIC_SESSIONS UNION SELECT academic_year FROM COURSE_OFFERINGS) y ORDER BY academic_year DESC");
+                    "SELECT academic_year FROM (SELECT academic_year FROM ACADEMIC_SESSIONS UNION SELECT academic_year FROM COURSE_OFFERINGS) y " +
+                    "ORDER BY TRY_CONVERT(int, academic_year), academic_year");
                 data.Semesters = QuerySingleColumnOptions(conn,
-                    "SELECT semester FROM (SELECT semester FROM ACADEMIC_SESSIONS UNION SELECT semester FROM COURSE_OFFERINGS) s ORDER BY semester");
+                    "SELECT semester FROM (SELECT semester FROM ACADEMIC_SESSIONS UNION SELECT semester FROM COURSE_OFFERINGS) s " +
+                    "ORDER BY TRY_CONVERT(int, REPLACE(LOWER(semester), 'semester ', '')), semester");
                 data.StudentSemesters = QuerySingleColumnOptions(conn,
-                    "SELECT DISTINCT CONVERT(varchar(10), semester) FROM STUDENTS WHERE semester IS NOT NULL ORDER BY CONVERT(varchar(10), semester)");
+                    "SELECT semester FROM (SELECT DISTINCT CONVERT(varchar(10), semester) AS semester " +
+                    "FROM STUDENTS WHERE semester IS NOT NULL) s " +
+                    "ORDER BY TRY_CONVERT(int, semester), semester");
                 data.EducationLevels = QuerySingleColumnOptions(conn,
                     "SELECT DISTINCT education_level FROM PROGRAMMES WHERE education_level IS NOT NULL AND LTRIM(RTRIM(education_level)) <> '' ORDER BY education_level");
                 data.ProgrammeStatuses = QuerySingleColumnOptions(conn,

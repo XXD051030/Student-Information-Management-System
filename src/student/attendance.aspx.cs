@@ -217,6 +217,9 @@ namespace src.student
             var semesters = courses
                 .GroupBy(c => c.SemesterId)
                 .Select(g => new { Id = g.Key, Name = g.First().SemesterName, IsCurrent = g.First().IsCurrent })
+                .OrderBy(sem => StudentPortalFormat.AcademicYearSortOrder(sem.Name))
+                .ThenBy(sem => StudentPortalFormat.SemesterSortOrder(sem.Name))
+                .ThenBy(sem => sem.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             var sb = new StringBuilder();
