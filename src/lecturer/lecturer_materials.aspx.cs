@@ -144,6 +144,10 @@ namespace student_information_management_system
                 string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase) ||
                 isViva;
+            bool requiresPositiveWeight =
+                string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase) ||
+                isViva;
             int selectedWeek;
             int? weekNumber = isLectureNotes &&
                 int.TryParse(weekSelect.SelectedValue, out selectedWeek) &&
@@ -192,7 +196,7 @@ namespace student_information_management_system
                 ShowStatus("Course weight is required for assessments.", false);
                 return;
             }
-            if (requiresAssessmentDetails && parsedWeight.Value <= 0m)
+            if (requiresPositiveWeight && parsedWeight.Value <= 0m)
             {
                 ShowStatus("Course weight for assessments must be greater than 0%.", false);
                 return;

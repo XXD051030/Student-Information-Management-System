@@ -357,21 +357,27 @@
         return false;
     }
 
+    function uploadField(selector) {
+        var uploadCard = document.querySelector("[data-upload-details-card]");
+        return uploadCard ? uploadCard.querySelector(selector) : document.querySelector(selector);
+    }
+
     function validateMaterialPublish() {
-        var uploadYear = document.querySelector("[data-upload-year-select]");
-        var uploadSemester = document.querySelector("[data-upload-semester-select]");
-        var course = document.querySelector("[data-material-course-select]");
-        var typeSelect = document.querySelector("[data-material-type-select]");
-        var title = document.querySelector("[data-material-title]");
-        var description = document.querySelector("[data-material-description]");
-        var dueDate = document.querySelector("[data-material-due-date]");
-        var dueTime = document.querySelector("[data-material-due-time]");
-        var weight = document.querySelector("[data-material-weight]");
-        var week = document.querySelector("[data-material-week-select]");
-        var file = document.querySelector("[data-material-file]");
-        var submissionMode = document.querySelector("[data-assessment-mode]");
+        var uploadYear = uploadField("[data-upload-year-select]");
+        var uploadSemester = uploadField("[data-upload-semester-select]");
+        var course = uploadField("[data-material-course-select]");
+        var typeSelect = uploadField("[data-material-type-select]");
+        var title = uploadField("input[data-material-title]");
+        var description = uploadField("[data-material-description]");
+        var dueDate = uploadField("[data-material-due-date]");
+        var dueTime = uploadField("[data-material-due-time]");
+        var weight = uploadField("[data-material-weight]");
+        var week = uploadField("[data-material-week-select]");
+        var file = uploadField("[data-material-file]");
+        var submissionMode = uploadField("[data-assessment-mode]");
         var type = typeSelect ? typeSelect.value : "";
         var requiresAssessment = type === "Assignment" || type === "Quiz" || type === "Test" || type === "Viva";
+        var requiresPositiveWeight = type === "Assignment" || type === "Test" || type === "Viva";
         var lectureNotes = type === "Lecture Notes";
         var quiz = type === "Quiz";
         var viva = type === "Viva";
@@ -411,7 +417,7 @@
         if (requiresAssessment && weight && !weight.value) {
             return showRequiredError("Course weight is required for assessments.", weight);
         }
-        if (requiresAssessment && weight && Number(weight.value) <= 0) {
+        if (requiresPositiveWeight && weight && Number(weight.value) <= 0) {
             return showRequiredError("Course weight for assessments must be greater than 0%.", weight);
         }
         if (weight) weight.setCustomValidity("");
@@ -491,16 +497,16 @@
     async function publishMaterial(button) {
         if (!validateMaterialPublish()) return;
 
-        var course = document.querySelector("[data-material-course-select]");
-        var type = document.querySelector("[data-material-type-select]");
-        var title = document.querySelector("[data-material-title]");
-        var description = document.querySelector("[data-material-description]");
-        var dueDate = document.querySelector("[data-material-due-date]");
-        var dueTime = document.querySelector("[data-material-due-time]");
-        var weight = document.querySelector("[data-material-weight]");
-        var week = document.querySelector("[data-material-week-select]");
-        var file = document.querySelector("[data-material-file]");
-        var submissionMode = document.querySelector("[data-assessment-mode]");
+        var course = uploadField("[data-material-course-select]");
+        var type = uploadField("[data-material-type-select]");
+        var title = uploadField("input[data-material-title]");
+        var description = uploadField("[data-material-description]");
+        var dueDate = uploadField("[data-material-due-date]");
+        var dueTime = uploadField("[data-material-due-time]");
+        var weight = uploadField("[data-material-weight]");
+        var week = uploadField("[data-material-week-select]");
+        var file = uploadField("[data-material-file]");
+        var submissionMode = uploadField("[data-assessment-mode]");
         var label = button.querySelector("[data-publish-label]");
         var formData = new FormData();
         formData.append("offeringId", course ? course.value : "");

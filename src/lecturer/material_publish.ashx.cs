@@ -38,6 +38,9 @@ namespace student_information_management_system
                 bool viva = materialType.Equals("Viva", StringComparison.OrdinalIgnoreCase);
                 bool assessment = quiz || materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase) ||
                                   materialType.Equals("Test", StringComparison.OrdinalIgnoreCase) || viva;
+                bool requiresPositiveWeight = materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase) ||
+                                              materialType.Equals("Test", StringComparison.OrdinalIgnoreCase) ||
+                                              viva;
                 if (materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase))
                     submissionMode = "FILE";
                 else if (quiz || materialType.Equals("Test", StringComparison.OrdinalIgnoreCase))
@@ -68,7 +71,7 @@ namespace student_information_management_system
                     throw new InvalidOperationException("Due date and due time are required for assessments.");
                 if (assessment && !weight.HasValue)
                     throw new InvalidOperationException("Course weight is required for assessments.");
-                if (assessment && weight.Value <= 0m)
+                if (requiresPositiveWeight && weight.Value <= 0m)
                     throw new InvalidOperationException("Course weight for assessments must be greater than 0%.");
                 if (dueDate.HasValue && dueDate.Value < DateTime.Now)
                     throw new InvalidOperationException("Due date and time cannot be in the past.");
