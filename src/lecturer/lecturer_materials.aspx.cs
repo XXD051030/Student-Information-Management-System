@@ -75,7 +75,11 @@ namespace student_information_management_system
                     uploadCourse.Attributes["data-year"] = course.AcademicYear;
                     uploadCourse.Attributes["data-semester"] = course.Semester;
                     courseSelect.Items.Add(uploadCourse);
-                    courseFilterSelect.Items.Add(new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture)));
+
+                    var filterCourse = new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture));
+                    filterCourse.Attributes["data-year"] = course.AcademicYear;
+                    filterCourse.Attributes["data-semester"] = course.Semester;
+                    courseFilterSelect.Items.Add(filterCourse);
                 }
 
                 var filterYears = sessions.Select(term => term.AcademicYear)

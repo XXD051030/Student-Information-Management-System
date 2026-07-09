@@ -330,7 +330,7 @@ namespace src.services
                     SELECT *
                     FROM final_report
                     WHERE (@Status = ''
-                        OR @Status NOT IN ('Healthy', 'Watch', 'At Risk')
+                        OR @Status NOT IN ('Healthy', 'Watch', 'At Risk', 'N/A')
                         OR ProgrammeStatus = @Status)
                     ORDER BY ProgrammeCode";
 

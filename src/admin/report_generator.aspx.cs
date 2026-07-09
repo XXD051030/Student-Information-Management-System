@@ -39,6 +39,13 @@ namespace src.admin
             ddlStatus.Items.Add(new ListItem("Probation", "Probation"));
             ddlStatus.Items.Add(new ListItem("At Risk", "At Risk"));
             ddlStatus.Items.Add(new ListItem("Pending", "Pending"));
+
+            ddlProgrammeStatus.Items.Clear();
+            ddlProgrammeStatus.Items.Add(new ListItem("Any", ""));
+            ddlProgrammeStatus.Items.Add(new ListItem("Healthy", "Healthy"));
+            ddlProgrammeStatus.Items.Add(new ListItem("Watch", "Watch"));
+            ddlProgrammeStatus.Items.Add(new ListItem("At Risk", "At Risk"));
+            ddlProgrammeStatus.Items.Add(new ListItem("N/A", "N/A"));
         }
 
         protected void Filter_Changed(object sender, EventArgs e)
@@ -64,7 +71,8 @@ namespace src.admin
         {
             string semesterId = EmptyToNull(ddlSemester.SelectedValue);
             string programmeId = EmptyToNull(ddlProgramme.SelectedValue);
-            string status = ddlStatus.SelectedValue;
+            string academicStatus = ddlStatus.SelectedValue;
+            string programmeStatus = ddlProgrammeStatus.SelectedValue;
 
             DateTime? dateFrom = null;
             DateTime? dateTo = null;
@@ -72,7 +80,7 @@ namespace src.admin
             var studentReportData = reportService.GetStudentAcademicReport(
                 semesterId,
                 programmeId,
-                status,
+                academicStatus,
                 dateFrom,
                 dateTo
             );
@@ -89,7 +97,7 @@ namespace src.admin
             var programmeReportData = reportService.GetProgrammePerformanceReport(
                 semesterId,
                 programmeId,
-                status,
+                programmeStatus,
                 dateFrom,
                 dateTo
             );

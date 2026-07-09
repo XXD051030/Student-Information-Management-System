@@ -51,6 +51,15 @@ namespace src.admin
         protected global::System.Web.UI.WebControls.DropDownList ddlStatus;
 
         /// <summary>
+        /// ddlProgrammeStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlProgrammeStatus;
+
+        /// <summary>
         /// rptPreview control.
         /// </summary>
         /// <remarks>

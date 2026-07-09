@@ -31,6 +31,10 @@
             .toLowerCase();
     }
 
+    function normalizedTerm(value) {
+        return normalized(value).replace(/^semester\s+/, "");
+    }
+
     function academicYearLabel(value) {
         var year = Number(value);
         return String(year) === String(value) ? String(year - 1) + "/" + value : value;
@@ -136,7 +140,7 @@
             var typeMatch = normalized(activeMaterialType) === "all" || type === normalized(activeMaterialType);
             var courseMatch = normalized(course) === "all" || normalized(rowCourse) === normalized(course);
             var yearMatch = normalized(year) === "all" || normalized(rowYear) === normalized(year);
-            var semesterMatch = normalized(semester) === "all" || normalized(rowSemester) === normalized(semester);
+            var semesterMatch = normalized(semester) === "all" || normalizedTerm(rowSemester) === normalizedTerm(semester);
             var searchMatch = !query || text.indexOf(query) >= 0;
             row.style.display = typeMatch && courseMatch && yearMatch && semesterMatch && searchMatch ? "" : "none";
         });
@@ -213,10 +217,12 @@
             if (!year || !semester) return;
 
             courses.forEach(function (course) {
-                if (course.year !== year || course.semester !== semester) return;
+                if (course.year !== year || normalizedTerm(course.semester) !== normalizedTerm(semester)) return;
                 var option = document.createElement("option");
                 option.value = course.value;
                 option.textContent = course.label;
+                option.setAttribute("data-year", course.year);
+                option.setAttribute("data-semester", course.semester);
                 courseSelect.appendChild(option);
             });
         }
@@ -224,6 +230,61 @@
         yearSelect.addEventListener("change", loadSemesters);
         semesterSelect.addEventListener("change", loadCourses);
         loadSemesters();
+    }
+
+    function initPublishedCourseFilters() {
+        var courseSelect = document.querySelector("[data-material-course-filter]");
+        var yearSelect = document.querySelector("[data-material-year-filter]");
+        var semesterSelect = document.querySelector("[data-material-semester-filter]");
+        if (!courseSelect || !yearSelect || !semesterSelect) return;
+
+        var courses = Array.prototype.slice.call(courseSelect.options, 1).map(function (option) {
+            return {
+                value: option.value,
+                label: option.textContent,
+                year: option.getAttribute("data-year") || "",
+                semester: option.getAttribute("data-semester") || ""
+            };
+        });
+
+        function addOption(value, label, year, semester) {
+            var option = document.createElement("option");
+            option.value = value;
+            option.textContent = label;
+            if (year) option.setAttribute("data-year", year);
+            if (semester) option.setAttribute("data-semester", semester);
+            courseSelect.appendChild(option);
+        }
+
+        function rebuildCourses() {
+            var previous = courseSelect.value || "all";
+            var year = yearSelect.value;
+            var semester = semesterSelect.value;
+            var hasPrevious = previous === "all";
+
+            courseSelect.innerHTML = "";
+            addOption("all", "All courses");
+
+            courses.forEach(function (course) {
+                var yearMatch = normalized(year) === "all" || normalized(course.year) === normalized(year);
+                var semesterMatch = normalized(semester) === "all" || normalizedTerm(course.semester) === normalizedTerm(semester);
+                if (!yearMatch || !semesterMatch) return;
+                addOption(course.value, course.label, course.year, course.semester);
+                if (course.value === previous) hasPrevious = true;
+            });
+
+            courseSelect.value = hasPrevious ? previous : "all";
+        }
+
+        [yearSelect, semesterSelect].forEach(function (filter) {
+            filter.addEventListener("change", function () {
+                rebuildCourses();
+                saveMaterialView();
+                applyMaterialFilters();
+            });
+        });
+
+        rebuildCourses();
     }
 
     function updateMaterialForm() {
@@ -763,6 +824,7 @@
             });
         });
         restoreMaterialView();
+        initPublishedCourseFilters();
         initUploadCourseFilters();
         syncPublishTypeToTab();
         applyMaterialFilters();
